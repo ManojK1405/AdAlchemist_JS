@@ -3,23 +3,33 @@ import * as Sentry from '@sentry/node';
 
 export const getLeaderboard = async (req, res) => {
     try {
-        // 1. Most Liked Creators (based on total project likes)
-        const topLikedUsers = await prisma.user.findMany({
-            take: 5,
+        // 1. Most Liked Creators (Ranked by total likes received on all their projects)
+        const usersWithLikes = await prisma.user.findMany({
             select: {
                 id: true,
                 name: true,
                 image: true,
-                _count: {
-                    select: { projectLikes: true }
-                }
-            },
-            orderBy: {
-                projectLikes: {
-                    _count: 'desc'
+                projects: {
+                    select: {
+                        _count: {
+                            select: { projectLikes: true }
+                        }
+                    }
                 }
             }
         });
+
+        const topLikedUsers = usersWithLikes
+            .map(user => ({
+                id: user.id,
+                name: user.name,
+                image: user.image,
+                _count: {
+                    projectLikes: user.projects.reduce((acc, p) => acc + p._count.projectLikes, 0)
+                }
+            }))
+            .sort((a, b) => b._count.projectLikes - a._count.projectLikes)
+            .slice(0, 5);
 
         // 2. Most Tipped Creators (based on aggregate tip amount received)
         // Note: Prisma doesn't directly support sum in findMany easily without raw queries or grouping
