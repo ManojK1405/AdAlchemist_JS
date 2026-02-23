@@ -11,6 +11,7 @@ import {
     deleteDiscussion,
     tipCreator
 } from '../controllers/socialController.js';
+import { getLeaderboard } from '../controllers/leaderboardController.js';
 import { protect } from '../middlewares/auth.js';
 
 const socialRouter = express.Router();
@@ -32,5 +33,8 @@ socialRouter.post('/projects/:projectId/like', protect, toggleLikeProject);
 
 // Tipping
 socialRouter.post('/tip', protect, tipCreator);
+
+// Leaderboard
+socialRouter.get('/leaderboard', getLeaderboard);
 
 export default socialRouter;

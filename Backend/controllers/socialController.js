@@ -320,6 +320,13 @@ export const tipCreator = async (req, res) => {
                 where: { id: recipientId },
                 data: { credits: { increment: amount } },
             }),
+            prisma.tip.create({
+                data: {
+                    amount,
+                    senderId: userId,
+                    recipientId,
+                }
+            })
         ]);
 
         res.json({ message: `Tipped ${amount} credits successfully!` });

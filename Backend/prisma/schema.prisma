@@ -32,6 +32,19 @@ model User {
   projectLikes ProjectLike[]
   discussions  Discussion[]
   brandKit     BrandKit?
+  sentTips     Tip[]         @relation("SentTips")
+  receivedTips Tip[]         @relation("ReceivedTips")
+}
+
+model Tip {
+  id          String   @id @default(uuid())
+  amount      Int
+  senderId    String
+  recipientId String
+  createdAt   DateTime @default(now())
+
+  sender      User     @relation("SentTips", fields: [senderId], references: [id], onDelete: Cascade)
+  recipient   User     @relation("ReceivedTips", fields: [recipientId], references: [id], onDelete: Cascade)
 }
 
 model Project {

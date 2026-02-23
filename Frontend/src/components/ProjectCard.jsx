@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom"
 import { useState } from "react"
-import { EllipsisIcon, Heart, ImageIcon, Loader2Icon, MessageCircle, Share2Icon, Trash2Icon, VideoIcon, Coins } from "lucide-react"
+import { EllipsisIcon, Heart, ImageIcon, Loader2Icon, MessageCircle, Share2Icon, Trash2Icon, VideoIcon, Coins, Copy } from "lucide-react"
 import { PrimaryButton } from "./Buttons"
 import { useAuth, useUser } from "@clerk/clerk-react"
 import toast from "react-hot-toast"
@@ -269,6 +269,18 @@ const ProjectCard = ({
                                 >
                                     <Coins size={20} />
                                     <span className="text-xs font-bold">Tip</span>
+                                </button>
+                            )}
+                            {gen.userPrompt && (
+                                <button
+                                    onClick={() => {
+                                        navigator.clipboard.writeText(gen.userPrompt);
+                                        toast.success("Prompt copied to clipboard!");
+                                    }}
+                                    className="flex items-center gap-1.5 transition-colors text-gray-500 hover:text-indigo-400"
+                                    title="Copy Prompt"
+                                >
+                                    <Copy size={18} />
                                 </button>
                             )}
                         </div>
