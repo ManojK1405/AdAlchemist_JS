@@ -1,8 +1,8 @@
 # 🧪 AdAlchemist  
 
-## AI-Powered AdTech Content Generation & Optimization Platform  
+## Modern AI-Powered Marketing Creative Generation Platform
 
-AdAlchemist is a full-stack AI-driven AdTech platform that enables users to generate, optimize, and manage high-performing marketing creatives using Generative AI. It helps marketers, startups, and businesses create compelling ad copy and structured campaign assets efficiently.
+AdAlchemist is a sophisticated, full-stack AdTech platform built to empower marketers, creators, and businesses to generate high-converting, platform-optimized advertising mockups in a matter of seconds. By leveraging state-of-the-art Generative AI, AdAlchemist transforms raw images and simple prompts into stunning, production-ready creatives.
 
 ---
 
@@ -12,308 +12,192 @@ AdAlchemist is a full-stack AI-driven AdTech platform that enables users to gene
 
 ---
 
-# 📌 Project Overview  
+# 🎯 Core Features  
 
-## AdAlchemist leverages AI to:
+## 🪄 AI Image & Video Magic
+- **Instant Ad Generation:** Feed in a product image and seamlessly generate engaging background contexts.
+- **Video Motion Generation:** One-click transformation of static image ads into dynamic, scrolling-stopping video mockups optimized for reels and short-form content.
+- **Targeted Aspect Ratios:** Render ads specifically tailored for 16:9 (YouTube), 1:1 (Instagram), and 9:16 (TikTok/Reels).
 
-- Generate high-converting ad copies  
-- Create campaign-specific content variations  
-- Manage projects & creatives  
-- Track user credits  
-- Provide scalable backend infrastructure  
+## 🏘️ Creator Lounge & Community
+- **Discussion Forums:** A dedicated "Creator Lounge" for users to interact, share prompts, discuss tutorials, and provide feedback on AI ad generation.
+- **Community Showcase:** A beautifully masonry-styled grid showcasing publicly published generations from fellow creators. Allows others to draw inspiration and track trending marketing styles.
+- **Social Interactions:** Engage with community-published projects by liking and instantly opening comment threads to foster creative collaboration.
+- **Real-time Search:** Effortlessly filter user discussions using integrated search and intelligent topic recommendation chips.
 
-This platform is built with a production-ready architecture using modern web technologies and cloud deployment.
+## 📁 Intelligent Project Management
+- **Dashboard:** Safely store, preview, and manage all your historical AI generations.
+- **Edit Studio:** Retouch previously generated assets directly inside the platform.
+- **Safe Cloud Storage:** Assets are stored robustly for 24/7 access, with intuitive quick-download capabilities for pictures and MP4 video formats.
+
+## 🔐 Secure & Managed Access
+- **Clerk Authentication:** Bank-grade user authentication encompassing social logins and standard email handling.
+- **Smart Credit System:** A built-in economy system to track AI usage. Distinct generation actions gracefully consume differing values of platform credits.
 
 ---
 
-# 🏗️ Tech Stack  
+# 🏗️ Modern Tech Stack  
 
 ## 💻 Frontend
-- React.js (Vite)  
-- TypeScript  
-- Tailwind CSS  
-- Framer Motion  
-- Axios  
-- Clerk Authentication  
+- **React.js & Vite** for blazing-fast development and optimized production bundling.
+- **JavaScript (ES6+)** codebase.
+- **Tailwind CSS** providing utility-first, highly-customizable and aesthetic visual stylings.
+- **Framer Motion** integrating buttery-smooth micro-animations, page transitions, and interactive visual feedback.
+- **Clerk UI Components** for secure sign-in, sign-up, and user profile management.
 
 ## ⚙️ Backend
-- Node.js  
-- Express.js  
-- TypeScript  
-- Prisma ORM  
-- PostgreSQL (Neon DB)  
-- OpenAI API (AI content generation)  
-- Sentry (Error Monitoring)  
+- **Node.js runtime** powered by **Express.js** handling robust asynchronous API routing.
+- **Prisma ORM** facilitating strongly-typed, predictable database interactions.
+- **NeonDB (PostgreSQL)** acting as the scalable, serverless cloud persistence layer.
+- **Replicate / OpenAI APIs** powering the core generative image and temporal video capabilities.
+- **Sentry** proactively capturing and isolating production errors.
 
 ## ☁️ Deployment
-- Frontend → Vercel  
-- Backend → Render  
-- Database → Neon PostgreSQL  
+- **Frontend:** Vercel (Edge-network static hosting)
+- **Backend:** Render (Web services)
 
 ---
 
-# 🎯 Features  
-
-## 🔐 Authentication & Authorization
-- Secure authentication using Clerk  
-- Protected API routes  
-- User-specific project isolation  
-
-## 🧠 AI Ad Generation
-- Generate ad copy using OpenAI  
-- Multiple tone variations  
-- Structured output format  
-- Token/credit-based generation system  
-
-## 📁 Project Management
-- Create projects  
-- Delete projects  
-- Fetch project by ID  
-- Store generated ads inside projects  
-
-## 💳 Credit System
-- Each user has AI credits  
-- Deduct credits per generation  
-- Prevent overuse  
-
-## 📊 Error Monitoring
-- Integrated Sentry for backend error tracking  
-
-## 🌍 Production-Ready CORS Handling
-- Secure cross-origin configuration  
-- Environment-based configuration  
-
----
-
-# 📂 Folder Structure  
+# 📂 Architecture Overview  
 
 ```
 AdAlchemist/
 │
-├── frontend/
+├── Frontend/                 # React SPA bundled using Vite
 │   ├── src/
-│   │   ├── components/
-│   │   ├── pages/
-│   │   ├── hooks/
-│   │   ├── utils/
-│   │   └── App.tsx
-│   └── vite.config.ts
+│   │   ├── components/       # Reusable UI pieces (Buttons, Navbar, ProjectCards, DiscussionPanels)
+│   │   ├── configs/          # Axios interception and global config 
+│   │   ├── pages/            # Application routes (Home, Community, CreatorLounge, Generator)
+│   │   ├── assets/           # Dummy data, base css
+│   │   └── App.jsx           # Master route orchestration
+│   └── vite.config.js
 │
-├── backend/
-│   ├── src/
-│   │   ├── controllers/
-│   │   ├── routes/
-│   │   ├── middleware/
-│   │   ├── configs/
-│   │   ├── services/
-│   │   └── server.ts
-│   └── prisma/
-│       └── schema.prisma
-│
-└── README.md
+└── Backend/                  # Express RESTful API
+    ├── server.js             # Express app entry & middleware composition
+    ├── configs/              # Environment binding and Prisma singleton
+    ├── controllers/          # Business logic handlers (Social, Credits, Ads)
+    ├── routes/               # Modular Express routing structures
+    ├── middlewares/          # Security checkpoints (auth checks via Clerk SDK)
+    └── prisma/
+        └── schema.prisma     # Relational persistence layout
 ```
 
 ---
 
-# 🗄️ Database Schema (Prisma)
+# 🗄️ Relational Schema
 
 ```prisma
 model User {
-  id        String   @id @default(cuid())
-  clerkId   String   @unique
-  email     String
-  credits   Int      @default(10)
-  projects  Project[]
-  createdAt DateTime @default(now())
+  id          String        @id @default(cuid())
+  clerkId     String        @unique
+  email       String
+  name        String?
+  image       String?
+  credits     Int           @default(100)
+  projects    Project[]
+  discussions Discussion[]
+  comments    Comment[]
+  projectLikes ProjectLike[]
+  commentLikes CommentLike[]
+  createdAt   DateTime      @default(now())
 }
 
 model Project {
-  id        String   @id @default(cuid())
-  name      String
-  userId    String
-  ads       Ad[]
-  createdAt DateTime @default(now())
+  id                 String        @id @default(cuid())
+  productName        String?
+  productDescription String?       @db.Text
+  aspectRatio        String?
+  uploadedImages     String[]
+  generatedImage     String?
+  generatedVideo     String?
+  isGenerating       Boolean       @default(false)
+  isPublished        Boolean       @default(false)
+  userId             String
+  user               User          @relation(fields: [userId], references: [id])
+  comments           Comment[]
+  projectLikes       ProjectLike[]
+  createdAt          DateTime      @default(now())
 }
 
-model Ad {
-  id        String   @id @default(cuid())
-  content   String
-  projectId String
-  createdAt DateTime @default(now())
+model Discussion {
+  id        String    @id @default(cuid())
+  title     String
+  content   String    @db.Text
+  userId    String
+  user      User      @relation(fields: [userId], references: [id])
+  comments  Comment[]
+  createdAt DateTime  @default(now())
+}
+
+model Comment {
+  id           String        @id @default(cuid())
+  content      String        @db.Text
+  userId       String
+  user         User          @relation(fields: [userId], references: [id])
+  projectId    String?
+  project      Project?      @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  discussionId String?
+  discussion   Discussion?   @relation(fields: [discussionId], references: [id], onDelete: Cascade)
+  parentId     String?
+  parent       Comment?      @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies      Comment[]     @relation("CommentReplies")
+  likes        CommentLike[]
+  createdAt    DateTime      @default(now())
 }
 ```
 
 ---
 
-# ⚙️ Environment Variables  
+# 🛠️ Local Development Setup  
 
-## 🔹 Backend (.env)
-
+### 1️⃣ Clone Repository
+```bash
+git clone https://github.com/ManojK1405/AdAlchemist_JS.git
+cd AdAlchemist_JS
 ```
-PORT=3000
-DATABASE_URL=your_neon_database_url
+
+### 2️⃣ Backend Configuration
+```bash
+cd Backend
+npm install
+```
+Create a `.env` file within `/Backend`:
+```
+PORT=5000
+DATABASE_URL=your_postgresql_connection_string
 CLERK_SECRET_KEY=your_clerk_secret
-OPENAI_API_KEY=your_openai_key
-SENTRY_DSN=your_sentry_dsn
 CLIENT_URL=http://localhost:5173
 ```
-
-## 🔹 Frontend (.env)
-
+Synchronize the DB schema and ignite the backend:
+```bash
+npx prisma generate
+npx prisma db push
+npm run dev
 ```
-VITE_CLERK_PUBLISHABLE_KEY=your_clerk_key
+
+### 3️⃣ Frontend Configuration
+```bash
+cd Frontend
+npm install
+```
+Create a `.env` file within `/Frontend`:
+```
+VITE_CLERK_PUBLISHABLE_KEY=your_clerk_publishable_key
 VITE_API_URL=http://localhost:5000
 ```
-
----
-
-# 🛠️ Installation & Setup  
-
-## 1️⃣ Clone Repository
-
-```bash
-git clone https://github.com/yourusername/AdAlchemist.git
-cd AdAlchemist
-```
-
-## 2️⃣ Backend Setup
-
-```bash
-cd backend
-npm install
-```
-
-### Run Prisma migrations:
-
-```bash
-npx prisma migrate dev
-```
-
-### Start backend:
-
+Ignite the frontend:
 ```bash
 npm run dev
 ```
-
-Backend runs on:  
-`http://localhost:5000`
-
----
-
-## 3️⃣ Frontend Setup
-
-```bash
-cd frontend
-npm install
-npm run dev
-```
-
-Frontend runs on:  
-`http://localhost:5173`
-
----
-
-# 🔌 API Endpoints  
-
-## 👤 User
-- `GET /api/user/credits` → Get user credits  
-
-## 📁 Projects
-- `POST /api/project/create`  
-- `GET /api/project/:projectId`  
-- `DELETE /api/project/:projectId`  
-
-## 🧠 AI Generation
-- `POST /api/ad/generate`  
-  - Deducts credits  
-  - Returns generated ad copy  
-
----
-
-# 🔄 Request Flow  
-
-1. User logs in via Clerk  
-2. Clerk token sent to backend  
-3. Backend verifies user  
-4. User creates project  
-5. User generates ad  
-6. Backend:
-   - Checks credits  
-   - Calls OpenAI  
-   - Saves response  
-   - Deducts credits  
-7. Response returned to frontend  
-
----
-
-# 🛡️ Security Measures  
-
-- JWT-based authentication (Clerk)  
-- CORS restricted to frontend domain  
-- Input validation  
-- Credit limitation system  
-- Environment variable protection  
-
----
-
-# 📈 Future Enhancements  
-
-- 💳 Stripe payment integration for buying credits  
-- 📊 Analytics dashboard (CTR prediction)  
-- 📢 Multi-platform ad formatting (Google, Meta, LinkedIn)  
-- 🧠 Fine-tuned AI model  
-- 🗂️ Campaign performance tracking  
-- 📱 Mobile responsiveness optimization  
-
----
-
-# 🧪 Testing Strategy  
-
-- Backend API testing via Postman  
-- Manual integration testing  
-- Error tracking via Sentry  
-
----
-
-# 🚀 Deployment Guide  
-
-## Backend → Render
-1. Push backend to GitHub  
-2. Connect to Render  
-3. Add environment variables  
-4. Deploy  
-
-## Frontend → Vercel
-1. Push frontend to GitHub  
-2. Import project in Vercel  
-3. Add environment variables  
-4. Deploy  
-
----
-
-# 📊 Performance Optimizations  
-
-- Lazy loading components  
-- Environment-based configs  
-- Optimized Prisma queries  
-- Centralized error handling  
-- API response structuring  
-
----
-
-# 👨‍💻 Author  
-
-**Manoj Kalasgonda**  
-Full Stack Developer | AI Enthusiast | AdAlchemist Builder  
+Navigate to `http://localhost:5173` to experience AdAlchemist.
 
 ---
 
 # 📜 License  
 
-No license. Enjoy.
+Unlicensed. Feel free to explore, learn, and expand upon the project.
 
 ---
 
-# 🌟 Why AdAlchemist?  
-
-AdAlchemist transforms raw product ideas into persuasive, high-performing marketing creatives using AI — making ad generation scalable, fast, and data-driven.
+### *Why AdAlchemist?*  
+*In a digital era demanding exponential creative iteration, AdAlchemist bridges the gap between a simple product shot and an immersive, converting narrative. Let AI do the heavy lifting of design, leaving you entirely to strategy.*
