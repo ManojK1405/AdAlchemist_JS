@@ -56,10 +56,14 @@ const DiscussionPanel = () => {
         }
     };
 
-    const filteredDiscussions = discussions.filter(d =>
-        (d.title && d.title.toLowerCase().includes(searchTerm.toLowerCase())) ||
-        (d.content && d.content.toLowerCase().includes(searchTerm.toLowerCase()))
-    );
+    const filteredDiscussions = discussions.filter(d => {
+        if (!searchTerm) return true;
+        const term = searchTerm.toLowerCase();
+        return (d.title && d.title.toLowerCase().includes(term)) ||
+            (d.content && d.content.toLowerCase().includes(term));
+    });
+
+    const suggestedTopics = ['Tutorials', 'Prompts', 'Feedback', 'Video Generation', 'Help'];
 
     return (
         <div className="bg-[#0f0f12] border border-white/5 rounded-[2rem] overflow-hidden h-fit shadow-2xl shadow-indigo-500/5">
@@ -87,8 +91,29 @@ const DiscussionPanel = () => {
                         placeholder="Search discussions by topic or content..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        className="w-full bg-[#1a1a24] border border-white/5 rounded-xl pl-11 pr-4 py-3 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500/50 transition-all text-white placeholder-white/30"
+                        className="w-full bg-[#1a1a24] border border-white/5 rounded-xl set-outline-none pl-11 pr-4 py-3 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500/50 transition-all text-white placeholder-white/30"
                     />
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2 mb-6">
+                    <span className="text-xs font-bold text-white/40 uppercase tracking-widest pl-1">Related:</span>
+                    {suggestedTopics.map((topic, idx) => (
+                        <button
+                            key={idx}
+                            onClick={() => setSearchTerm(topic)}
+                            className="px-3 py-1.5 bg-white/5 hover:bg-white/10 text-white/60 hover:text-white/90 rounded-full text-[10px] font-medium uppercase tracking-wider transition-colors border border-white/5"
+                        >
+                            {topic}
+                        </button>
+                    ))}
+                    {searchTerm && (
+                        <button
+                            onClick={() => setSearchTerm('')}
+                            className="text-[10px] text-red-400 hover:text-red-300 ml-2 font-medium"
+                        >
+                            Clear
+                        </button>
+                    )}
                 </div>
 
                 {isCreating && (
