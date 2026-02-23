@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth, useUser } from '@clerk/clerk-react';
-import { MessageCircle, Plus, Users, ArrowRight, Sparkles } from 'lucide-react';
+import { MessageCircle, Plus, Users, ArrowRight, Sparkles, Search } from 'lucide-react';
 import api from '../configs/axios';
 import toast from 'react-hot-toast';
 import CommentSection from './CommentSection';
@@ -14,6 +14,7 @@ const DiscussionPanel = () => {
     const [title, setTitle] = useState('');
     const [content, setContent] = useState('');
     const [loading, setLoading] = useState(false);
+    const [searchTerm, setSearchTerm] = useState('');
 
     const fetchDiscussions = async () => {
         try {
@@ -55,6 +56,11 @@ const DiscussionPanel = () => {
         }
     };
 
+    const filteredDiscussions = discussions.filter(d =>
+        (d.title && d.title.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (d.content && d.content.toLowerCase().includes(searchTerm.toLowerCase()))
+    );
+
     return (
         <div className="bg-[#0f0f12] border border-white/5 rounded-[2rem] overflow-hidden h-fit shadow-2xl shadow-indigo-500/5">
             <div className="p-6 border-b border-white/5 bg-gradient-to-b from-white/[0.02] to-transparent flex items-center justify-between">
@@ -73,6 +79,18 @@ const DiscussionPanel = () => {
             </div>
 
             <div className="p-5 space-y-4 max-h-[700px] overflow-y-auto custom-scrollbar">
+
+                <div className="relative mb-4">
+                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-white/40" />
+                    <input
+                        type="text"
+                        placeholder="Search discussions by topic or content..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="w-full bg-[#1a1a24] border border-white/5 rounded-xl pl-11 pr-4 py-3 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500/50 transition-all text-white placeholder-white/30"
+                    />
+                </div>
+
                 {isCreating && (
                     <form onSubmit={handleCreate} className="p-5 bg-white/[0.02] border border-white/10 rounded-[1.5rem] space-y-4 animate-in fade-in zoom-in-95 duration-300">
                         <div className="flex items-center gap-2 text-indigo-400 text-[10px] font-bold uppercase tracking-widest pl-1">
@@ -111,7 +129,7 @@ const DiscussionPanel = () => {
                     </form>
                 )}
 
-                {discussions.length === 0 ? (
+                {filteredDiscussions.length === 0 ? (
                     <div className="text-center py-20 bg-white/[0.01] rounded-[2rem] border border-dashed border-white/5">
                         <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-4 border border-white/5">
                             <MessageCircle size={28} className="text-white/20" />
@@ -120,7 +138,7 @@ const DiscussionPanel = () => {
                         <p className="text-[10px] text-white/20 uppercase tracking-[0.2em] mt-2">Start the first thread</p>
                     </div>
                 ) : (
-                    discussions.map(discussion => (
+                    filteredDiscussions.map(discussion => (
                         <div
                             key={discussion.id}
                             className={`group p-5 rounded-[1.5rem] border transition-all duration-300 cursor-pointer ${selectedId === discussion.id

@@ -23,6 +23,7 @@ export default function Navbar() {
         { name: 'Home', href: '/#' },
         { name: 'Create', href: '/generate' },
         { name: 'Community', href: '/community' },
+        { name: 'Creator Lounge', href: '/creator-lounge' },
         { name: 'Plans', href: '/plans' },
         { name: 'My Generations', href: '/my-generations' }
     ];
@@ -90,6 +91,8 @@ export default function Navbar() {
                                 <UserButton.Action label='My Generations' labelIcon={<FolderEditIcon size={14} />} onClick={() => navigate('/my-generations')} />
 
                                 <UserButton.Action label='Community' labelIcon={<GalleryHorizontalEnd size={14} />} onClick={() => navigate('/community')} />
+
+                                <UserButton.Action label='Creator Lounge' labelIcon={<SparkleIcon size={14} />} onClick={() => navigate('/creator-lounge')} />
 
                                 <UserButton.Action label='Plans' labelIcon={<DollarSignIcon size={14} />} onClick={() => navigate('/plans')} />
 

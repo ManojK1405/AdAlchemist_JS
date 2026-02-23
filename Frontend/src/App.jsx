@@ -14,6 +14,7 @@ import { Toaster } from 'react-hot-toast';
 import FAQ from './pages/FAQ';
 import FeaturesPage from './pages/FeaturesPage';
 import EditGeneration from './pages/EditGeneration';
+import CreatorLounge from './pages/CreatorLounge';
 
 
 function App() {
@@ -26,7 +27,9 @@ function App() {
 
             <Routes>
                 <Route path="/" element={<Home />} />
+
                 <Route path="/community" element={<Community />} />
+                <Route path="/creator-lounge" element={<CreatorLounge />} />
                 <Route path="/plans" element={<Plans />} />
                 <Route path="/faq" element={<FAQ />} />
                 <Route path="/features" element={<FeaturesPage />} />

@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { Loader2Icon, Sparkles } from "lucide-react";
 import ProjectCard from "../components/ProjectCard";
-import DiscussionPanel from "../components/DiscussionPanel";
 import api from "../configs/axios";
 
 
@@ -44,17 +43,13 @@ const Community = () => {
                     </p>
                 </header>
 
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
-                    <div className="lg:col-span-8 space-y-8">
-                        <div className="columns-1 sm:columns-2 gap-6">
+                <div className="grid grid-cols-1 gap-12 items-start">
+                    <div className="space-y-8">
+                        <div className="columns-1 sm:columns-2 lg:columns-3 xl:columns-4 gap-6">
                             {projects.map((project) => (
                                 <ProjectCard key={project.id} gen={project} setGenerations={setProjects} forCommunity={true} />
                             ))}
                         </div>
-                    </div>
-
-                    <div className="lg:col-span-4 sticky top-32">
-                        <DiscussionPanel />
                     </div>
                 </div>
 

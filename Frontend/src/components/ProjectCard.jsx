@@ -91,7 +91,7 @@ const ProjectCard = ({
 
     return (
         <div key={gen.id} className="mb-6 break-inside-avoid animate-in fade-in zoom-in-95 duration-500">
-            <div className="bg-[#0f0f12] border border-white/5 rounded-[2rem] overflow-hidden hover:border-white/10 transition-all duration-300 group shadow-xl hover:shadow-indigo-500/5">
+            <div className="bg-[#13131a] border border-white/5 rounded-[2rem] overflow-hidden hover:border-white/10 transition-all duration-300 group shadow-xl hover:shadow-indigo-500/5">
 
                 {/* preview image */}
                 <div className={`${gen?.aspectRatio === '9:16' ? 'aspect-9/16' : 'aspect-video'} relative overflow-hidden`}>
@@ -183,10 +183,10 @@ const ProjectCard = ({
 
                     {/* Source Images */}
                     <div className="absolute left-4 bottom-4 flex -space-x-4">
-                        <div className="w-14 h-14 rounded-full border-2 border-[#0f0f12] overflow-hidden shadow-2xl transform hover:scale-110 transition-transform cursor-pointer">
+                        <div className="w-14 h-14 rounded-full border-2 border-[#13131a] overflow-hidden shadow-2xl transform hover:scale-110 transition-transform cursor-pointer">
                             <img src={gen.uploadedImages[0]} className="w-full h-full object-cover" alt="Source 1" />
                         </div>
-                        <div className="w-14 h-14 rounded-full border-2 border-[#0f0f12] overflow-hidden shadow-2xl transform hover:scale-110 transition-transform cursor-pointer" style={{ transitionDelay: '50ms' }}>
+                        <div className="w-14 h-14 rounded-full border-2 border-[#13131a] overflow-hidden shadow-2xl transform hover:scale-110 transition-transform cursor-pointer" style={{ transitionDelay: '50ms' }}>
                             <img src={gen.uploadedImages[1]} className="w-full h-full object-cover" alt="Source 2" />
                         </div>
                     </div>
