@@ -26,6 +26,11 @@ export const getAllProjects = async (req, res) => {
         const { userId } = req.auth();
         const projects = await prisma.project.findMany({
             where: { userId },
+            include: {
+                projectLikes: true,
+                comments: true,
+                user: true,
+            },
             orderBy: { createdAt: 'desc' },
         });
 
@@ -44,6 +49,11 @@ export const getUserProjectById = async (req, res) => {
         const projectId = Array.isArray(req.params.projectId) ? req.params.projectId[0] : req.params.projectId;
         const project = await prisma.project.findUnique({
             where: { id: projectId, userId },
+            include: {
+                projectLikes: true,
+                comments: true,
+                user: true,
+            }
         });
 
         if (!project) {
