@@ -79,12 +79,13 @@ export default function Pricing() {
                 order_id: orderData.orderId,
                 handler: async (response) => {
                     try {
+                        const freshToken = await getToken();
                         const { data: verifyData } = await api.post('/api/payment/verify-payment', {
                             razorpay_order_id: response.razorpay_order_id,
                             razorpay_payment_id: response.razorpay_payment_id,
                             razorpay_signature: response.razorpay_signature
                         }, {
-                            headers: { Authorization: `Bearer ${token}` }
+                            headers: { Authorization: `Bearer ${freshToken}` }
                         });
                         toast.success(verifyData.message);
                         // Refresh credits display if needed, or redirect
@@ -163,8 +164,8 @@ export default function Pricing() {
                                 onClick={() => handleSubscription(plan.id)}
                                 disabled={loading === plan.id}
                                 className={`w-full py-4 rounded-xl font-bold transition-all flex items-center justify-center gap-2 ${plan.popular
-                                        ? 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-xl shadow-indigo-500/20'
-                                        : 'bg-white/5 hover:bg-white/10 text-white border border-white/10'
+                                    ? 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-xl shadow-indigo-500/20'
+                                    : 'bg-white/5 hover:bg-white/10 text-white border border-white/10'
                                     }`}
                             >
                                 {loading === plan.id ? (
