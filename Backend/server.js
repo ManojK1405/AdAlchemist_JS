@@ -1,7 +1,8 @@
 import './configs/instument.js';
+import dotenv from 'dotenv';
+dotenv.config();
 import express from 'express';
 import cors from 'cors';
-import dotenv from 'dotenv';
 import { clerkMiddleware } from '@clerk/express'
 import clerkWebHooks from './controllers/clerk.js';
 import * as Sentry from "@sentry/node";
@@ -11,7 +12,6 @@ import socialRouter from './routes/socialRoutes.js';
 import metaRouter from './routes/metaRoutes.js';
 import paymentRouter from './routes/paymentRoutes.js';
 
-dotenv.config();
 
 const app = express();
 
