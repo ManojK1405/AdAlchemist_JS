@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth, useUser } from '@clerk/clerk-react';
-import { MessageCircle, Plus, Users, ArrowRight, Sparkles, Search, Trash2 } from 'lucide-react';
+import { MessageCircle, Plus, Users, ArrowRight, Sparkles, Search, Trash2, Coins } from 'lucide-react';
 import api from '../configs/axios';
 import toast from 'react-hot-toast';
 import CommentSection from './CommentSection';
@@ -70,6 +70,27 @@ const DiscussionPanel = () => {
             toast.success("Discussion deleted successfully");
         } catch (error) {
             toast.error("Failed to delete discussion");
+        }
+    };
+
+    const handleTip = async (e, discussion) => {
+        e.stopPropagation();
+        if (!clerkUser) {
+            toast.error('Please login to tip creators');
+            return;
+        }
+
+        const confirm = window.confirm(`Tip 5 credits to ${discussion.user?.name || 'this creator'}?`);
+        if (!confirm) return;
+
+        try {
+            const token = await getToken();
+            await api.post('/api/social/tip', { recipientId: discussion.userId, amount: 5 }, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            toast.success('Successfully tipped 5 credits!');
+        } catch (error) {
+            toast.error(error?.response?.data?.message || 'Failed to tip creator');
         }
     };
 
@@ -214,6 +235,15 @@ const DiscussionPanel = () => {
                                     <span className="text-[10px] font-bold text-white/40 uppercase tracking-wider">{discussion.user?.name || 'Creator'}</span>
                                 </div>
                                 <div className="flex items-center gap-4 text-[10px] font-bold text-white/30">
+                                    {clerkUser?.id !== discussion.userId && (
+                                        <span
+                                            onClick={(e) => handleTip(e, discussion)}
+                                            className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-yellow-500 hover:text-yellow-400 hover:bg-yellow-500/10 transition-colors cursor-pointer"
+                                        >
+                                            <Coins size={12} />
+                                            Tip
+                                        </span>
+                                    )}
                                     <span className="flex items-center gap-1.5 bg-white/5 px-2.5 py-1 rounded-full border border-white/5">
                                         <MessageCircle size={12} className="text-indigo-400/60" />
                                         {discussion._count?.comments || 0}

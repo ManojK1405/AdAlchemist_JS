@@ -6,6 +6,9 @@ import {
     RefreshCwIcon,
     SparkleIcon,
     VideoIcon,
+    Facebook,
+    Instagram,
+    SendIcon
 } from "lucide-react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { GhostButton, PrimaryButton } from "../components/Buttons";
@@ -73,6 +76,17 @@ const Result = () => {
             toast.error(error?.response?.data?.message || "Failed to generate video");
             setIsGenerating(false);
         }
+    };
+
+    const handleSocialPublish = (platform) => {
+        toast.promise(
+            new Promise((resolve) => setTimeout(resolve, 2000)),
+            {
+                loading: `Connecting to ${platform}...`,
+                success: "Meta Graph API configuration required on backend.",
+                error: "Action failed"
+            }
+        );
     };
 
 
@@ -168,8 +182,8 @@ const Result = () => {
                         <div className="glass-panel p-3 rounded-3xl w-full">
                             <div
                                 className={`${project.aspectRatio === "9:16"
-                                        ? "aspect-9/16"
-                                        : "aspect-video"
+                                    ? "aspect-9/16"
+                                    : "aspect-video"
                                     } w-full rounded-2xl overflow-hidden bg-gray-900`}
                             >
                                 {project.generatedVideo ? (
@@ -260,6 +274,30 @@ const Result = () => {
                                 </div>
                             )}
 
+                        </div>
+
+                        {/* Social Auto-Publish Section */}
+                        <div className="glass-panel p-6 rounded-2xl relative overflow-hidden">
+                            <h3 className="text-xl font-semibold mb-2">Social Publish</h3>
+                            <p className="text-gray-400 text-sm mb-6">
+                                Post directly to your linked connected professional pages.
+                            </p>
+                            <div className="flex gap-3">
+                                <button
+                                    onClick={() => handleSocialPublish("Facebook")}
+                                    className="flex-1 py-3 bg-[#1877F2]/10 text-[#1877F2] hover:bg-[#1877F2]/20 rounded-xl flex items-center justify-center gap-2 transition font-medium"
+                                >
+                                    <Facebook size={18} />
+                                    Facebook
+                                </button>
+                                <button
+                                    onClick={() => handleSocialPublish("Instagram")}
+                                    className="flex-1 py-3 bg-[#E4405F]/10 text-[#E4405F] hover:bg-[#E4405F]/20 rounded-xl flex items-center justify-center gap-2 transition font-medium"
+                                >
+                                    <Instagram size={18} />
+                                    Instagram
+                                </button>
+                            </div>
                         </div>
 
                     </div>

@@ -8,7 +8,8 @@ import {
     getDiscussions,
     getDiscussionById,
     toggleLikeProject,
-    deleteDiscussion
+    deleteDiscussion,
+    tipCreator
 } from '../controllers/socialController.js';
 import { protect } from '../middlewares/auth.js';
 
@@ -28,5 +29,8 @@ socialRouter.delete('/discussions/:id', protect, deleteDiscussion);
 
 // Project Likes
 socialRouter.post('/projects/:projectId/like', protect, toggleLikeProject);
+
+// Tipping
+socialRouter.post('/tip', protect, tipCreator);
 
 export default socialRouter;

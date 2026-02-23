@@ -8,6 +8,7 @@ import * as Sentry from "@sentry/node";
 import userRouter from './routes/userRoutes.js';
 import projectRouter from './routes/projectRoutes.js';
 import socialRouter from './routes/socialRoutes.js';
+import metaRouter from './routes/metaRoutes.js';
 
 dotenv.config();
 
@@ -28,6 +29,7 @@ app.use(clerkMiddleware());
 app.use('/api/user', userRouter);
 app.use('/api/project', projectRouter);
 app.use('/api/social', socialRouter);
+app.use('/api/meta', metaRouter);
 
 
 app.get('/', (req, res) => {

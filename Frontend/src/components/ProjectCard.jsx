@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom"
 import { useState } from "react"
-import { EllipsisIcon, Heart, ImageIcon, Loader2Icon, MessageCircle, Share2Icon, Trash2Icon, VideoIcon } from "lucide-react"
+import { EllipsisIcon, Heart, ImageIcon, Loader2Icon, MessageCircle, Share2Icon, Trash2Icon, VideoIcon, Coins } from "lucide-react"
 import { PrimaryButton } from "./Buttons"
 import { useAuth, useUser } from "@clerk/clerk-react"
 import toast from "react-hot-toast"
@@ -85,6 +85,26 @@ const ProjectCard = ({
             }));
         } catch (error) {
             toast.error('Failed to update like');
+        }
+    }
+
+    const handleTip = async () => {
+        if (!user) {
+            toast.error('Please login to tip creators');
+            return;
+        }
+
+        const confirm = window.confirm(`Tip 5 credits to ${gen.user?.name || 'this creator'}?`);
+        if (!confirm) return;
+
+        try {
+            const token = await getToken();
+            await api.post('/api/social/tip', { recipientId: gen.userId, amount: 5 }, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            toast.success('Successfully tipped 5 credits!');
+        } catch (error) {
+            toast.error(error?.response?.data?.message || 'Failed to tip creator');
         }
     }
 
@@ -242,6 +262,15 @@ const ProjectCard = ({
                                 <MessageCircle size={20} />
                                 <span className="text-xs font-bold">{gen.comments?.length || 0}</span>
                             </button>
+                            {user?.id !== gen.userId && (
+                                <button
+                                    onClick={handleTip}
+                                    className="flex items-center gap-1.5 transition-colors text-gray-500 hover:text-yellow-400"
+                                >
+                                    <Coins size={20} />
+                                    <span className="text-xs font-bold">Tip</span>
+                                </button>
+                            )}
                         </div>
 
                         {!forCommunity && (

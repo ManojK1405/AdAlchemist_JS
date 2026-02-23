@@ -270,3 +270,62 @@ export const toggleLikeProject = async (req, res) => {
         res.status(500).json({ message: "Internal server error" });
     }
 };
+
+// --- Creator Tipping ---
+
+export const tipCreator = async (req, res) => {
+    try {
+        const { userId } = req.auth();
+        const { recipientId, amount = 5 } = req.body;
+
+        if (!userId) {
+            return res.status(401).json({ message: "Unauthorized" });
+        }
+
+        if (userId === recipientId) {
+            return res.status(400).json({ message: "You cannot tip yourself." });
+        }
+
+        if (amount <= 0) {
+            return res.status(400).json({ message: "Invalid tip amount." });
+        }
+
+        // Fetch sender
+        const sender = await prisma.user.findUnique({
+            where: { id: userId },
+            select: { credits: true }
+        });
+
+        if (!sender || sender.credits < amount) {
+            return res.status(400).json({ message: "Insufficient credits to tip." });
+        }
+
+        // Verify recipient
+        const recipient = await prisma.user.findUnique({
+            where: { id: recipientId },
+            select: { id: true }
+        });
+
+        if (!recipient) {
+            return res.status(404).json({ message: "Recipient user not found." });
+        }
+
+        // Perform atomic transaction
+        await prisma.$transaction([
+            prisma.user.update({
+                where: { id: userId },
+                data: { credits: { decrement: amount } },
+            }),
+            prisma.user.update({
+                where: { id: recipientId },
+                data: { credits: { increment: amount } },
+            }),
+        ]);
+
+        res.json({ message: `Tipped ${amount} credits successfully!` });
+    } catch (error) {
+        Sentry.captureException(error);
+        console.error("Tip Error:", error);
+        res.status(500).json({ message: "Internal server error" });
+    }
+};
