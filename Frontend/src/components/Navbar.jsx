@@ -1,4 +1,4 @@
-import { DollarSignIcon, FolderEditIcon, GalleryHorizontalEnd, MenuIcon, SparkleIcon, XIcon } from 'lucide-react';
+import { DollarSignIcon, FolderEditIcon, GalleryHorizontalEnd, MenuIcon, SparkleIcon, XIcon, Receipt } from 'lucide-react';
 import { GhostButton, PrimaryButton } from './Buttons';
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
@@ -25,7 +25,8 @@ export default function Navbar() {
         { name: 'Community', href: '/community' },
         { name: 'Creator Lounge', href: '/creator-lounge' },
         { name: 'Plans', href: '/plans' },
-        { name: 'My Generations', href: '/my-generations' }
+        { name: 'My Generations', href: '/my-generations' },
+        { name: 'Billing', href: '/billing' }
     ];
 
     const getCredits = async () => {
@@ -95,6 +96,8 @@ export default function Navbar() {
                                 <UserButton.Action label='Creator Lounge' labelIcon={<SparkleIcon size={14} />} onClick={() => navigate('/creator-lounge')} />
 
                                 <UserButton.Action label='Plans' labelIcon={<DollarSignIcon size={14} />} onClick={() => navigate('/plans')} />
+
+                                <UserButton.Action label='Billing' labelIcon={<Receipt size={14} />} onClick={() => navigate('/billing')} />
 
                             </UserButton.MenuItems>
                         </UserButton>

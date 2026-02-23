@@ -15,6 +15,7 @@ import FAQ from './pages/FAQ';
 import FeaturesPage from './pages/FeaturesPage';
 import EditGeneration from './pages/EditGeneration';
 import CreatorLounge from './pages/CreatorLounge';
+import Billing from './pages/Billing';
 
 
 function App() {
@@ -35,6 +36,7 @@ function App() {
                 <Route path="/features" element={<FeaturesPage />} />
                 <Route path="/generate" element={<Generator />} />
                 <Route path="/my-generations" element={<MyGenerations />} />
+                <Route path="/billing" element={<Billing />} />
                 <Route path="/result/:projectId" element={<Result />} />
                 <Route path="/edit/:projectId" element={<EditGeneration />} />
                 <Route path="/loading" element={<Loading />} />

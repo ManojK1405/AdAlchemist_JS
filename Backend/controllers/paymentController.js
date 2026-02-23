@@ -165,3 +165,19 @@ export const razorpayWebhook = async (req, res) => {
         res.status(500).json({ message: "Webhook processing failed" });
     }
 };
+
+export const getUserTransactions = async (req, res) => {
+    try {
+        const { userId } = req.auth();
+        const transactions = await prisma.transaction.findMany({
+            where: { userId },
+            orderBy: { createdAt: "desc" }
+        });
+
+        res.json({ transactions });
+    } catch (error) {
+        Sentry.captureException(error);
+        console.error("Fetch Transactions Error:", error);
+        res.status(500).json({ message: "Failed to fetch transactions" });
+    }
+};
