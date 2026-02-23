@@ -27,11 +27,11 @@ const Community = () => {
 
 
     return loading ? (
-        <div className="flex items-center justify-center min-h-screen bg-[#050505]">
+        <div className="flex items-center justify-center min-h-screen">
             <Loader2Icon className="size-10 animate-spin text-indigo-500" />
         </div>
     ) : (
-        <div className="min-h-screen text-white p-6 md:p-12 pt-32 pb-20 bg-[#050505] selection:bg-indigo-500/30">
+        <div className="min-h-screen text-white p-6 md:p-12 mt-28 selection:bg-indigo-500/30">
             <div className="max-w-7xl mx-auto">
                 <header className="mb-16 relative">
                     <div className="flex items-center gap-2 text-indigo-400 text-xs font-bold uppercase tracking-[0.3em] mb-4">
