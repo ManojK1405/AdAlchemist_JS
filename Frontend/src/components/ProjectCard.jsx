@@ -204,10 +204,10 @@ const ProjectCard = ({
                     {/* Source Images */}
                     <div className="absolute left-4 bottom-4 flex -space-x-4">
                         <div className="w-14 h-14 rounded-full border-2 border-[#13131a] overflow-hidden shadow-2xl transform hover:scale-110 transition-transform cursor-pointer">
-                            <img src={gen.uploadedImages[0]} className="w-full h-full object-cover" alt="Source 1" />
+                            <img src={gen.uploadedImages[0]?.replace('/upload/', '/upload/f_auto,q_auto/')} className="w-full h-full object-cover" alt="Source 1" />
                         </div>
                         <div className="w-14 h-14 rounded-full border-2 border-[#13131a] overflow-hidden shadow-2xl transform hover:scale-110 transition-transform cursor-pointer" style={{ transitionDelay: '50ms' }}>
-                            <img src={gen.uploadedImages[1]} className="w-full h-full object-cover" alt="Source 2" />
+                            <img src={gen.uploadedImages[1]?.replace('/upload/', '/upload/f_auto,q_auto/')} className="w-full h-full object-cover" alt="Source 2" />
                         </div>
                     </div>
 

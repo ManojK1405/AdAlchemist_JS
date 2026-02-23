@@ -7,6 +7,7 @@ import { useNavigate } from "react-router-dom"
 import { toast } from "react-hot-toast"
 import api from "../configs/axios"
 import BrandKitModal from "../components/BrandKitModal"
+import heic2any from "heic2any"
 
 const Generator = () => {
 
@@ -24,10 +25,33 @@ const Generator = () => {
     const [isGenerating, setIsGenerating] = useState(false)
     const [isBrandKitOpen, setIsBrandKitOpen] = useState(false)
 
-    const handleFileChange = (e, type) => {
+    const handleFileChange = async (e, type) => {
         if (e.target.files && e.target.files[0]) {
-            if (type === 'product') setProductImage(e.target.files[0])
-            else setModelImage(e.target.files[0])
+            let file = e.target.files[0];
+
+            if (file.type === "image/heic" || file.type === "image/heif" || file.name.toLowerCase().endsWith(".heic")) {
+                const toastId = toast.loading("Converting iPhone image format...");
+                try {
+                    const blob = await heic2any({
+                        blob: file,
+                        toType: "image/jpeg",
+                        quality: 0.8
+                    });
+
+                    const finalBlob = Array.isArray(blob) ? blob[0] : blob;
+                    file = new File([finalBlob], file.name.replace(/\.heic$/i, ".jpg"), {
+                        type: "image/jpeg",
+                    });
+                    toast.success("Image optimized!", { id: toastId });
+                } catch (error) {
+                    console.error("HEIC conversion failed", error);
+                    toast.error("Failed to process HEIC file. Please try a different image.", { id: toastId });
+                    return;
+                }
+            }
+
+            if (type === 'product') setProductImage(file)
+            else setModelImage(file)
         }
     }
 
