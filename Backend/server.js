@@ -17,7 +17,7 @@ const app = express();
 
 //Middleware
 app.use(cors({
-    origin: ['http://localhost:5174', 'https://ad-alchemist.vercel.app', 'https://www.ad-alchemist.shop']
+    origin: ['http://localhost:5174', 'https://ad-alchemist-js-twm9.vercel.app', 'https://www.ad-alchemist.shop']
 }
 ));
 
