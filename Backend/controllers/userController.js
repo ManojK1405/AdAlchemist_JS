@@ -9,13 +9,36 @@ export const getUserCredits = async (req, res) => {
         if (!userId) {
             return res.status(401).json({ message: 'Unauthorized' });
         }
-        const user = await prisma.user.findUnique({
+
+        let user = await prisma.user.findUnique({
             where: { id: userId },
         });
 
-        res.json({ credits: user?.credits });
+        // 🛡️ Self-Healing: If user exists in Clerk but not in our DB (failed webhook)
+        if (!user) {
+            console.log(`User ${userId} not found in DB, attempting on-the-fly creation...`);
+
+            // Note: req.auth() doesn't contain email/name, only session data.
+            // However, we can use the data available or the next time webhook fires.
+            // Better: Create user with placeholder name/email if not found.
+            // Actually, Clerk's middleware adds some properties to req.
+
+            const session = await req.auth();
+            // If the user is here, they are authenticated.
+
+            user = await prisma.user.create({
+                data: {
+                    id: userId,
+                    email: "user@adalchemist.shop", // Placeholder if we don't have it
+                    name: "New Creator",
+                    credits: 20
+                }
+            });
+        }
+
+        res.json({ credits: user.credits });
     } catch (error) {
-        Sentry.captureException(error); // Log the error to Sentry
+        Sentry.captureException(error);
         res.status(500).json({ message: 'Internal server error' });
     }
 };

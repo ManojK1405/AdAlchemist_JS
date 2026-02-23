@@ -6,8 +6,10 @@ const clerkWebHooks = async (req, res) => {
     try {
         // 🔐 Verify Clerk webhook
         const evt = await verifyWebhook(req, {
-            signingSecret: process.env.CLERK_WEBHOOK_SECRET,
+            signingSecret: process.env.CLERK_WEBHOOK_SIGNING_SECRET,
         });
+
+        console.log("Clerk Webhook Received:", evt.type);
 
         const { data, type } = evt;
 
