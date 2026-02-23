@@ -322,45 +322,26 @@ export const createVideo = async (req, res) => {
         });
 
         const prompt = `
-        Create a professional commercial video.
+Create a high-end cinematic commercial video featuring: ${project.productName}.
+Context: ${project.productDescription || "Premium brand advertisement"}.
 
-        The person must naturally showcase and interact with the product: ${project.productName}.
+STRICT PRODUCT INTEGRITY:
+• Hero Treatment: Product must be the focal point of every frame.
+• Design Fidelity: Preserve exact physical appearance, colors, and branding without any distortion.
 
-        Product details: ${project.productDescription || "No description provided"}.
+MOTION & DIRECTION:
+• Dynamic Action: Natural human interaction with the product (unboxing, wearing, using, or showcasing).
+• Cinematic Camera: Use a combination of slow-motion tracking shots and elegant focus shifts (bokeh).
+• Atmosphere: Premium lighting, realistic reflections, and physically accurate shadows.
 
-        STRICT REQUIREMENTS:
-        • Product must stay clearly visible at all times
-        • Product must remain unchanged and realistic
-        • Natural hand movement and interaction
-        • Realistic physics and motion
-        • Correct proportions and scale
-        • No distortion or morphing
-        • No unrealistic motion
-        • No glitches or artifacts
+TECHNICAL QUALITY:
+• Ultra-high-fidelity textures.
+• Zero artifacts, morphing, or uncanny valley effects.
+• Motion should feel intentional and professional, not random.
 
-        CINEMATIC STYLE:
-        • Smooth camera movement
-        • Professional commercial framing
-        • Shallow depth of field
-        • Natural lighting
-        • Soft shadows
-        • Realistic reflections
-
-        SHOT TYPE:
-        Choose the most suitable shot automatically:
-        close-up / medium shot / product focus shot / lifestyle shot
-
-        MOOD:
-        Premium, modern, aspirational advertisement
-
-        QUALITY:
-        Ultra realistic
-        Brand campaign level
-        High detail
-        Professional video production
-
-        Output must look like a real advertisement filmed with a professional camera.
-        `;
+OUTPUT:
+A stunningly realistic, brand-quality commercial segment ready for prime-time marketing.
+`;
 
 
         const model = 'veo-3.1-generate-preview';
@@ -667,57 +648,40 @@ export const editGeneration = async (req, res) => {
 
         // ✅ Final prompt
         const finalPrompt = `
-You are a world-class commercial photographer creating a high-end advertisement image.
+You are a world-class commercial photographer and art director creating a high-end advertisement image.
 
 IMPORTANT:
-This is a revised version of a previously generated advertisement.
-Apply the new creative direction clearly and noticeably.
-Do NOT recreate the previous composition.
-Introduce visible variation while maintaining realism.
+This is a REFINEMENT phase. You are taking a base concept and elevating it to magazine-standard quality.
+Apply the new creative direction with precision and artistic flair.
+Do NOT simply repeat the previous generation; evolve it.
 
-PRODUCT DETAILS (DO NOT ALTER DESIGN):
-Product Name: ${productName || project.productName}
-Product Description: ${productDescription || project.productDescription}
+PRODUCT MASTER RULES (NON-NEGOTIABLE):
+• Name: ${productName || project.productName}
+• Description: ${productDescription || project.productDescription}
+• Preserve absolute geometry: Exact shape, sharp edges, and authentic label placement.
+• Hero Treatment: Product must be the undisputed focal point, rendered with ultra-realistic textures (brushed metal, smooth plastic, liquid reflections, etc.).
+• No Distortion: Zero warping or melting of product components.
 
-STRICT PRODUCT RULES:
-• Preserve exact product shape, color, logo, and proportions
-• No warping, stretching, melting, or redesign
-• Keep branding perfectly readable
-• Maintain realistic scale relative to subject and environment
-
-UPDATED CREATIVE DIRECTION:
+NEW ARTISTIC DIRECTION:
 ${userPrompt || project.userPrompt || "Create a clean, premium commercial look."}
 
-${brandKit && brandKit.color ? `BRANDING RULE: Incorporate the signature color ${brandKit.color} effectively.` : ''}
-${brandKit && brandKit.voice ? `BRANDING AESTHETIC: ${brandKit.voice}` : ''}
+${brandKit && brandKit.color ? `BRANDING SIGNATURE: Seamlessly integrate the brand color ${brandKit.color} into the lighting, environment accents, or subtle color grading.` : ''}
+${brandKit && brandKit.voice ? `BRANDING AESTHETIC: Follow the brand's core vibe: ${brandKit.voice}.` : ''}
 
-COMPOSITION REQUIREMENTS:
-• Professional commercial layout
-• Product must be the hero focal point
-• Natural human interaction if applicable
-• Realistic hand anatomy and body proportions
-• Balanced negative space for advertising text
-
-LIGHTING & TECHNICAL QUALITY:
-• Studio-level lighting or realistic natural lighting
-• Physically accurate shadows and reflections
-• Sharp product focus
-• Subtle depth of field (85mm commercial lens look)
-• High dynamic range
-• Ultra realistic textures
+TECHNICAL SPECIFICATIONS:
+• Lighting: Global Illumination, softbox key light, rim lighting to separate product from background.
+• Lens: 100mm f/2.8 Macro lens look for extreme detail and natural background compression.
+• Environment: Clean, contextually relevant, minimal but high-quality studio or lifestyle setting.
+• Subject Interaction: If a person is present, ensure natural grip on product, expressive eyes, and professional styling. 
+• Negative Space: Strategic placement for future ad copy (Top, Bottom, or Sides).
 
 FORBIDDEN:
-• No AI artifacts
-• No surreal distortions
-• No broken hands or extra fingers
-• No floating objects
-• No unnatural skin textures
-
-ASPECT RATIO:
-${aspectRatio || project.aspectRatio || "9:16"}
+• AI Hallucinations (extra limbs, merged objects).
+• Generic stock photo look.
+• Low-contrast or muddy colors.
 
 OUTPUT:
-One ultra-high-resolution photorealistic advertisement image suitable for premium marketing campaigns.
+One ultra-high-resolution photorealistic advertisement image that looks like it was shot for a premium global brand campaign.
 `;
 
 
@@ -872,46 +836,34 @@ export const editVideo = async (req, res) => {
 
         // 🔥 Build enhanced motion prompt
         const prompt = `
-      You are refining and improving an existing premium commercial advertisement video.
+You are a senior video editor and motion designer refining a premium commercial advertisement.
 
-      IMPORTANT:
-      This is a revised version of a previously generated advertisement.
-      Maintain the same product identity, environment, and overall brand tone,
-      but clearly apply the updated motion direction.
-      Do NOT create a completely different concept.
-      Enhance and evolve the existing scene.
+CORE TASK:
+Elevate the existing scene from a static or basic motion state into a cinematic masterpiece.
+Maintain total brand consistency while injecting high-end motion dynamics.
 
-      BASE PRODUCT (DO NOT ALTER DESIGN):
-      Product Name: ${project.productName}
-      Product Description: ${project.productDescription}
+BASE ASSET CONSTANTS:
+• Name: ${project.productName}
+• Context: ${project.productDescription}
+• STAY IDENTICAL: Product scale, branding, lighting environment, and core setting.
 
-      PRESERVE:
-      • Product appearance, logo, color, proportions
-      • Overall setting and context
-      • Realistic lighting consistency
-      • Brand identity and premium feel
+MOTION DIRECTIVE:
+${userPrompt || project.userPrompt || "Refine motion with smoother cinematic movement."}
 
-      UPDATED MOTION DIRECTION:
-      ${userPrompt || project.userPrompt || "Refine motion with smoother cinematic movement."}
+MOTION REFINEMENT RULES:
+• Parallax Effect:Foreground and background should move at slightly different offsets to create professional depth.
+• Camera Dynamics: Use high-end film equipment simulation (Dolly, Pan, or Crane shots).
+• Micro-Expressions: If a subject is visible, ensure realistic blinks, subtle smiles, or natural shifts in weight.
+• Product Interaction: Movement should highlight the product's premium features (glint of light on metal, fluid movement of liquid, etc.).
 
-      MOTION REFINEMENT RULES:
-      • Improve camera movement dynamics
-      • Enhance natural hand and body motion
-      • Add subtle cinematic depth and realism
-      • Maintain physical accuracy
-      • No distortion or morphing
-      • No surreal effects
-      • No visual glitches
+TECHNICAL QUALITY:
+• 24fps cinematic cadence.
+• Zero morphing artifacts or physics-defying glitches.
+• Consistent temporal coherence (objects should not change shape during movement).
 
-      CINEMATIC ENHANCEMENT:
-      • More fluid motion transitions
-      • Refined depth of field
-      • Natural light consistency
-      • Professional advertisement pacing
-
-      OUTPUT:
-      A refined, improved version of the original commercial video with noticeable motion enhancement while preserving brand integrity.
-      `;
+OUTPUT:
+A breathtakingly professional 5-second commercial segment that looks like it was produced by a top-tier creative agency.
+`;
 
 
         const model = "veo-3.1-generate-preview";
