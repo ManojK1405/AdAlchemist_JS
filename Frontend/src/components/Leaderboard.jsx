@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
-import { Trophy, Crown, Heart, Coins, Loader2Icon, Sparkles, Copy } from 'lucide-react';
+import { Trophy, Crown, Heart, Coins, Loader2Icon } from 'lucide-react';
 import api from '../configs/axios';
 import toast from 'react-hot-toast';
 
 const Leaderboard = () => {
-    const [data, setData] = useState({ topLiked: [], topTipped: [], trendingPrompts: [] });
+    const [data, setData] = useState({ topLiked: [], topTipped: [] });
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -93,48 +93,6 @@ const Leaderboard = () => {
                     ))}
                     {data.topTipped.length === 0 && (
                         <div className="p-8 text-center text-gray-500 text-sm italic">No tips received yet</div>
-                    )}
-                </div>
-            </section>
-
-            {/* Trending Prompts */}
-            <section>
-                <div className="flex items-center gap-3 mb-6">
-                    <div className="p-2 bg-indigo-500/10 rounded-lg text-indigo-400">
-                        <Sparkles size={20} />
-                    </div>
-                    <h3 className="text-xl font-bold tracking-tight">Trending Prompts</h3>
-                </div>
-                <div className="space-y-4">
-                    {data.trendingPrompts.map((prompt) => (
-                        <div
-                            key={prompt.id}
-                            className="group p-4 bg-white/5 border border-white/10 rounded-xl hover:border-indigo-500/30 transition-all duration-300"
-                        >
-                            <div className="flex justify-between items-start gap-2 mb-2">
-                                <span className="text-[10px] font-bold text-indigo-400 uppercase tracking-wider">
-                                    {prompt.productName}
-                                </span>
-                                <button
-                                    onClick={() => {
-                                        navigator.clipboard.writeText(prompt.userPrompt);
-                                        toast.success("Prompt copied!");
-                                    }}
-                                    className="p-1.5 rounded-lg bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-white/10 text-gray-400 hover:text-white"
-                                >
-                                    <Copy size={14} />
-                                </button>
-                            </div>
-                            <p className="text-xs text-gray-400 line-clamp-3 leading-relaxed italic">
-                                "{prompt.userPrompt}"
-                            </p>
-                            <div className="mt-3 flex items-center gap-1 text-[10px] text-gray-600 font-bold">
-                                <Heart size={10} fill="currentColor" /> {prompt._count.projectLikes} Likes
-                            </div>
-                        </div>
-                    ))}
-                    {data.trendingPrompts.length === 0 && (
-                        <div className="p-8 text-center text-gray-500 text-sm italic">No trending prompts</div>
                     )}
                 </div>
             </section>

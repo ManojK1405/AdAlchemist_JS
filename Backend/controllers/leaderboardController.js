@@ -1,4 +1,4 @@
-import prisma from '../configs/prisma.js';
+import { prisma } from '../configs/prisma.js';
 import * as Sentry from '@sentry/node';
 
 export const getLeaderboard = async (req, res) => {
@@ -49,32 +49,9 @@ export const getLeaderboard = async (req, res) => {
             };
         }));
 
-        // 3. Trending Prompts (from most liked projects)
-        const trendingPrompts = await prisma.project.findMany({
-            where: {
-                isPublished: true,
-                userPrompt: { not: "" }
-            },
-            take: 5,
-            select: {
-                id: true,
-                userPrompt: true,
-                productName: true,
-                _count: {
-                    select: { projectLikes: true }
-                }
-            },
-            orderBy: {
-                projectLikes: {
-                    _count: 'desc'
-                }
-            }
-        });
-
         res.json({
             topLiked: topLikedUsers,
-            topTipped: topTippedWithDetails,
-            trendingPrompts: trendingPrompts
+            topTipped: topTippedWithDetails
         });
     } catch (error) {
         Sentry.captureException(error);
