@@ -15,6 +15,7 @@ import { GhostButton, PrimaryButton } from "../components/Buttons";
 import { useAuth, useUser } from "@clerk/clerk-react";
 import api from "../configs/axios";
 import { toast } from "react-hot-toast";
+import SocialPublishModal from "../components/SocialPublishModal";
 
 const Result = () => {
 
@@ -26,6 +27,10 @@ const Result = () => {
     const [project, setProjectData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [isGenerating, setIsGenerating] = useState(false);
+
+    // Facebook Publish States
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [targetPlatform, setTargetPlatform] = useState('Facebook');
 
     // Fetch project
     const fetchProjectData = async () => {
@@ -79,14 +84,8 @@ const Result = () => {
     };
 
     const handleSocialPublish = (platform) => {
-        toast.promise(
-            new Promise((resolve) => setTimeout(resolve, 2000)),
-            {
-                loading: `Connecting to ${platform}...`,
-                success: "Meta Graph API configuration required on backend.",
-                error: "Action failed"
-            }
-        );
+        setTargetPlatform(platform);
+        setIsModalOpen(true);
     };
 
 
@@ -304,6 +303,13 @@ const Result = () => {
                 </div>
 
             </div>
+
+            <SocialPublishModal
+                isOpen={isModalOpen}
+                onClose={() => setIsModalOpen(false)}
+                project={project}
+                initialPlatform={targetPlatform}
+            />
         </div>
     );
 };
