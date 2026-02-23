@@ -87,7 +87,13 @@ export default function Navbar() {
                         <GhostButton onClick={() => navigate('/plans')} className="border-none text-gray-300 sm:py-1.5">
                             Credits: {credits}
                         </GhostButton>
-                        <UserButton>
+                        <UserButton appearance={{
+                            elements: {
+                                userProfileNavbarButton__billing: 'hidden',
+                                navbarButton__billing: 'hidden',
+                                navbarMobileMenuButton__billing: 'hidden'
+                            }
+                        }}>
                             <UserButton.MenuItems>
                                 <UserButton.Action label='Generate' labelIcon={<SparkleIcon size={14} />} onClick={() => navigate('/generate')} />
 
