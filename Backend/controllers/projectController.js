@@ -1,4 +1,5 @@
 import * as Sentry from "@sentry/node";
+import { sendEmail, getVideoCompleteEmailTemplate } from "../utils/email.js";
 import { prisma } from "../configs/prisma.js";
 import { v2 as cloudinary } from "cloudinary";
 import {
@@ -408,6 +409,13 @@ A stunningly realistic, brand-quality commercial segment ready for prime-time ma
             },
         });
 
+        // 💌 Send Notification Email
+        if (project.user?.email) {
+            const template = getVideoCompleteEmailTemplate(project.productName, uploadResult.secure_url);
+            sendEmail(project.user.email, `Your video for ${project.productName} is ready! 🎬`, template)
+                .catch(err => console.error("Video Completion Email failed:", err));
+        }
+
         //delete the local video file
         fs.unlinkSync(filePath);
 
@@ -798,6 +806,7 @@ export const editVideo = async (req, res) => {
         // ✅ Get project
         const project = await prisma.project.findUnique({
             where: { id: projectId },
+            include: { user: true }
         });
 
         if (!project || project.userId !== userId) {
@@ -929,6 +938,13 @@ A breathtakingly professional 5-second commercial segment that looks like it was
                 error: "",
             },
         });
+
+        // 💌 Send Notification Email
+        if (project.user?.email) {
+            const template = getVideoCompleteEmailTemplate(project.productName, uploadResult.secure_url);
+            sendEmail(project.user.email, `Enhanced video for ${project.productName} is ready! 🎬`, template)
+                .catch(err => console.error("Video Edit Email failed:", err));
+        }
 
         // Delete local file
         fs.unlinkSync(filePath);

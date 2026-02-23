@@ -1,5 +1,6 @@
 import { prisma } from "../configs/prisma.js";
 import * as Sentry from "@sentry/node";
+import { sendEmail, getTipEmailTemplate, getCommentEmailTemplate } from "../utils/email.js";
 
 // --- Comments ---
 
@@ -23,8 +24,24 @@ export const addComment = async (req, res) => {
             },
             include: {
                 user: true,
+                project: {
+                    include: {
+                        user: true
+                    }
+                }
             },
         });
+
+        // 💌 Send Notification Email
+        if (comment.project?.user?.email) {
+            const template = getCommentEmailTemplate(
+                comment.user?.name || "A user",
+                comment.project.productName,
+                comment.content
+            );
+            sendEmail(comment.project.user.email, `New comment on ${comment.project.productName}`, template)
+                .catch(err => console.error("Email notification failed:", err));
+        }
 
         res.status(201).json(comment);
     } catch (error) {
@@ -328,6 +345,16 @@ export const tipCreator = async (req, res) => {
                 }
             })
         ]);
+
+        // 💌 Send Notification Email
+        const recipientUser = await prisma.user.findUnique({ where: { id: recipientId } });
+        const senderUser = await prisma.user.findUnique({ where: { id: userId } });
+
+        if (recipientUser?.email) {
+            const template = getTipEmailTemplate(senderUser?.name || "A fellow creator", amount);
+            sendEmail(recipientUser.email, "You received a Tip! 🪙", template)
+                .catch(err => console.error("Tip Email notification failed:", err));
+        }
 
         res.json({ message: `Tipped ${amount} credits successfully!` });
     } catch (error) {
