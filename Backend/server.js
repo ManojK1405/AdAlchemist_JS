@@ -9,6 +9,7 @@ import userRouter from './routes/userRoutes.js';
 import projectRouter from './routes/projectRoutes.js';
 import socialRouter from './routes/socialRoutes.js';
 import metaRouter from './routes/metaRoutes.js';
+import paymentRouter from './routes/paymentRoutes.js';
 
 dotenv.config();
 
@@ -30,6 +31,7 @@ app.use('/api/user', userRouter);
 app.use('/api/project', projectRouter);
 app.use('/api/social', socialRouter);
 app.use('/api/meta', metaRouter);
+app.use('/api/payment', paymentRouter);
 
 
 app.get('/', (req, res) => {

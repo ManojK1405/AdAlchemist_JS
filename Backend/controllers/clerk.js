@@ -47,44 +47,6 @@ const clerkWebHooks = async (req, res) => {
                 break;
             }
 
-            // 💳 PAYMENT SUCCESS (Credits Allocation)
-            case "paymentAttempt.updated": {
-                if (
-                    (data.charge_type === "recurring" ||
-                        data.charge_type === "checkout") &&
-                    data.status === "paid"
-                ) {
-                    const clerkUserId = data?.payer?.user_id;
-
-                    const planName =
-                        data?.subscription_items?.[0]?.plan?.name?.toLowerCase().trim();
-
-                    const creditMap = {
-                        "creator plan": 120,
-                        "brands plan": 350,
-                    };
-
-                    const creditsToAdd = creditMap[planName];
-
-                    if (!creditsToAdd) {
-                        console.log("Unknown plan name:", planName);
-                        return res.json({ message: "Plan not recognized, ignored." });
-                    }
-
-                    await prisma.user.update({
-                        where: { id: clerkUserId },
-                        data: {
-                            credits: { increment: creditsToAdd },
-                        },
-                    });
-
-                    console.log(`Added ${creditsToAdd} credits to ${clerkUserId}`);
-                }
-
-                break;
-            }
-
-
             default:
                 break;
         }
