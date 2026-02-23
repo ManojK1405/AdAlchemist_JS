@@ -113,3 +113,55 @@ export const verifyPayment = async (req, res) => {
         res.status(500).json({ message: "Payment verification failed" });
     }
 };
+
+export const razorpayWebhook = async (req, res) => {
+    try {
+        const secret = process.env.RAZORPAY_WEBHOOK_SECRET;
+        const signature = req.headers["x-razorpay-signature"];
+
+        const expectedSignature = crypto
+            .createHmac("sha256", secret)
+            .update(JSON.stringify(req.body))
+            .digest("hex");
+
+        if (signature === expectedSignature) {
+            const { event, payload } = req.body;
+
+            // Handle order.paid event
+            if (event === "order.paid") {
+                const orderId = payload.order.entity.id;
+                const paymentId = payload.payment.entity.id;
+
+                const transaction = await prisma.transaction.findUnique({
+                    where: { orderId }
+                });
+
+                if (transaction && transaction.status !== "success") {
+                    await prisma.$transaction([
+                        prisma.transaction.update({
+                            where: { id: transaction.id },
+                            data: {
+                                status: "success",
+                                paymentId: paymentId
+                            }
+                        }),
+                        prisma.user.update({
+                            where: { id: transaction.userId },
+                            data: {
+                                credits: { increment: transaction.credits }
+                            }
+                        })
+                    ]);
+                    console.log(`Webhook: Credits added for order ${orderId}`);
+                }
+            }
+            res.status(200).json({ status: "ok" });
+        } else {
+            res.status(400).json({ message: "Invalid webhook signature" });
+        }
+    } catch (error) {
+        Sentry.captureException(error);
+        console.error("Webhook Error:", error);
+        res.status(500).json({ message: "Webhook processing failed" });
+    }
+};
