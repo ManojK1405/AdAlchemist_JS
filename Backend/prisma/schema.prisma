@@ -31,6 +31,7 @@ model User {
   commentLikes CommentLike[]
   projectLikes ProjectLike[]
   discussions  Discussion[]
+  brandKit     BrandKit?
 }
 
 model Project {
@@ -109,5 +110,10 @@ model Discussion {
   updatedAt DateTime @updatedAt
 }
 
-
-
+model BrandKit {
+  id      String  @id @default(uuid())
+  userId  String  @unique
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  color   String? @default("#4f46e5")
+  voice   String? @default("")
+}

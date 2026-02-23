@@ -54,6 +54,8 @@ export const createProject = async (req, res) => {
                 .json({ message: "User Not Found" });
         }
 
+        const brandKit = await prisma.brandKit.findUnique({ where: { userId } });
+
         if (user.credits < 10) {
             return res
                 .status(400)
@@ -181,6 +183,8 @@ BRAND ALIGNMENT:
 Tone: Premium, aspirational, trustworthy, modern
 Mood: ${userPrompt?.includes('mood') || userPrompt?.includes('vibe') ? 'per user specification' : 'Confident, authentic, approachable'}
 Target: High-end consumer expecting quality and authenticity
+${brandKit?.color ? `Brand Signature Color (incorporate into lighting, props, or background): ${brandKit.color}` : ''}
+${brandKit?.voice ? `Brand Voice & Aesthetic Guidelines: ${brandKit.voice}` : ''}
 
 ${userPrompt ? `\nCUSTOM REQUIREMENTS:\n${userPrompt}` : ''}
 
@@ -592,6 +596,8 @@ export const editGeneration = async (req, res) => {
             return res.status(404).json({ message: "Project not found" });
         }
 
+        const brandKit = await prisma.brandKit.findUnique({ where: { userId } });
+
         if (project.isGenerating) {
             return res.status(400).json({ message: "Project is already generating" });
         }
@@ -681,6 +687,9 @@ STRICT PRODUCT RULES:
 
 UPDATED CREATIVE DIRECTION:
 ${userPrompt || project.userPrompt || "Create a clean, premium commercial look."}
+
+${brandKit && brandKit.color ? `BRANDING RULE: Incorporate the signature color ${brandKit.color} effectively.` : ''}
+${brandKit && brandKit.voice ? `BRANDING AESTHETIC: ${brandKit.voice}` : ''}
 
 COMPOSITION REQUIREMENTS:
 • Professional commercial layout
@@ -1003,5 +1012,35 @@ export const editVideo = async (req, res) => {
         return res.status(500).json({
             message: "Internal server error",
         });
+    }
+};
+
+// get trending projects (most liked)
+export const getTrendingProjects = async (req, res) => {
+    try {
+        const trendingProjects = await prisma.project.findMany({
+            where: {
+                isPublished: true,
+            },
+            include: {
+                user: true,
+                projectLikes: true,
+                comments: true,
+                _count: {
+                    select: { projectLikes: true }
+                }
+            },
+            orderBy: {
+                projectLikes: {
+                    _count: 'desc'
+                }
+            },
+            take: 10
+        });
+
+        res.json({ projects: trendingProjects });
+    } catch (error) {
+        Sentry.captureException(error);
+        res.status(500).json({ message: 'Internal server error' });
     }
 };

@@ -89,3 +89,36 @@ export const toggleProjectPublic = async (req, res) => {
         res.status(500).json({ message: 'Internal server error' });
     }
 };
+
+// Get user brand kit
+export const getBrandKit = async (req, res) => {
+    try {
+        const { userId } = req.auth();
+        const brandKit = await prisma.brandKit.findUnique({
+            where: { userId },
+        });
+        res.json({ brandKit: brandKit || { color: "#4f46e5", voice: "" } });
+    } catch (error) {
+        Sentry.captureException(error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+};
+
+// Update user brand kit
+export const updateBrandKit = async (req, res) => {
+    try {
+        const { userId } = req.auth();
+        const { color, voice } = req.body;
+
+        const brandKit = await prisma.brandKit.upsert({
+            where: { userId },
+            update: { color, voice },
+            create: { userId, color, voice },
+        });
+
+        res.json({ brandKit, message: "Brand Kit successfully updated!" });
+    } catch (error) {
+        Sentry.captureException(error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+};

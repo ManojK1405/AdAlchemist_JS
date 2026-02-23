@@ -6,6 +6,7 @@ import { useAuth, useUser } from "@clerk/clerk-react"
 import { useNavigate } from "react-router-dom"
 import { toast } from "react-hot-toast"
 import api from "../configs/axios"
+import BrandKitModal from "../components/BrandKitModal"
 
 const Generator = () => {
 
@@ -21,6 +22,7 @@ const Generator = () => {
     const [modelImage, setModelImage] = useState(null)
     const [userPrompt, setUserPrompt] = useState('')
     const [isGenerating, setIsGenerating] = useState(false)
+    const [isBrandKitOpen, setIsBrandKitOpen] = useState(false)
 
     const handleFileChange = (e, type) => {
         if (e.target.files && e.target.files[0]) {
@@ -101,16 +103,32 @@ const Generator = () => {
                     {/* RIGHT SIDE */}
                     <div className="space-y-6">
 
-                        {/* Project Name */}
-                        <div>
-                            <label className="block text-sm mb-2">Project Name</label>
-                            <input
-                                value={name}
-                                onChange={(e) => setName(e.target.value)}
-                                type="text"
-                                placeholder="Name your project"
-                                className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 focus:outline-none focus:border-violet-500"
-                            />
+                        {/* Project Name & Brand Kit */}
+                        <div className="flex items-end justify-between gap-4">
+                            <div className="flex-1">
+                                <label className="block text-sm mb-2">Project Name</label>
+                                <input
+                                    value={name}
+                                    onChange={(e) => setName(e.target.value)}
+                                    type="text"
+                                    placeholder="Name your project"
+                                    className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 focus:outline-none focus:border-violet-500"
+                                />
+                            </div>
+                            {user && (
+                                <button
+                                    type="button"
+                                    onClick={() => setIsBrandKitOpen(true)}
+                                    className="flex items-center gap-2 px-4 py-3 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 rounded-lg transition-colors whitespace-nowrap"
+                                >
+                                    <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                        <path d="M12 2v20c-5.523 0-10-4.477-10-10S6.477 2 12 2z" />
+                                        <path d="m19 14.5-2-2-4 4" />
+                                        <path d="m14.5 19 2-2 4 4" />
+                                    </svg>
+                                    Brand Kit
+                                </button>
+                            )}
                         </div>
 
                         {/* Product Name */}
@@ -147,8 +165,8 @@ const Generator = () => {
                                     type="button"
                                     onClick={() => setAspectRatio('9:16')}
                                     className={`h-14 w-12 rounded-lg border flex items-center justify-center transition ${aspectRatio === '9:16'
-                                            ? 'border-violet-500 bg-violet-500/10'
-                                            : 'border-white/10 hover:border-violet-500/40'
+                                        ? 'border-violet-500 bg-violet-500/10'
+                                        : 'border-white/10 hover:border-violet-500/40'
                                         }`}
                                 >
                                     <div className="h-8 w-4 border border-white/50 rounded-sm" />
@@ -158,8 +176,8 @@ const Generator = () => {
                                     type="button"
                                     onClick={() => setAspectRatio('16:9')}
                                     className={`h-14 w-16 rounded-lg border flex items-center justify-center transition ${aspectRatio === '16:9'
-                                            ? 'border-violet-500 bg-violet-500/10'
-                                            : 'border-white/10 hover:border-violet-500/40'
+                                        ? 'border-violet-500 bg-violet-500/10'
+                                        : 'border-white/10 hover:border-violet-500/40'
                                         }`}
                                 >
                                     <div className="h-4 w-8 border border-white/50 rounded-sm" />
@@ -206,6 +224,8 @@ const Generator = () => {
 
 
             </form>
+
+            <BrandKitModal isOpen={isBrandKitOpen} onClose={() => setIsBrandKitOpen(false)} />
         </div>
     )
 }
