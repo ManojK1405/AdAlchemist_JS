@@ -8,24 +8,34 @@ const Billing = () => {
     const { getToken } = useAuth();
     const { user } = useUser();
     const [transactions, setTransactions] = useState([]);
+    const [credits, setCredits] = useState(0);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        const fetchTransactions = async () => {
+        const fetchData = async () => {
             try {
                 const token = await getToken();
-                const { data } = await api.get('/api/payment/transactions', {
+
+                // Fetch Transactions
+                const { data: txData } = await api.get('/api/payment/transactions', {
                     headers: { Authorization: `Bearer ${token}` }
                 });
-                setTransactions(data.transactions);
+                setTransactions(txData.transactions);
+
+                // Fetch Credits
+                const { data: userData } = await api.get('/api/user/credits', {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+                setCredits(userData.credits);
+
             } catch (error) {
-                toast.error("Failed to load billing history");
+                toast.error("Failed to load billing details");
             } finally {
                 setLoading(false);
             }
         };
 
-        if (user) fetchTransactions();
+        if (user) fetchData();
     }, [user, getToken]);
 
     const getStatusStyle = (status) => {
@@ -69,8 +79,8 @@ const Billing = () => {
                                     <Coins size={24} />
                                 </div>
                                 <div>
-                                    <span className="text-3xl font-bold block">Current Balance</span>
-                                    <span className="text-indigo-400 font-bold text-lg">Credits based on your plans</span>
+                                    <span className="text-3xl font-bold block">{credits} Credits</span>
+                                    <span className="text-indigo-400 font-bold text-lg uppercase tracking-tighter">Available Balance</span>
                                 </div>
                             </div>
                             <button

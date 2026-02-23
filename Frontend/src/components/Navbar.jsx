@@ -25,8 +25,10 @@ export default function Navbar() {
         { name: 'Community', href: '/community' },
         { name: 'Creator Lounge', href: '/creator-lounge' },
         { name: 'Plans', href: '/plans' },
-        { name: 'My Generations', href: '/my-generations' },
-        { name: 'Billing', href: '/billing' }
+        ...(user ? [
+            { name: 'My Generations', href: '/my-generations' },
+            { name: 'Billing', href: '/billing' }
+        ] : [])
     ];
 
     const getCredits = async () => {
