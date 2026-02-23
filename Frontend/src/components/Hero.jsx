@@ -10,12 +10,12 @@ export default function Hero() {
         'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=50&h=50&fit=crop'
     ];
 
-    const mainImageUrl = 'https://images.unsplash.com/photo-1576267423445-b2e0074d68a4?q=80&w=1600&auto=format&fit=crop';
+    const mainImageUrl = 'https://images.unsplash.com/photo-1620916566398-39f1143ab7be?q=80&w=1600&auto=format&fit=crop';
 
     const galleryStripImages = [
-        'https://images.unsplash.com/photo-1542744173-8e7e53415bb0?q=80&w=100',
-        'https://images.unsplash.com/photo-1517048676732-d65bc937f952?q=80&w=100',
-        'https://images.unsplash.com/photo-1553877522-43269d4ea984?q=80&w=100',
+        'https://images.unsplash.com/photo-1542291026-7eec264c27ff?q=80&w=100',
+        'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?q=80&w=100',
+        'https://images.unsplash.com/photo-1523275335684-37898b6baf30?q=80&w=100',
     ];
 
     const trustedLogosText = [

@@ -207,6 +207,34 @@ export const getDiscussionById = async (req, res) => {
     }
 }
 
+export const deleteDiscussion = async (req, res) => {
+    try {
+        const { userId } = req.auth();
+        const { id } = req.params;
+
+        const discussion = await prisma.discussion.findUnique({
+            where: { id }
+        });
+
+        if (!discussion) {
+            return res.status(404).json({ message: "Discussion not found" });
+        }
+
+        if (discussion.userId !== userId) {
+            return res.status(403).json({ message: "Unauthorized to delete this discussion" });
+        }
+
+        await prisma.discussion.delete({
+            where: { id }
+        });
+
+        res.json({ message: "Discussion deleted successfully" });
+    } catch (error) {
+        Sentry.captureException(error);
+        res.status(500).json({ message: "Internal server error" });
+    }
+};
+
 // --- Project Likes ---
 
 export const toggleLikeProject = async (req, res) => {

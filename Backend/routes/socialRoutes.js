@@ -7,7 +7,8 @@ import {
     createDiscussion,
     getDiscussions,
     getDiscussionById,
-    toggleLikeProject
+    toggleLikeProject,
+    deleteDiscussion
 } from '../controllers/socialController.js';
 import { protect } from '../middlewares/auth.js';
 
@@ -23,6 +24,7 @@ socialRouter.delete('/comments/:commentId', protect, deleteComment);
 socialRouter.post('/discussions', protect, createDiscussion);
 socialRouter.get('/discussions', getDiscussions);
 socialRouter.get('/discussions/:id', getDiscussionById);
+socialRouter.delete('/discussions/:id', protect, deleteDiscussion);
 
 // Project Likes
 socialRouter.post('/projects/:projectId/like', protect, toggleLikeProject);

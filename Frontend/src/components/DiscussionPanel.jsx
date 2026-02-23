@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth, useUser } from '@clerk/clerk-react';
-import { MessageCircle, Plus, Users, ArrowRight, Sparkles, Search } from 'lucide-react';
+import { MessageCircle, Plus, Users, ArrowRight, Sparkles, Search, Trash2 } from 'lucide-react';
 import api from '../configs/axios';
 import toast from 'react-hot-toast';
 import CommentSection from './CommentSection';
@@ -53,6 +53,23 @@ const DiscussionPanel = () => {
             toast.error('Failed to start discussion');
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleDelete = async (e, id) => {
+        e.stopPropagation();
+        const confirm = window.confirm("Are you sure you want to delete this discussion?");
+        if (!confirm) return;
+        try {
+            const token = await getToken();
+            await api.delete(`/api/social/discussions/${id}`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            setDiscussions(prev => prev.filter(d => d.id !== id));
+            if (selectedId === id) setSelectedId(null);
+            toast.success("Discussion deleted successfully");
+        } catch (error) {
+            toast.error("Failed to delete discussion");
         }
     };
 
@@ -174,7 +191,17 @@ const DiscussionPanel = () => {
                         >
                             <div className="flex justify-between items-start mb-3">
                                 <h4 className="font-bold text-sm text-white/90 group-hover:text-white transition-colors leading-tight">{discussion.title}</h4>
-                                <span className="text-[10px] font-medium text-white/20 shrink-0 ml-4">{new Date(discussion.createdAt).toLocaleDateString()}</span>
+                                <div className="flex items-center gap-3 shrink-0 ml-4">
+                                    <span className="text-[10px] font-medium text-white/20">{new Date(discussion.createdAt).toLocaleDateString()}</span>
+                                    {clerkUser?.id === discussion.userId && (
+                                        <button
+                                            onClick={(e) => handleDelete(e, discussion.id)}
+                                            className="text-white/20 hover:text-red-400 transition-colors"
+                                        >
+                                            <Trash2 size={13} />
+                                        </button>
+                                    )}
+                                </div>
                             </div>
                             <p className={`text-xs text-white/50 leading-relaxed mb-4 transition-all duration-500 ${selectedId === discussion.id ? '' : 'line-clamp-2'}`}>
                                 {discussion.content}
