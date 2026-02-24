@@ -9,7 +9,7 @@ const PLANS = [
     {
         id: 'starter',
         name: 'Starter',
-        price: '499',
+        price: '4.99',
         credits: '100',
         icon: <Zap className="text-blue-400" />,
         features: ['100 Generation Credits', 'Standard Processing', 'Basic Support', 'Email Updates'],
@@ -18,7 +18,7 @@ const PLANS = [
     {
         id: 'pro',
         name: 'Pro',
-        price: '1,999',
+        price: '19.99',
         credits: '500',
         icon: <Shield className="text-indigo-400" />,
         features: ['500 Generation Credits', 'Priority Processing', 'Professional Templates', 'Priority Support'],
@@ -28,7 +28,7 @@ const PLANS = [
     {
         id: 'agency',
         name: 'Agency',
-        price: '4,999',
+        price: '49.99',
         credits: '2,000',
         icon: <Crown className="text-yellow-400" />,
         features: ['2,000 Generation Credits', 'Ultra-Fast Processing', 'Custom Brand Kits', '24/7 Dedicated Support'],
