@@ -137,7 +137,7 @@ const Result = () => {
     if (loading || !project) {
         return (
             <div className="h-screen w-full flex items-center justify-center">
-                <Loader2Icon className="animate-spin text-indigo-400 size-9" />
+                <Loader2Icon className="animate-spin text-cyan-400 size-9" />
             </div>
         );
     }

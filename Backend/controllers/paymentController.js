@@ -115,6 +115,31 @@ export const verifyPayment = async (req, res) => {
     }
 };
 
+export const cancelPayment = async (req, res) => {
+    try {
+        const { orderId } = req.body;
+
+        const transaction = await prisma.transaction.findUnique({
+            where: { orderId }
+        });
+
+        if (!transaction || transaction.status !== "pending") {
+            return res.status(400).json({ message: "Transaction not found or already processed" });
+        }
+
+        await prisma.transaction.update({
+            where: { id: transaction.id },
+            data: { status: "failed" }
+        });
+
+        res.json({ message: "Payment marked as failed" });
+    } catch (error) {
+        Sentry.captureException(error);
+        console.error("Cancel Payment Error:", error);
+        res.status(500).json({ message: "Internal server error" });
+    }
+}
+
 export const razorpayWebhook = async (req, res) => {
     try {
         const secret = process.env.RAZORPAY_WEBHOOK_SECRET;
@@ -210,7 +235,7 @@ export const generateReceipt = async (req, res) => {
         doc.pipe(res);
 
         // Header
-        doc.fillColor("#4f46e5")
+        doc.fillColor("#06b6d4")
             .fontSize(24)
             .text("AdAlchemist", 50, 50);
 
@@ -258,7 +283,7 @@ export const generateReceipt = async (req, res) => {
         // Total
         doc.moveDown(2);
         doc.fontSize(12).fillColor("#1f2937").text("TOTAL AMOUNT:", 350, tableTop + 80);
-        doc.fontSize(14).fillColor("#4f46e5").text(`INR ${transaction.amount.toFixed(2)}`, 450, tableTop + 78, { align: 'right' });
+        doc.fontSize(14).fillColor("#06b6d4").text(`INR ${transaction.amount.toFixed(2)}`, 450, tableTop + 78, { align: 'right' });
 
         // Footer
         const footerPosition = 700;

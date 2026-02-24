@@ -94,7 +94,7 @@ const Billing = () => {
             <div className="max-w-5xl mx-auto">
                 <header className="mb-12">
                     <div className="flex items-center gap-4 mb-4">
-                        <div className="p-3 bg-indigo-600/20 rounded-2xl text-indigo-400">
+                        <div className="p-3 bg-cyan-600/20 rounded-2xl text-cyan-400">
                             <Receipt size={32} />
                         </div>
                         <div>
@@ -115,12 +115,12 @@ const Billing = () => {
                                 </div>
                                 <div>
                                     <span className="text-3xl font-bold block">{credits} Credits</span>
-                                    <span className="text-indigo-400 font-bold text-lg uppercase tracking-tighter">Available Balance</span>
+                                    <span className="text-cyan-400 font-bold text-lg uppercase tracking-tighter">Available Balance</span>
                                 </div>
                             </div>
                             <button
                                 onClick={() => window.location.href = '/plans'}
-                                className="w-full mt-8 py-4 rounded-2xl bg-indigo-600 hover:bg-indigo-500 transition-all font-bold flex items-center justify-center gap-2"
+                                className="w-full mt-8 py-4 rounded-2xl bg-cyan-600 hover:bg-cyan-500 transition-all font-bold flex items-center justify-center gap-2"
                             >
                                 <CreditCard size={18} /> Buy More Credits
                             </button>
@@ -129,7 +129,7 @@ const Billing = () => {
                         <div className="glass-panel p-6 rounded-3xl border border-white/10 bg-white/[0.02]">
                             <h3 className="text-sm font-bold text-gray-500 uppercase tracking-widest mb-4">Need Help?</h3>
                             <p className="text-sm text-gray-400 mb-6 leading-relaxed">If you have any issues with your payments or credits, please contact our support team.</p>
-                            <a href="mailto:manojadalchemist@gmail.com" className="text-indigo-400 font-bold hover:underline">manojadalchemist@gmail.com</a>
+                            <a href="mailto:manojadalchemist@gmail.com" className="text-cyan-400 font-bold hover:underline">manojadalchemist@gmail.com</a>
                         </div>
                     </div>
 
@@ -171,7 +171,7 @@ const Billing = () => {
                                             transactions.map((tx) => (
                                                 <tr key={tx.id} className="hover:bg-white/[0.02] transition-colors group">
                                                     <td className="px-6 py-5">
-                                                        <div className="font-mono text-[10px] text-indigo-400 mb-1">{tx.orderId}</div>
+                                                        <div className="font-mono text-[10px] text-cyan-400 mb-1">{tx.orderId}</div>
                                                         <div className="text-xs text-gray-400">{new Date(tx.createdAt).toLocaleDateString()}</div>
                                                     </td>
                                                     <td className="px-6 py-5">

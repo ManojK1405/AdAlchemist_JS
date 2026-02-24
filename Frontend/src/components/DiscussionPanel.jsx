@@ -104,17 +104,17 @@ const DiscussionPanel = () => {
     const suggestedTopics = ['Tutorials', 'Prompts', 'Feedback', 'Video Generation', 'Help'];
 
     return (
-        <div className="bg-[#0f0f12] border border-white/5 rounded-[2rem] overflow-hidden h-fit shadow-2xl shadow-indigo-500/5">
+        <div className="bg-[#0f0f12] border border-white/5 rounded-[2rem] overflow-hidden h-fit shadow-2xl shadow-cyan-500/5">
             <div className="p-6 border-b border-white/5 bg-gradient-to-b from-white/[0.02] to-transparent flex items-center justify-between">
                 <h3 className="flex items-center gap-3 font-bold text-lg tracking-tight">
-                    <div className="w-8 h-8 rounded-xl bg-indigo-500/10 flex items-center justify-center">
-                        <Users size={18} className="text-indigo-400" />
+                    <div className="w-8 h-8 rounded-xl bg-cyan-500/10 flex items-center justify-center">
+                        <Users size={18} className="text-cyan-400" />
                     </div>
                     Creator Lounge
                 </h3>
                 <button
                     onClick={() => setIsCreating(true)}
-                    className="p-2.5 bg-indigo-600 rounded-xl hover:bg-indigo-500 transition-all duration-300 shadow-lg shadow-indigo-600/20 active:scale-95"
+                    className="p-2.5 bg-cyan-600 rounded-xl hover:bg-cyan-500 transition-all duration-300 shadow-lg shadow-cyan-600/20 active:scale-95"
                 >
                     <Plus size={20} className="text-white" />
                 </button>
@@ -129,7 +129,7 @@ const DiscussionPanel = () => {
                         placeholder="Search discussions by topic or content..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        className="w-full bg-[#1a1a24] border border-white/5 rounded-xl set-outline-none pl-11 pr-4 py-3 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500/50 transition-all text-white placeholder-white/30"
+                        className="w-full bg-[#1a1a24] border border-white/5 rounded-xl set-outline-none pl-11 pr-4 py-3 text-sm focus:outline-none focus:ring-1 focus:ring-cyan-500/50 transition-all text-white placeholder-white/30"
                     />
                 </div>
 
@@ -156,7 +156,7 @@ const DiscussionPanel = () => {
 
                 {isCreating && (
                     <form onSubmit={handleCreate} className="p-5 bg-white/[0.02] border border-white/10 rounded-[1.5rem] space-y-4 animate-in fade-in zoom-in-95 duration-300">
-                        <div className="flex items-center gap-2 text-indigo-400 text-[10px] font-bold uppercase tracking-widest pl-1">
+                        <div className="flex items-center gap-2 text-cyan-400 text-[10px] font-bold uppercase tracking-widest pl-1">
                             <Sparkles size={12} />
                             Start a new topic
                         </div>
@@ -164,20 +164,20 @@ const DiscussionPanel = () => {
                             value={title}
                             onChange={(e) => setTitle(e.target.value)}
                             placeholder="Catchy discussion title..."
-                            className="w-full bg-black/40 border border-white/5 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500/50 transition-all"
+                            className="w-full bg-black/40 border border-white/5 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-1 focus:ring-cyan-500/50 transition-all"
                         />
                         <textarea
                             value={content}
                             onChange={(e) => setContent(e.target.value)}
                             placeholder="Share your experience or ask a question..."
                             rows={3}
-                            className="w-full bg-black/40 border border-white/5 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500/50 transition-all resize-none"
+                            className="w-full bg-black/40 border border-white/5 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-1 focus:ring-cyan-500/50 transition-all resize-none"
                         />
                         <div className="flex gap-2 pt-2">
                             <button
                                 type="submit"
                                 disabled={loading}
-                                className="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white py-3 rounded-xl text-xs font-bold transition-all disabled:opacity-50"
+                                className="flex-1 bg-cyan-600 hover:bg-cyan-500 text-white py-3 rounded-xl text-xs font-bold transition-all disabled:opacity-50"
                             >
                                 {loading ? 'Publishing...' : 'Publish Topic'}
                             </button>
@@ -205,7 +205,7 @@ const DiscussionPanel = () => {
                         <div
                             key={discussion.id}
                             className={`group p-5 rounded-[1.5rem] border transition-all duration-300 cursor-pointer ${selectedId === discussion.id
-                                ? 'bg-indigo-500/5 border-indigo-500/30 ring-1 ring-indigo-500/30'
+                                ? 'bg-cyan-500/5 border-cyan-500/30 ring-1 ring-cyan-500/30'
                                 : 'bg-white/[0.02] border-white/5 hover:border-white/10 hover:bg-white/[0.04]'
                                 }`}
                             onClick={() => setSelectedId(selectedId === discussion.id ? null : discussion.id)}
@@ -245,10 +245,10 @@ const DiscussionPanel = () => {
                                         </span>
                                     )}
                                     <span className="flex items-center gap-1.5 bg-white/5 px-2.5 py-1 rounded-full border border-white/5">
-                                        <MessageCircle size={12} className="text-indigo-400/60" />
+                                        <MessageCircle size={12} className="text-cyan-400/60" />
                                         {discussion._count?.comments || 0}
                                     </span>
-                                    <ArrowRight size={14} className={`transition-transform duration-300 ${selectedId === discussion.id ? 'rotate-90 text-indigo-400' : 'group-hover:translate-x-1'}`} />
+                                    <ArrowRight size={14} className={`transition-transform duration-300 ${selectedId === discussion.id ? 'rotate-90 text-cyan-400' : 'group-hover:translate-x-1'}`} />
                                 </div>
                             </div>
 

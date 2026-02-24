@@ -24,7 +24,7 @@ const Leaderboard = () => {
     if (loading) {
         return (
             <div className="flex items-center justify-center p-12">
-                <Loader2Icon className="animate-spin text-indigo-500" size={24} />
+                <Loader2Icon className="animate-spin text-cyan-500" size={24} />
             </div>
         );
     }
@@ -80,12 +80,12 @@ const Leaderboard = () => {
                         >
                             <div className="flex items-center gap-4">
                                 <div className="w-8 flex justify-center text-sm font-bold text-gray-500">
-                                    {index === 0 ? <Trophy className="text-indigo-400" size={18} /> : index + 1}
+                                    {index === 0 ? <Trophy className="text-cyan-400" size={18} /> : index + 1}
                                 </div>
                                 <img src={creator.image} className="w-10 h-10 rounded-full object-cover border border-white/10" alt={creator.name} />
                                 <span className="font-semibold text-gray-200">{creator.name}</span>
                             </div>
-                            <div className="flex items-center gap-1.5 text-indigo-400 font-bold text-sm">
+                            <div className="flex items-center gap-1.5 text-cyan-400 font-bold text-sm">
                                 {creator.totalTips}
                                 <Coins size={14} />
                             </div>

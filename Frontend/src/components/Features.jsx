@@ -34,7 +34,7 @@ export default function Features() {
                             }}
                             className="rounded-2xl p-6 bg-white/3 border border-white/6"
                         >
-                            <div className="w-12 h-12 rounded-lg bg-violet-900/20 flex items-center justify-center mb-4">
+                            <div className="w-12 h-12 rounded-lg bg-cyan-900/20 flex items-center justify-center mb-4">
                                 {feature.icon}
                             </div>
                             <h3 className="text-lg font-semibold mb-2">{feature.title}</h3>

@@ -62,7 +62,7 @@ export default function Hero() {
                                 transition={{ type: "spring", stiffness: 250, damping: 70, mass: 1, delay: 0.1 }}
                             >
                                 Create Viral Ads <br />
-                                <span className="bg-clip-text text-transparent bg-linear-to-r from-indigo-300 to-indigo-400">
+                                <span className="bg-clip-text text-transparent bg-linear-to-r from-cyan-300 to-cyan-400">
                                     In Seconds
                                 </span>
                             </motion.h1>

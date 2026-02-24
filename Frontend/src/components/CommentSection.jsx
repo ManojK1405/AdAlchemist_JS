@@ -130,7 +130,7 @@ const CommentSection = ({ projectId, discussionId, ownerId, onCommentsChanged })
                 <div className="flex-1 min-w-0">
                     <div className="bg-white/5 p-3 rounded-2xl rounded-tl-none border border-white/10 hover:border-white/20 transition-colors">
                         <div className="flex justify-between items-center mb-1 gap-2">
-                            <span className={`text-sm font-semibold truncate ${!comment.user ? 'text-gray-400 italic' : 'text-indigo-300'}`}>
+                            <span className={`text-sm font-semibold truncate ${!comment.user ? 'text-gray-400 italic' : 'text-cyan-300'}`}>
                                 {comment.user?.name || 'Anonymous Alchemist'}
                             </span>
                             <span className="text-[10px] uppercase tracking-wider text-gray-500 whitespace-nowrap">{new Date(comment.createdAt).toLocaleDateString()}</span>
@@ -149,7 +149,7 @@ const CommentSection = ({ projectId, discussionId, ownerId, onCommentsChanged })
                         {depth < maxDepth && (
                             <button
                                 onClick={() => setReplyTo(replyTo === comment.id ? null : comment.id)}
-                                className={`flex items-center gap-1 text-xs transition-all ${replyTo === comment.id ? 'text-indigo-400' : 'text-gray-400 hover:text-indigo-400'}`}
+                                className={`flex items-center gap-1 text-xs transition-all ${replyTo === comment.id ? 'text-cyan-400' : 'text-gray-400 hover:text-cyan-400'}`}
                             >
                                 <Reply size={14} />
                                 <span className="font-medium">Reply</span>
@@ -175,12 +175,12 @@ const CommentSection = ({ projectId, discussionId, ownerId, onCommentsChanged })
                                     value={replyContent}
                                     onChange={(e) => setReplyContent(e.target.value)}
                                     placeholder="Write a reply..."
-                                    className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-xs focus:outline-none focus:border-indigo-500/50 transition-all"
+                                    className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-xs focus:outline-none focus:border-cyan-500/50 transition-all"
                                 />
                                 <button
                                     type="submit"
                                     disabled={loading || !replyContent.trim()}
-                                    className="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-xl text-[10px] font-bold transition-all disabled:opacity-30"
+                                    className="bg-cyan-600 hover:bg-cyan-500 text-white px-4 py-2 rounded-xl text-[10px] font-bold transition-all disabled:opacity-30"
                                 >
                                     Reply
                                 </button>
@@ -200,7 +200,7 @@ const CommentSection = ({ projectId, discussionId, ownerId, onCommentsChanged })
         <div className="mt-12 pt-8 border-t border-white/10">
             <div className="flex items-center justify-between mb-8">
                 <h4 className="flex items-center gap-3 text-xl font-semibold bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent">
-                    <MessageSquare size={22} className="text-indigo-400" />
+                    <MessageSquare size={22} className="text-cyan-400" />
                     Community Feedback
                 </h4>
                 <span className="text-xs text-gray-500 bg-white/5 px-3 py-1 rounded-full border border-white/10">
@@ -215,13 +215,13 @@ const CommentSection = ({ projectId, discussionId, ownerId, onCommentsChanged })
                             value={newComment}
                             onChange={(e) => setNewComment(e.target.value)}
                             placeholder="Share your thoughts with the creator..."
-                            className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-3.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500/50 transition-all placeholder:text-gray-600"
+                            className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-3.5 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500/50 transition-all placeholder:text-gray-600"
                         />
                     </div>
                     <button
                         type="submit"
                         disabled={loading || !newComment.trim()}
-                        className="bg-indigo-600 hover:bg-indigo-500 disabled:opacity-30 disabled:hover:bg-indigo-600 text-white px-6 py-3.5 rounded-2xl transition-all duration-300 flex items-center gap-2 font-medium shadow-lg shadow-indigo-600/20 hover:shadow-indigo-600/40"
+                        className="bg-cyan-600 hover:bg-cyan-500 disabled:opacity-30 disabled:hover:bg-cyan-600 text-white px-6 py-3.5 rounded-2xl transition-all duration-300 flex items-center gap-2 font-medium shadow-lg shadow-cyan-600/20 hover:shadow-cyan-600/40"
                     >
                         <Send size={18} className={loading ? 'animate-pulse' : ''} />
                         <span className="hidden sm:inline">Post</span>
@@ -232,8 +232,8 @@ const CommentSection = ({ projectId, discussionId, ownerId, onCommentsChanged })
             <div className="space-y-2 max-h-[600px] overflow-y-auto pr-4 custom-scrollbar">
                 {comments.length === 0 ? (
                     <div className="text-center py-16 bg-white/3 rounded-3xl border border-dashed border-white/10">
-                        <div className="w-16 h-16 bg-indigo-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                            <MessageSquare size={28} className="text-indigo-400/50" />
+                        <div className="w-16 h-16 bg-cyan-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <MessageSquare size={28} className="text-cyan-400/50" />
                         </div>
                         <p className="text-gray-400 font-medium">No voices here yet.</p>
                         <p className="text-xs text-gray-500 mt-1">Be the first to start the conversation!</p>

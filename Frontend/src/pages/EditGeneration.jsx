@@ -37,6 +37,20 @@ const EditGeneration = () => {
         aspectRatio: "9:16",
     });
 
+    const [brandKit, setBrandKit] = useState(null);
+
+    const fetchBrandKit = async () => {
+        try {
+            const token = await getToken();
+            const { data } = await api.get('/api/user/brand-kit', {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            setBrandKit(data.brandKit);
+        } catch (error) {
+            console.error("Error fetching brand kit", error);
+        }
+    }
+
     // Fetch project
     const fetchProject = async () => {
         try {
@@ -62,7 +76,10 @@ const EditGeneration = () => {
     };
 
     useEffect(() => {
-        if (projectId) fetchProject();
+        if (projectId) {
+            fetchProject();
+            fetchBrandKit();
+        }
     }, [projectId]);
 
     const handleChange = (e) => {
@@ -111,7 +128,7 @@ const EditGeneration = () => {
     if (loading || !project) {
         return (
             <div className="h-screen flex items-center justify-center">
-                <Loader2Icon className="animate-spin size-8 text-indigo-400" />
+                <Loader2Icon className="animate-spin size-8 text-cyan-400" />
             </div>
         );
     }
@@ -146,7 +163,7 @@ const EditGeneration = () => {
                             <button
                                 onClick={() => setEditMode("image")}
                                 className={`px-4 py-2 rounded-lg transition ${editMode === "image"
-                                    ? "bg-indigo-600 text-white"
+                                    ? "bg-cyan-600 text-white"
                                     : "text-gray-400"
                                     }`}
                             >
@@ -156,7 +173,7 @@ const EditGeneration = () => {
                             <button
                                 onClick={() => setEditMode("video")}
                                 className={`px-4 py-2 rounded-lg transition ${editMode === "video"
-                                    ? "bg-indigo-600 text-white"
+                                    ? "bg-cyan-600 text-white"
                                     : "text-gray-400"
                                     }`}
                             >
@@ -174,7 +191,7 @@ const EditGeneration = () => {
 
                             {regenerating && (
                                 <div className="absolute inset-0 bg-black/70 flex items-center justify-center z-10">
-                                    <Loader2Icon className="animate-spin size-10 text-indigo-400" />
+                                    <Loader2Icon className="animate-spin size-10 text-cyan-400" />
                                 </div>
                             )}
 
@@ -197,9 +214,20 @@ const EditGeneration = () => {
                     {/* RIGHT SIDE: Controls */}
                     <div className="space-y-6">
                         <div className="glass-panel p-6 rounded-3xl border border-white/10 space-y-6 bg-white/[0.02]">
-                            <h3 className="text-sm font-bold text-indigo-400 uppercase tracking-widest flex items-center gap-2">
-                                <Edit2Icon size={14} /> Global Settings
-                            </h3>
+                            <div className="flex items-center justify-between">
+                                <h3 className="text-sm font-bold text-cyan-400 uppercase tracking-widest flex items-center gap-2">
+                                    <Edit2Icon size={14} /> Global Settings
+                                </h3>
+                                {brandKit && (
+                                    <div className="flex items-center gap-2 px-2 py-1 bg-white/5 border border-white/10 rounded-lg">
+                                        <div
+                                            className="w-3 h-3 rounded-full border border-white/20"
+                                            style={{ backgroundColor: brandKit.color }}
+                                        />
+                                        <span className="text-[9px] font-bold text-gray-500 uppercase">{brandKit.voice} DNA</span>
+                                    </div>
+                                )}
+                            </div>
 
                             <div className="space-y-4">
                                 <div>
@@ -209,7 +237,7 @@ const EditGeneration = () => {
                                         value={form.productName}
                                         onChange={handleChange}
                                         placeholder="Product Name"
-                                        className="w-full p-4 rounded-xl bg-white/5 border border-white/10 focus:border-indigo-500/50 transition-all outline-none"
+                                        className="w-full p-4 rounded-xl bg-white/5 border border-white/10 focus:border-cyan-500/50 transition-all outline-none"
                                     />
                                 </div>
 
@@ -221,14 +249,14 @@ const EditGeneration = () => {
                                         onChange={handleChange}
                                         placeholder="Describe the product use case..."
                                         rows={3}
-                                        className="w-full p-4 rounded-xl bg-white/5 border border-white/10 focus:border-indigo-500/50 transition-all outline-none resize-none px-4"
+                                        className="w-full p-4 rounded-xl bg-white/5 border border-white/10 focus:border-cyan-500/50 transition-all outline-none resize-none px-4"
                                     />
                                 </div>
                             </div>
 
                             <div className="h-px bg-white/10" />
 
-                            <h3 className="text-sm font-bold text-indigo-400 uppercase tracking-widest flex items-center gap-2">
+                            <h3 className="text-sm font-bold text-cyan-400 uppercase tracking-widest flex items-center gap-2">
                                 <Wand2 size={14} /> AI Direction
                             </h3>
 
@@ -238,7 +266,7 @@ const EditGeneration = () => {
                                         <button
                                             key={preset.label}
                                             onClick={() => setForm(f => ({ ...f, userPrompt: (f.userPrompt + preset.prompt).trim() }))}
-                                            className="px-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-[10px] font-bold hover:bg-indigo-500/20 hover:border-indigo-500/40 transition-all flex items-center gap-1.5"
+                                            className="px-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-[10px] font-bold hover:bg-cyan-500/20 hover:border-cyan-500/40 transition-all flex items-center gap-1.5"
                                         >
                                             {preset.icon}
                                             {preset.label}
@@ -287,7 +315,7 @@ const EditGeneration = () => {
                                             : "Describe creative direction, lighting, mood..."
                                     }
                                     rows={4}
-                                    className="w-full p-4 rounded-xl bg-white/5 border border-white/10 focus:border-indigo-500/50 transition-all outline-none resize-none px-4"
+                                    className="w-full p-4 rounded-xl bg-white/5 border border-white/10 focus:border-cyan-500/50 transition-all outline-none resize-none px-4"
                                 />
                             </div>
 
@@ -305,7 +333,7 @@ const EditGeneration = () => {
                                                 type="button"
                                                 onClick={() => setForm({ ...form, aspectRatio: ratio.id })}
                                                 className={`flex-1 py-3 rounded-xl border text-xs font-bold transition-all ${form.aspectRatio === ratio.id
-                                                    ? 'bg-indigo-600 border-indigo-500 text-white shadow-lg shadow-indigo-500/20'
+                                                    ? 'bg-cyan-600 border-cyan-500 text-white shadow-lg shadow-cyan-500/20'
                                                     : 'bg-white/5 border-white/10 text-gray-400 hover:border-white/20'
                                                     }`}
                                             >
@@ -319,7 +347,7 @@ const EditGeneration = () => {
                             <button
                                 onClick={handleRegenerate}
                                 disabled={regenerating}
-                                className="w-full py-4 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:tracking-widest transition-all flex items-center justify-center gap-3 font-bold shadow-lg shadow-indigo-500/20 active:scale-[0.98] disabled:opacity-50"
+                                className="w-full py-4 rounded-xl bg-gradient-to-r from-cyan-600 to-cyan-600 hover:tracking-widest transition-all flex items-center justify-center gap-3 font-bold shadow-lg shadow-cyan-500/20 active:scale-[0.98] disabled:opacity-50"
                             >
                                 {regenerating ? (
                                     <Loader2Icon className="animate-spin size-5" />

@@ -3,7 +3,7 @@ import { XIcon, UploadIcon } from "lucide-react"
 const UploadZone = ({ label, file, onClear, onChange }) => {
     return (
         <div className="relative group">
-            <div className={`relative aspect-square max-w-xs mx-auto rounded-2xl border-2 border-dashed bg-white/2 p-6 flex flex-col items-center justify-center cursor-pointer transition-all duration-300 ${file ? 'border-violet-600/50 bg-violet-500/5' : 'border-white/10 hover:border-violet-500/30 hover:bg-white/5'}`}>
+            <div className={`relative aspect-square max-w-xs mx-auto rounded-2xl border-2 border-dashed bg-white/2 p-6 flex flex-col items-center justify-center cursor-pointer transition-all duration-300 ${file ? 'border-cyan-600/50 bg-cyan-500/5' : 'border-white/10 hover:border-cyan-500/30 hover:bg-white/5'}`}>
                 {file ? (
                     <>
                         <img src={URL.createObjectURL(file)} alt="Preview" className="absolute h-full w-full inset-0 object-cover rounded-xl opacity-60" />
@@ -19,7 +19,7 @@ const UploadZone = ({ label, file, onClear, onChange }) => {
                 ) : (
                     <>
                         <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
-                            <UploadIcon className="w-8 h-8 text-gray-400 group-hover:text-violet-400 transition-colors" />
+                            <UploadIcon className="w-8 h-8 text-gray-400 group-hover:text-cyan-400 transition-colors" />
                         </div>
                         <h3 className="text-lg font-semibold mb-2">{label}</h3>
                         <p className="text-sm text-gray-400 text-center max-w-50" >Drag & drop or click to upload</p>

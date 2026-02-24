@@ -13,17 +13,17 @@ const PLANS = [
         credits: '100',
         icon: <Zap className="text-blue-400" />,
         features: ['100 Generation Credits', 'Standard Processing', 'Basic Support', 'Email Updates'],
-        color: 'from-blue-600/20 to-indigo-600/20'
+        color: 'from-blue-600/20 to-cyan-600/20'
     },
     {
         id: 'pro',
         name: 'Pro',
         price: '199.9',
         credits: '500',
-        icon: <Shield className="text-indigo-400" />,
+        icon: <Shield className="text-cyan-400" />,
         features: ['500 Generation Credits', 'Priority Processing', 'Professional Templates', 'Priority Support'],
         popular: true,
-        color: 'from-indigo-600/30 to-violet-600/30'
+        color: 'from-cyan-600/30 to-cyan-600/30'
     },
     {
         id: 'agency',
@@ -32,7 +32,7 @@ const PLANS = [
         credits: '2,000',
         icon: <Crown className="text-yellow-400" />,
         features: ['2,000 Generation Credits', 'Ultra-Fast Processing', 'Custom Brand Kits', '24/7 Dedicated Support'],
-        color: 'from-violet-600/20 to-purple-600/20'
+        color: 'from-cyan-600/20 to-indigo-600/20'
     }
 ];
 
@@ -99,11 +99,38 @@ export default function Pricing() {
                     email: user.primaryEmailAddress.emailAddress,
                 },
                 theme: {
-                    color: "#6366f1",
+                    color: "#06b6d4",
                 },
+                modal: {
+                    ondismiss: async () => {
+                        try {
+                            const freshToken = await getToken();
+                            await api.post('/api/payment/cancel-payment', {
+                                orderId: orderData.orderId
+                            }, {
+                                headers: { Authorization: `Bearer ${freshToken}` }
+                            });
+                        } catch (e) {
+                            console.error("Error cancelling payment tracking", e);
+                        }
+                    }
+                }
             };
 
             const paymentObject = new window.Razorpay(options);
+            paymentObject.on('payment.failed', async (response) => {
+                try {
+                    const freshToken = await getToken();
+                    await api.post('/api/payment/cancel-payment', {
+                        orderId: orderData.orderId
+                    }, {
+                        headers: { Authorization: `Bearer ${freshToken}` }
+                    });
+                    toast.error(response.error.description || 'Payment failed');
+                } catch (e) {
+                    console.error("Error updating failed payment status", e);
+                }
+            });
             paymentObject.open();
 
         } catch (error) {
@@ -126,10 +153,10 @@ export default function Pricing() {
                     {PLANS.map((plan) => (
                         <div
                             key={plan.id}
-                            className={`relative flex flex-col p-8 rounded-3xl border border-white/10 bg-gradient-to-br ${plan.color} backdrop-blur-xl transition-all duration-500 hover:scale-[1.02] hover:border-white/20 ${plan.popular ? 'ring-2 ring-indigo-500' : ''}`}
+                            className={`relative flex flex-col p-8 rounded-3xl border border-white/10 bg-gradient-to-br ${plan.color} backdrop-blur-xl transition-all duration-500 hover:scale-[1.02] hover:border-white/20 ${plan.popular ? 'ring-2 ring-cyan-500' : ''}`}
                         >
                             {plan.popular && (
-                                <span className="absolute -top-4 left-1/2 -translate-x-1/2 px-4 py-1 bg-indigo-500 text-white text-[10px] font-bold uppercase tracking-widest rounded-full shadow-lg">
+                                <span className="absolute -top-4 left-1/2 -translate-x-1/2 px-4 py-1 bg-cyan-500 text-white text-[10px] font-bold uppercase tracking-widest rounded-full shadow-lg">
                                     Most Popular
                                 </span>
                             )}
@@ -140,7 +167,7 @@ export default function Pricing() {
                                 </div>
                                 <div>
                                     <h3 className="text-xl font-bold">{plan.name}</h3>
-                                    <p className="text-xs text-indigo-400 font-bold uppercase tracking-tighter">{plan.credits} Credits</p>
+                                    <p className="text-xs text-cyan-400 font-bold uppercase tracking-tighter">{plan.credits} Credits</p>
                                 </div>
                             </div>
 
@@ -164,7 +191,7 @@ export default function Pricing() {
                                 onClick={() => handleSubscription(plan.id)}
                                 disabled={loading === plan.id}
                                 className={`w-full py-4 rounded-xl font-bold transition-all flex items-center justify-center gap-2 ${plan.popular
-                                    ? 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-xl shadow-indigo-500/20'
+                                    ? 'bg-cyan-600 hover:bg-cyan-500 text-white shadow-xl shadow-cyan-500/20'
                                     : 'bg-white/5 hover:bg-white/10 text-white border border-white/10'
                                     }`}
                             >

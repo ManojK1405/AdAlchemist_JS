@@ -61,7 +61,7 @@ export default function Navbar() {
             <div className='max-w-6xl mx-auto flex items-center justify-between bg-black/50 backdrop-blur-md border border-white/4 rounded-2xl p-3'>
                 <Link to='/' onClick={() => scrollTo(0, 0)}>
                     <span className="text-xl font-extrabold tracking-wide text-gray-500">
-                        Ad<span className="bg-linear-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">Alchemist</span>
+                        Ad<span className="bg-linear-to-r from-cyan-600 to-indigo-600 bg-clip-text text-transparent">Alchemist</span>
                     </span>
                 </Link>
 

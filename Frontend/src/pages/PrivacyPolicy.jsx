@@ -13,7 +13,7 @@ const PrivacyPolicy = () => {
                 <div className="glass-panel p-8 md:p-12 rounded-3xl border border-white/10 bg-white/[0.02] space-y-8 text-gray-300 leading-relaxed">
                     <section className="space-y-4">
                         <h2 className="text-xl font-bold text-white flex items-center gap-3">
-                            <span className="w-8 h-8 rounded-lg bg-indigo-500/20 flex items-center justify-center text-indigo-400 text-sm">01</span>
+                            <span className="w-8 h-8 rounded-lg bg-cyan-500/20 flex items-center justify-center text-cyan-400 text-sm">01</span>
                             Information We Collect
                         </h2>
                         <p>
@@ -23,7 +23,7 @@ const PrivacyPolicy = () => {
 
                     <section className="space-y-4">
                         <h2 className="text-xl font-bold text-white flex items-center gap-3">
-                            <span className="w-8 h-8 rounded-lg bg-indigo-500/20 flex items-center justify-center text-indigo-400 text-sm">02</span>
+                            <span className="w-8 h-8 rounded-lg bg-cyan-500/20 flex items-center justify-center text-cyan-400 text-sm">02</span>
                             How We Use Your Information
                         </h2>
                         <p>
@@ -33,7 +33,7 @@ const PrivacyPolicy = () => {
 
                     <section className="space-y-4">
                         <h2 className="text-xl font-bold text-white flex items-center gap-3">
-                            <span className="w-8 h-8 rounded-lg bg-indigo-500/20 flex items-center justify-center text-indigo-400 text-sm">03</span>
+                            <span className="w-8 h-8 rounded-lg bg-cyan-500/20 flex items-center justify-center text-cyan-400 text-sm">03</span>
                             Data Security
                         </h2>
                         <p>
@@ -43,7 +43,7 @@ const PrivacyPolicy = () => {
 
                     <section className="space-y-4">
                         <h2 className="text-xl font-bold text-white flex items-center gap-3">
-                            <span className="w-8 h-8 rounded-lg bg-indigo-500/20 flex items-center justify-center text-indigo-400 text-sm">04</span>
+                            <span className="w-8 h-8 rounded-lg bg-cyan-500/20 flex items-center justify-center text-cyan-400 text-sm">04</span>
                             Cookies & Tracking
                         </h2>
                         <p>

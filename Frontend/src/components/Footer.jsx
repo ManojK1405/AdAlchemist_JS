@@ -15,7 +15,7 @@ export default function Footer() {
                 <div className="flex flex-col md:flex-row items-start justify-between gap-10 py-10 border-b border-white/10">
                     <div>
                         <span className="text-xl font-extrabold tracking-wide text-gray-500">
-                            Ad<span className="bg-linear-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+                            Ad<span className="bg-linear-to-r from-cyan-600 to-indigo-600 bg-clip-text text-transparent">
                                 Alchemist
                             </span>
                         </span>

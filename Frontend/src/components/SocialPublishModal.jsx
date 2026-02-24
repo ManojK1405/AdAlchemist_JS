@@ -183,7 +183,7 @@ const SocialPublishModal = ({ isOpen, onClose, project, initialPlatform = 'Faceb
                                     <select
                                         value={selectedPage?.id || ''}
                                         onChange={(e) => setSelectedPage(pages.find(p => p.id === e.target.value))}
-                                        className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 focus:outline-none focus:border-indigo-500 text-white"
+                                        className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 focus:outline-none focus:border-cyan-500 text-white"
                                     >
                                         {pages.map(page => (
                                             <option key={page.id} value={page.id} className="bg-gray-900">

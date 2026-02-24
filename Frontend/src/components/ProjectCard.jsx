@@ -111,7 +111,7 @@ const ProjectCard = ({
 
     return (
         <div key={gen.id} className="mb-6 break-inside-avoid animate-in fade-in zoom-in-95 duration-500">
-            <div className="bg-[#13131a] border border-white/5 rounded-[2rem] overflow-hidden hover:border-white/10 transition-all duration-300 group shadow-xl hover:shadow-indigo-500/5">
+            <div className="bg-[#13131a] border border-white/5 rounded-[2rem] overflow-hidden hover:border-white/10 transition-all duration-300 group shadow-xl hover:shadow-cyan-500/5">
 
                 {/* preview image */}
                 <div className={`${gen?.aspectRatio === '9:16' ? 'aspect-9/16' : 'aspect-video'} relative overflow-hidden`}>
@@ -138,7 +138,7 @@ const ProjectCard = ({
 
                     {(!gen?.generatedImage && !gen?.generatedVideo) && (
                         <div className="absolute inset-0 w-full h-full flex flex-col items-center justify-center bg-black/40 backdrop-blur-sm">
-                            <Loader2Icon className="size-8 animate-spin text-indigo-500" />
+                            <Loader2Icon className="size-8 animate-spin text-cyan-500" />
                         </div>
                     )}
 
@@ -222,8 +222,8 @@ const ProjectCard = ({
                             </h3>
 
                             <div className="flex items-center gap-3 mt-2">
-                                <div className="w-8 h-8 rounded-full bg-indigo-500/10 flex items-center justify-center border border-indigo-500/20">
-                                    <span className="text-xs font-bold text-indigo-400">{gen.user?.name?.[0] || 'A'}</span>
+                                <div className="w-8 h-8 rounded-full bg-cyan-500/10 flex items-center justify-center border border-cyan-500/20">
+                                    <span className="text-xs font-bold text-cyan-400">{gen.user?.name?.[0] || 'A'}</span>
                                 </div>
                                 <div className="flex flex-col">
                                     <span className="text-[10px] text-gray-500 font-bold uppercase tracking-wider leading-none">{gen.user?.name || 'AdAlchemist'}</span>
@@ -257,7 +257,7 @@ const ProjectCard = ({
                             </button>
                             <button
                                 onClick={() => setShowComments(!showComments)}
-                                className={`flex items-center gap-1.5 transition-colors ${showComments ? 'text-indigo-400' : 'text-gray-500 hover:text-indigo-400'}`}
+                                className={`flex items-center gap-1.5 transition-colors ${showComments ? 'text-cyan-400' : 'text-gray-500 hover:text-cyan-400'}`}
                             >
                                 <MessageCircle size={20} />
                                 <span className="text-xs font-bold">{gen.comments?.length || 0}</span>
@@ -277,7 +277,7 @@ const ProjectCard = ({
                                         navigator.clipboard.writeText(gen.userPrompt);
                                         toast.success("Prompt copied to clipboard!");
                                     }}
-                                    className="flex items-center gap-1.5 transition-colors text-gray-500 hover:text-indigo-400"
+                                    className="flex items-center gap-1.5 transition-colors text-gray-500 hover:text-cyan-400"
                                     title="Copy Prompt"
                                 >
                                     <Copy size={18} />
