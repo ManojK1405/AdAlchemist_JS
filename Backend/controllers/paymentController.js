@@ -9,7 +9,7 @@ const razorpay = new Razorpay({
     key_secret: process.env.RAZORPAY_KEY_SECRET,
 });
 
-// Plans Configuration (Reduced 10x for phase-2 testing)
+// Plans Configuration
 const PLANS = {
     starter: { credits: 100, amount: 49.9, name: "Starter" }, // ₹49.9
     pro: { credits: 500, amount: 199.9, name: "Pro" },     // ₹199.9
