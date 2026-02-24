@@ -16,6 +16,8 @@ import FeaturesPage from './pages/FeaturesPage';
 import EditGeneration from './pages/EditGeneration';
 import CreatorLounge from './pages/CreatorLounge';
 import Billing from './pages/Billing';
+import PrivacyPolicy from './pages/PrivacyPolicy';
+import TermsOfService from './pages/TermsOfService';
 
 
 function App() {
@@ -37,6 +39,8 @@ function App() {
                 <Route path="/generate" element={<Generator />} />
                 <Route path="/my-generations" element={<MyGenerations />} />
                 <Route path="/billing" element={<Billing />} />
+                <Route path="/privacy" element={<PrivacyPolicy />} />
+                <Route path="/terms" element={<TermsOfService />} />
                 <Route path="/result/:projectId" element={<Result />} />
                 <Route path="/edit/:projectId" element={<EditGeneration />} />
                 <Route path="/loading" element={<Loading />} />

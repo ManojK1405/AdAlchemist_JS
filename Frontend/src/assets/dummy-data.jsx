@@ -18,55 +18,6 @@ export const featuresData = [
     }
 ];
 
-export const plansData = [
-    {
-        id: 'starter',
-        name: 'Starter',
-        price: '$12',
-        desc: 'Ideal for creators and early-stage founders getting started with AI ads.',
-        credits: 'One-time',
-        features: [
-            '25 AI ad credits',
-            'Static ads only',
-            'No watermark',
-            'Standard resolution (1080p)',
-            'Basic generation speed',
-            'Email support'
-        ]
-    },
-    {
-        id: 'pro',
-        name: 'Pro',
-        price: '$39',
-        desc: 'Perfect for startups and marketing teams creating ads regularly.',
-        credits: 'Monthly',
-        features: [
-            '100 AI ad credits / month',
-            'Static + short video ads',
-            'No watermark',
-            'HD resolution',
-            'Faster generation speed',
-            'Priority email support'
-        ],
-        popular: true
-    },
-    {
-        id: 'ultra',
-        name: 'Ultra',
-        price: '$99',
-        desc: 'Built for brands and agencies scaling ad production at speed.',
-        credits: 'Monthly',
-        features: [
-            '300 AI ad credits / month',
-            'Advanced video ads',
-            'No watermark',
-            '4K resolution',
-            'Fastest generation speed',
-            'Dedicated account support'
-        ]
-    }
-];
-
 
 export const faqData = [
     {
@@ -110,15 +61,15 @@ export const footerLinks = [
     {
         title: "Legal",
         links: [
-            { name: "Privacy Policy", url: "/" },
-            { name: "Terms of Service", url: "/" }
+            { name: "Privacy Policy", url: "/privacy" },
+            { name: "Terms of Service", url: "/terms" }
         ]
     },
     {
         title: "Connect",
         links: [
-            { name: "Office", url: "/" },
-            { name: "GitHub", url: "https://github.com/ManojK1405/AdAlchemist.git" }
+            { name: "Email", url: "mailto:manojadalchemist@gmail.com" },
+            { name: "GitHub", url: "https://github.com/ManojK1405/AdAlchemist_JS" }
         ]
     }
 ];

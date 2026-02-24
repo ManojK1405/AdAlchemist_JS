@@ -129,7 +129,7 @@ const Billing = () => {
                         <div className="glass-panel p-6 rounded-3xl border border-white/10 bg-white/[0.02]">
                             <h3 className="text-sm font-bold text-gray-500 uppercase tracking-widest mb-4">Need Help?</h3>
                             <p className="text-sm text-gray-400 mb-6 leading-relaxed">If you have any issues with your payments or credits, please contact our support team.</p>
-                            <a href="mailto:support@adalchemist.shop" className="text-indigo-400 font-bold hover:underline">support@adalchemist.shop</a>
+                            <a href="mailto:manojadalchemist@gmail.com" className="text-indigo-400 font-bold hover:underline">manojadalchemist@gmail.com</a>
                         </div>
                     </div>
 

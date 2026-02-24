@@ -1,4 +1,4 @@
-import { ArrowRightIcon } from 'lucide-react';
+import { ArrowRightIcon, Users } from 'lucide-react';
 import { GhostButton } from './Buttons';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
@@ -17,7 +17,7 @@ export default function CTA() {
                             viewport={{ once: true }}
                             transition={{ type: "spring", stiffness: 250, damping: 70, mass: 1 }}
                         >
-                            Ready To Transform Your Digital Presence?
+                            Be Part of the Alchemist Community
                         </motion.h2>
                         <motion.p className="max-sm:text-sm text-slate-400 mb-10 max-w-xl mx-auto"
                             initial={{ y: 60, opacity: 0 }}
@@ -25,7 +25,7 @@ export default function CTA() {
                             viewport={{ once: true }}
                             transition={{ type: "spring", stiffness: 250, damping: 70, mass: 1, delay: 0.2 }}
                         >
-                            Get started with AdAlchemist today and see how AI can elevate your advertising game.
+                            Connect with top creators, share your best generations, and learn the recipes for high-converting AI ads.
                         </motion.p>
                         <motion.div
                             initial={{ y: 60, opacity: 0 }}
@@ -33,8 +33,8 @@ export default function CTA() {
                             viewport={{ once: true }}
                             transition={{ type: "spring", stiffness: 250, damping: 70, mass: 1, delay: 0.3 }}
                         >
-                            <GhostButton onClick={() => { navigate('/generate') }} className="px-8 py-3 gap-2">
-                                Start Creating Now <ArrowRightIcon size={20} />
+                            <GhostButton onClick={() => { navigate('/community') }} className="px-8 py-3 gap-2 mx-auto flex items-center justify-center">
+                                Join the Community <Users size={20} />
                             </GhostButton>
                         </motion.div>
                     </div>

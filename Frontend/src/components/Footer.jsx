@@ -1,5 +1,6 @@
 import { footerLinks } from '../assets/dummy-data';
 import { motion } from 'framer-motion';
+import { Link } from 'react-router-dom';
 
 export default function Footer() {
 
@@ -34,12 +35,23 @@ export default function Footer() {
                                     {section.links.map(
                                         (link, i) => (
                                             <li key={i}>
-                                                <a
-                                                    href={link.url}
-                                                    className="hover:text-white transition"
-                                                >
-                                                    {link.name}
-                                                </a>
+                                                {link.url.startsWith('http') || link.url.startsWith('mailto:') ? (
+                                                    <a
+                                                        href={link.url}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        className="hover:text-white transition"
+                                                    >
+                                                        {link.name}
+                                                    </a>
+                                                ) : (
+                                                    <Link
+                                                        to={link.url}
+                                                        className="hover:text-white transition"
+                                                    >
+                                                        {link.name}
+                                                    </Link>
+                                                )}
                                             </li>
                                         )
                                     )}
