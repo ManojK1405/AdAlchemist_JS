@@ -1,5 +1,6 @@
 import * as Sentry from "@sentry/node";
 import { prisma } from "../configs/prisma.js";
+import { clerkClient } from '@clerk/express';
 
 
 //Get user credits
@@ -18,12 +19,27 @@ export const getUserCredits = async (req, res) => {
         if (!user) {
             console.log(`User ${userId} not found in DB, attempting on-the-fly creation...`);
 
+            let email = "user@adalchemist.shop";
+            let name = "New Creator";
+            let image = "https://img.clerk.com/static/placeholder.png";
+
+            try {
+                const clerkUser = await clerkClient.users.getUser(userId);
+                if (clerkUser) {
+                    email = clerkUser.emailAddresses[0]?.emailAddress || email;
+                    name = `${clerkUser.firstName || ''} ${clerkUser.lastName || ''}`.trim() || name;
+                    image = clerkUser.imageUrl || image;
+                }
+            } catch (err) {
+                console.error("Failed to fetch user from Clerk for self-healing:", err);
+            }
+
             user = await prisma.user.create({
                 data: {
                     id: userId,
-                    email: "user@adalchemist.shop",
-                    name: "New Creator",
-                    image: "https://img.clerk.com/static/placeholder.png",
+                    email,
+                    name,
+                    image,
                     credits: 20
                 }
             });
