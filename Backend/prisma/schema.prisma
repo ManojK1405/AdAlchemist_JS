@@ -41,7 +41,7 @@ model Transaction {
   id              String   @id @default(uuid())
   userId          String
   planId          String
-  amount          Int
+  amount          Float
   credits         Int
   paymentId       String?  // Razorpay Payment ID
   orderId         String   @unique // Razorpay Order ID
@@ -55,7 +55,7 @@ model Transaction {
 
 model Tip {
   id          String   @id @default(uuid())
-  amount      Int
+  amount      Float
   senderId    String
   recipientId String
   createdAt   DateTime @default(now())

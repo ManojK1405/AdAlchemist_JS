@@ -178,7 +178,7 @@ const Billing = () => {
                                                         <div className="font-bold text-sm capitalize">{tx.planId}</div>
                                                         <div className="text-[10px] text-gray-500">+{tx.credits} Credits</div>
                                                     </td>
-                                                    <td className="px-6 py-5 font-bold">₹{tx.amount}</td>
+                                                    <td className="px-6 py-5 font-bold">₹{tx.amount?.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
                                                     <td className="px-6 py-5">
                                                         <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold border uppercase tracking-wider ${getStatusStyle(tx.status)}`}>
                                                             {getStatusIcon(tx.status)}
