@@ -357,8 +357,16 @@ A stunningly realistic, brand-quality commercial segment ready for prime-time ma
         //create image directory if not exists
         fs.mkdirSync('videos', { recursive: true });
 
-        if (!operation.response.generatedVideos) {
-            throw new Error('Video generation failed');
+        if (operation.error) {
+            throw new Error(`Generation Error: ${operation.error.message || JSON.stringify(operation.error)}`);
+        }
+
+        if (!operation.response?.generatedVideos) {
+            let errorMsg = 'Video generation failed';
+            if (operation.response?.raiMediaFilteredReasons?.length > 0) {
+                errorMsg = `Content filtered due to safety policies: ${operation.response.raiMediaFilteredReasons.join(', ')}`;
+            }
+            throw new Error(errorMsg);
         }
 
         //Download the video
