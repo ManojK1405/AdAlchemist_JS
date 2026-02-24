@@ -104,8 +104,8 @@ export const createProject = async (req, res) => {
         // Gemini config
         const generationConfig = {
             maxOutputTokens: 32768,
-            temperature: 1,
-            topP: 0.95,
+            temperature: 0.8, // Slightly lower for more stability
+            topP: 0.9,      // Reduced for tighter output
             responseModalities: ["IMAGE"],
             imageConfig: {
                 aspectRatio: aspectRatio || "9:16",
@@ -127,71 +127,44 @@ export const createProject = async (req, res) => {
         const img2 = loadImage(images[1].path, images[1].mimetype);
 
         const promptImage = `
-You are a professional commercial photographer creating a premium advertisement image.
+You are an elite commercial photography AI. Your mission is to generate a high-end, photorealistic advertisement image that is indistinguishable from a professional shoot.
 
 CORE OBJECTIVE:
-Create a photorealistic advertisement showing a person naturally interacting with the product in a way that feels authentic and aspirational.
+Create a flawless advertisement showing the person from the uploaded content naturally interacting with the product. The output must be aspirational, clean, and commercial-grade.
 
-PRODUCT INTEGRITY (CRITICAL):
-- Product is the hero - main focal point of composition
-- Preserve exact product appearance: shape, colors, logos, text, design details
-- No warping, stretching, or distortion of any kind
-- Maintain accurate product scale relative to person and environment
-- Product must be in sharp focus with visible details
+SUBJECT FIDELITY & IDENTITY (CRITICAL):
+- Maintain the EXACT facial features, bone structure, and identity of the person in the source image.
+- ABSOLUTELY NO facial distortion, warping, or "melting" of features.
+- Eyes must be sharp, expressive, and anatomically perfect (no double iris or blurred pupils).
+- Skin texture must be realistic, showing natural pores and subtle imperfections, avoiding a "plastic" or "airbrushed" AI look.
+- Hands and fingers must be anatomically correct, naturally gripping or gesturing towards the product without merging into it.
 
-HUMAN SUBJECT:
-- Natural, confident body language appropriate for the product
-- Realistic skin tones and textures across all ethnicities
-- Anatomically correct hands with proper finger positioning
-- Genuine facial expression matching the product/brand mood
-- Professional styling - hair, makeup, wardrobe coordinated with brand aesthetic
+PRODUCT INTEGRITY:
+- The product (${productName}) is the HERO. It must be rendered with perfect geometrical accuracy.
+- Zero distortion of logos, text, or characteristic design elements.
+- Material physics: render realistic reflections on metal/glass and accurate textures on fabric/plastic.
+- Scaling must be physically accurate relative to the human subject.
 
-COMPOSITION & FRAMING:
-- Rule of thirds or centered hero composition
-- Person positioned to complement, not compete with product
-- Negative space used strategically for text overlay areas
-- Eye line and gesture directing attention to product
-- Environmental context relevant to product use case
+COMPOSITION & ART DIRECTION:
+- Professional studio-grade lighting (Rembrandt or High-key) matching the product's premium nature.
+- Depth of Field: Use a soft bokeh background to make the subject and product pop (F-stop 2.8 style).
+- Background: Clean, minimal environment that complements the brand kit color if provided.
+- Shot on: Hasselblad H6D-400c with 85mm prime lens for maximum detail.
 
-LIGHTING & TECHNICAL QUALITY:
-- Studio-quality three-point lighting or natural window light simulation
-- Consistent light temperature (warm/cool matching brand identity)
-- Realistic shadows with proper direction and softness
-- Subtle highlights on product surfaces for dimension
-- Catchlights in subject's eyes for life and engagement
-
-VISUAL STYLE:
-- Shot on professional camera: Canon 5D Mark IV or Sony A7R IV
-- 85mm f/1.8 lens for flattering compression and natural bokeh
-- Shallow depth of field (f/2.8-f/4) with product and face in focus
-- Color grading: ${userPrompt?.includes('color') ? 'per user specification' : 'clean, modern, slightly elevated saturation'}
-- Professional retouching: subtle, maintaining authenticity
-
-ENVIRONMENT:
-- Clean, minimal background that doesn't distract
-- Context appropriate to product category and use
-- Props only if they enhance storytelling
-- Consistent art direction matching brand tier (luxury/mainstream/lifestyle)
-
-FORBIDDEN ELEMENTS:
-- No AI artifacts, melted features, or uncanny valley effects
-- No unrealistic proportions or physics-defying poses
-- No floating objects or disconnected elements
-- No excessive blur, grain, or technical flaws
-- No generic stock photo clichés
+FORBIDDEN:
+- Extra limbs, merged fingers, or unnatural body proportions.
+- AI artifacts, background hallucinations, or "uncanny valley" faces.
+- Floating objects or physics-defying placement.
+- Watermarks, blurry textures, or low-resolution details.
 
 BRAND ALIGNMENT:
-Tone: Premium, aspirational, trustworthy, modern
-Mood: ${userPrompt?.includes('mood') || userPrompt?.includes('vibe') ? 'per user specification' : 'Confident, authentic, approachable'}
-Target: High-end consumer expecting quality and authenticity
-${brandKit?.color ? `Brand Signature Color (incorporate into lighting, props, or background): ${brandKit.color}` : ''}
-${brandKit?.voice ? `Brand Voice & Aesthetic Guidelines: ${brandKit.voice}` : ''}
+${brandKit?.color ? `Incorporate Brand Color subtly: ${brandKit.color}` : ''}
+${brandKit?.voice ? `Aesthetic Guidelines: ${brandKit.voice}` : ''}
 
-${userPrompt ? `\nCUSTOM REQUIREMENTS:\n${userPrompt}` : ''}
+${userPrompt ? `\nCUSTOM CREATIVE DIRECTION:\n${userPrompt}` : ''}
 
 OUTPUT:
-Single high-resolution advertisement image ready for commercial use.
-Quality: Magazine-cover standard, suitable for billboards and premium digital placements.
+One high-resolution, magazine-quality advertisement image.
 `;
 
         const response = await ai.models.generateContent({
@@ -612,8 +585,8 @@ export const editGeneration = async (req, res) => {
         // ✅ Gemini config
         const generationConfig = {
             maxOutputTokens: 32768,
-            temperature: 1,
-            topP: 0.95,
+            temperature: 0.7, // Lower than initial generation for higher fidelity
+            topP: 0.85,      // Tighter for refinement
             responseModalities: ["IMAGE"],
             imageConfig: {
                 aspectRatio: aspectRatio || project.aspectRatio || "9:16",
@@ -656,40 +629,40 @@ export const editGeneration = async (req, res) => {
 
         // ✅ Final prompt
         const finalPrompt = `
-You are a world-class commercial photographer and art director creating a high-end advertisement image.
+You are a world-class commercial photographer and art director. This is a REFINEMENT phase. You are taking a base concept and elevating it to magazine-standard quality.
 
-IMPORTANT:
-This is a REFINEMENT phase. You are taking a base concept and elevating it to magazine-standard quality.
-Apply the new creative direction with precision and artistic flair.
-Do NOT simply repeat the previous generation; evolve it.
+SUBJECT FIDELITY (HIGHEST PRIORITY):
+- Maintain the EXACT facial features, bone structure, and identity of the person in the source image.
+- ABSOLUTELY NO facial distortion, warping, or asymmetry.
+- Eyes must be perfectly symmetrical, sharp, and full of life.
+- Skin texture must be realistic and high-resolution, avoiding any "plastic" or over-smoothed AI look.
+- Hands and fingers must be anatomically correct with professional posing.
 
-PRODUCT MASTER RULES (NON-NEGOTIABLE):
+PRODUCT MASTER RULES:
 • Name: ${productName || project.productName}
 • Description: ${productDescription || project.productDescription}
-• Preserve absolute geometry: Exact shape, sharp edges, and authentic label placement.
-• Hero Treatment: Product must be the undisputed focal point, rendered with ultra-realistic textures (brushed metal, smooth plastic, liquid reflections, etc.).
-• No Distortion: Zero warping or melting of product components.
+• Render with perfect geometrical accuracy. No warping or melting of product components.
+• Hero Treatment: Use rim lighting and micro-contrast to make the product look premium.
 
-NEW ARTISTIC DIRECTION:
+NEW CREATIVE DIRECTION:
 ${userPrompt || project.userPrompt || "Create a clean, premium commercial look."}
 
-${brandKit && brandKit.color ? `BRANDING SIGNATURE: Seamlessly integrate the brand color ${brandKit.color} into the lighting, environment accents, or subtle color grading.` : ''}
-${brandKit && brandKit.voice ? `BRANDING AESTHETIC: Follow the brand's core vibe: ${brandKit.voice}.` : ''}
+BRANDING & STYLE:
+${brandKit && brandKit.color ? `Brand Signature Color (incorporate subtly): ${brandKit.color}` : ''}
+${brandKit && brandKit.voice ? `Brand Aesthetic Guidelines: ${brandKit.voice}` : ''}
 
-TECHNICAL SPECIFICATIONS:
-• Lighting: Global Illumination, softbox key light, rim lighting to separate product from background.
-• Lens: 100mm f/2.8 Macro lens look for extreme detail and natural background compression.
-• Environment: Clean, contextually relevant, minimal but high-quality studio or lifestyle setting.
-• Subject Interaction: If a person is present, ensure natural grip on product, expressive eyes, and professional styling. 
-• Negative Space: Strategic placement for future ad copy (Top, Bottom, or Sides).
+TECHNICAL SPECS:
+• Lighting: 3-point studio setup with a softbox key and back-lighting for separation.
+• Camera: Digital Medium Format look (Phase One style) for ultimate clarity.
+• Environment: Sophisticated, minimal, and contextually relevant.
+• Negative Space: Ensure breathable composition for potential ad copy overlays.
 
 FORBIDDEN:
-• AI Hallucinations (extra limbs, merged objects).
-• Generic stock photo look.
-• Low-contrast or muddy colors.
+• Extra limbs, merged objects, or technical artifacts.
+• Low-contrast, muddy colors, or blurry focal areas.
 
 OUTPUT:
-One ultra-high-resolution photorealistic advertisement image that looks like it was shot for a premium global brand campaign.
+One ultra-high-resolution photorealistic advertisement image that looks like a high-budget global campaign.
 `;
 
 

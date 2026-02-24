@@ -244,6 +244,37 @@ const EditGeneration = () => {
                                             {preset.label}
                                         </button>
                                     ))}
+                                    {editMode === "image" && (
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                const fidelity = " Priority: Subject Identity / Face Structure.";
+                                                setForm(prev => ({
+                                                    ...prev,
+                                                    userPrompt: prev.userPrompt.includes('Priority: Subject Identity')
+                                                        ? prev.userPrompt.replace(fidelity, '').trim()
+                                                        : (prev.userPrompt + fidelity).trim()
+                                                }));
+                                            }}
+                                            className={`w-full mt-4 flex items-center justify-between p-4 rounded-xl border transition-all duration-300 ${form.userPrompt.includes('Priority: Subject Identity')
+                                                ? 'bg-emerald-500/10 border-emerald-500 text-emerald-400'
+                                                : 'bg-white/5 border-white/10 text-gray-400 hover:border-white/20'
+                                                }`}
+                                        >
+                                            <div className="flex items-center gap-3">
+                                                <div className={`p-2 rounded-lg transition-colors ${form.userPrompt.includes('Priority: Subject Identity') ? 'bg-emerald-500 text-white' : 'bg-white/10 text-gray-500'}`}>
+                                                    <Sparkles size={16} />
+                                                </div>
+                                                <div className="text-left">
+                                                    <div className="text-xs font-semibold">Strict Subject Identity</div>
+                                                    <div className="text-[10px] opacity-60">Prioritize exact facial preservation</div>
+                                                </div>
+                                            </div>
+                                            <div className={`w-8 h-4 rounded-full p-0.5 transition-colors ${form.userPrompt.includes('Priority: Subject Identity') ? 'bg-emerald-500' : 'bg-white/20'}`}>
+                                                <div className={`w-3 h-3 rounded-full bg-white transition-transform ${form.userPrompt.includes('Priority: Subject Identity') ? 'translate-x-4' : 'translate-x-0'}`} />
+                                            </div>
+                                        </button>
+                                    )}
                                 </div>
 
                                 <textarea
@@ -261,18 +292,27 @@ const EditGeneration = () => {
                             </div>
 
                             {editMode === "image" && (
-                                <div className="space-y-2">
+                                <div className="space-y-3">
                                     <label className="text-[10px] font-bold text-gray-500 uppercase ml-1 block">Framing & Ratio</label>
-                                    <select
-                                        name="aspectRatio"
-                                        value={form.aspectRatio}
-                                        onChange={handleChange}
-                                        className="w-full p-4 rounded-xl bg-white/5 border border-white/10 focus:border-indigo-500/50 transition-all outline-none appearance-none"
-                                    >
-                                        <option value="9:16">9:16 - TikTok / Reels</option>
-                                        <option value="1:1">1:1 - Instagram Post</option>
-                                        <option value="16:9">16:9 - YouTube / Widescreen</option>
-                                    </select>
+                                    <div className="flex gap-2">
+                                        {[
+                                            { id: '9:16', label: '9:16' },
+                                            { id: '1:1', label: '1:1' },
+                                            { id: '16:9', label: '16:9' },
+                                        ].map((ratio) => (
+                                            <button
+                                                key={ratio.id}
+                                                type="button"
+                                                onClick={() => setForm({ ...form, aspectRatio: ratio.id })}
+                                                className={`flex-1 py-3 rounded-xl border text-xs font-bold transition-all ${form.aspectRatio === ratio.id
+                                                    ? 'bg-indigo-600 border-indigo-500 text-white shadow-lg shadow-indigo-500/20'
+                                                    : 'bg-white/5 border-white/10 text-gray-400 hover:border-white/20'
+                                                    }`}
+                                            >
+                                                {ratio.label}
+                                            </button>
+                                        ))}
+                                    </div>
                                 </div>
                             )}
 

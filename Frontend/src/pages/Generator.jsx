@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { Loader2 } from "lucide-react"
+import { Loader2, Camera, Video, User, Layers, Zap, Sparkles } from "lucide-react"
 import Title from "../components/Title"
 import UploadZone from "../components/UploadZone"
 import { useAuth, useUser } from "@clerk/clerk-react"
@@ -212,15 +212,85 @@ const Generator = () => {
                         {/* User Prompt */}
                         <div>
                             <label className="block text-sm mb-2">
-                                User Prompt <span className="text-gray-400">(optional)</span>
+                                Custom Creative Direction <span className="text-gray-400">(optional)</span>
                             </label>
                             <textarea
                                 value={userPrompt}
                                 onChange={(e) => setUserPrompt(e.target.value)}
-                                rows={3}
-                                placeholder="Describe how you want the narration to be."
+                                rows={2}
+                                placeholder="e.g. Add golden hour lighting, cinematic atmosphere..."
                                 className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 resize-none focus:outline-none focus:border-violet-500"
                             />
+                        </div>
+
+                        {/* Pro Options */}
+                        <div className="pt-6 border-t border-white/5 space-y-6">
+                            <div>
+                                <h4 className="text-[10px] font-bold text-gray-500 uppercase tracking-[0.2em] mb-4">Creative Narrative Style</h4>
+                                <div className="flex flex-wrap gap-2">
+                                    {[
+                                        { id: 'Cinematic', icon: <Camera size={14} />, label: 'Cinematic' },
+                                        { id: 'Studio Professional', icon: <Video size={14} />, label: 'Studio' },
+                                        { id: 'Lifestyle', icon: <User size={14} />, label: 'Lifestyle' },
+                                        { id: 'Minimalist', icon: <Layers size={14} />, label: 'Minimalist' },
+                                        { id: 'Vibrant UGC', icon: <Zap size={14} />, label: 'Vibrant' },
+                                    ].map((style) => (
+                                        <button
+                                            key={style.id}
+                                            type="button"
+                                            onClick={() => {
+                                                const styleTag = `Style: ${style.id}.`;
+                                                setUserPrompt(prev => {
+                                                    if (prev.includes(styleTag)) return prev.replace(styleTag, '').trim();
+                                                    // Remove any existing style tag first
+                                                    const cleaned = prev.replace(/Style:.*?\./, '').trim();
+                                                    return `${cleaned} ${styleTag}`.trim();
+                                                });
+                                            }}
+                                            className={`flex items-center gap-2 px-4 py-2 rounded-full border text-xs font-medium transition-all duration-300 ${userPrompt.includes(`Style: ${style.id}`)
+                                                ? 'bg-violet-500 border-violet-500 text-white shadow-lg shadow-violet-500/20'
+                                                : 'bg-white/5 border-white/10 text-gray-400 hover:border-white/20 hover:bg-white/10'
+                                                }`}
+                                        >
+                                            {style.icon}
+                                            {style.label}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 gap-4">
+                                <div>
+                                    <h4 className="text-[10px] font-bold text-gray-500 uppercase tracking-[0.2em] mb-4">Subject Fidelity</h4>
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            const fidelity = 'Priority: Subject Identity / Face Structure.';
+                                            setUserPrompt(prev => {
+                                                if (prev.includes('Priority: Subject Identity')) return prev.replace(fidelity, '').trim();
+                                                return `${prev} ${fidelity}`.trim();
+                                            });
+                                        }}
+                                        className={`w-full group flex items-center justify-between p-4 rounded-xl border transition-all duration-300 ${userPrompt.includes('Priority: Subject Identity')
+                                            ? 'bg-emerald-500/10 border-emerald-500 text-emerald-400'
+                                            : 'bg-white/5 border-white/10 text-gray-400 hover:border-white/20'
+                                            }`}
+                                    >
+                                        <div className="flex items-center gap-3">
+                                            <div className={`p-2 rounded-lg transition-colors ${userPrompt.includes('Priority: Subject Identity') ? 'bg-emerald-500 text-white' : 'bg-white/10 text-gray-500'}`}>
+                                                <Sparkles size={16} />
+                                            </div>
+                                            <div className="text-left">
+                                                <div className="text-sm font-semibold">Strict Subject Identity</div>
+                                                <div className="text-[10px] opacity-60">Prioritize exact face structure and bone identity</div>
+                                            </div>
+                                        </div>
+                                        <div className={`w-10 h-5 rounded-full p-1 transition-colors ${userPrompt.includes('Priority: Subject Identity') ? 'bg-emerald-500' : 'bg-white/20'}`}>
+                                            <div className={`w-3 h-3 rounded-full bg-white transition-transform ${userPrompt.includes('Priority: Subject Identity') ? 'translate-x-5' : 'translate-x-0'}`} />
+                                        </div>
+                                    </button>
+                                </div>
+                            </div>
                         </div>
 
                     </div>

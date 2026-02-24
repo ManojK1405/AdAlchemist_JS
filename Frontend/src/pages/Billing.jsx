@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth, useUser } from '@clerk/clerk-react';
 import api from '../configs/axios';
-import { Receipt, Clock, CheckCircle, XCircle, Download, CreditCard, Coins } from 'lucide-react';
+import { Receipt, Clock, CheckCircle, XCircle, Download, CreditCard, Coins, Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 const Billing = () => {
@@ -10,6 +10,7 @@ const Billing = () => {
     const [transactions, setTransactions] = useState([]);
     const [credits, setCredits] = useState(0);
     const [loading, setLoading] = useState(true);
+    const [downloadingId, setDownloadingId] = useState(null);
 
     useEffect(() => {
         const fetchData = async () => {
@@ -37,6 +38,40 @@ const Billing = () => {
 
         if (user) fetchData();
     }, [user, getToken]);
+
+    const handleDownloadReceipt = async (transactionId, orderId) => {
+        try {
+            setDownloadingId(transactionId);
+            const token = await getToken();
+
+            const response = await api.get(`/api/payment/receipt/${transactionId}`, {
+                headers: { Authorization: `Bearer ${token}` },
+                responseType: 'blob'
+            });
+
+            // Create a blob from the response data
+            const blob = new Blob([response.data], { type: 'application/pdf' });
+            const url = window.URL.createObjectURL(blob);
+
+            // Create a temporary link and trigger download
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', `receipt_${orderId}.pdf`);
+            document.body.appendChild(link);
+            link.click();
+
+            // Cleanup
+            link.parentNode.removeChild(link);
+            window.URL.revokeObjectURL(url);
+
+            toast.success("Receipt downloaded successfully");
+        } catch (error) {
+            console.error("Download Error:", error);
+            toast.error("Failed to download receipt");
+        } finally {
+            setDownloadingId(null);
+        }
+    };
 
     const getStatusStyle = (status) => {
         switch (status) {
@@ -153,10 +188,15 @@ const Billing = () => {
                                                     <td className="px-6 py-5 text-right">
                                                         {tx.status === 'success' && (
                                                             <button
-                                                                onClick={() => toast.success("Receipt generation is being enabled...")}
-                                                                className="p-2 bg-white/5 rounded-xl text-gray-400 hover:bg-white/10 hover:text-white transition-all shadow-sm"
+                                                                onClick={() => handleDownloadReceipt(tx.id, tx.orderId)}
+                                                                disabled={downloadingId === tx.id}
+                                                                className="p-2 bg-white/5 rounded-xl text-gray-400 hover:bg-white/10 hover:text-white transition-all shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
                                                             >
-                                                                <Download size={16} />
+                                                                {downloadingId === tx.id ? (
+                                                                    <Loader2 size={16} className="animate-spin" />
+                                                                ) : (
+                                                                    <Download size={16} />
+                                                                )}
                                                             </button>
                                                         )}
                                                     </td>

@@ -1,5 +1,6 @@
 import Razorpay from 'razorpay';
 import crypto from 'crypto';
+import PDFDocument from 'pdfkit';
 import { prisma } from '../configs/prisma.js';
 import * as Sentry from '@sentry/node';
 
@@ -179,5 +180,99 @@ export const getUserTransactions = async (req, res) => {
         Sentry.captureException(error);
         console.error("Fetch Transactions Error:", error);
         res.status(500).json({ message: "Failed to fetch transactions" });
+    }
+};
+
+export const generateReceipt = async (req, res) => {
+    try {
+        const { userId } = req.auth();
+        const { transactionId } = req.params;
+
+        const transaction = await prisma.transaction.findUnique({
+            where: { id: transactionId },
+            include: { user: true }
+        });
+
+        if (!transaction) {
+            return res.status(404).json({ message: "Transaction not found" });
+        }
+
+        if (transaction.userId !== userId) {
+            return res.status(403).json({ message: "Unauthorized access to transaction" });
+        }
+
+        const doc = new PDFDocument({ margin: 50 });
+
+        // HTTP headers
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', `attachment; filename=receipt_${transaction.orderId}.pdf`);
+
+        doc.pipe(res);
+
+        // Header
+        doc.fillColor("#4f46e5")
+            .fontSize(24)
+            .text("AdAlchemist", 50, 50);
+
+        doc.fillColor("#444")
+            .fontSize(10)
+            .text("ADALCHEMIST AI SOLUTIONS", 200, 55, { align: 'right' })
+            .text("contact@adalchemist.ai", 200, 70, { align: 'right' })
+            .text("www.adalchemist.ai", 200, 85, { align: 'right' });
+
+        doc.moveDown();
+        doc.strokeColor("#eee").lineWidth(1).moveTo(50, 110).lineTo(550, 110).stroke();
+
+        // Invoice Info
+        doc.moveDown(2);
+        doc.fillColor("#444").fontSize(14).text("RECEIPT / INVOICE");
+        doc.fontSize(10).moveDown(0.5);
+        doc.text(`Order ID: ${transaction.orderId}`);
+        doc.text(`Payment ID: ${transaction.paymentId || 'N/A'}`);
+        doc.text(`Date: ${new Date(transaction.createdAt).toLocaleDateString()}`);
+        doc.text(`Status: ${transaction.status.toUpperCase()}`);
+
+        // Billing To
+        doc.moveDown(2);
+        doc.fontSize(12).text("BILL TO:");
+        doc.fontSize(10).moveDown(0.5);
+        doc.text(transaction.user.name);
+        doc.text(transaction.user.email);
+
+        // Table Header
+        const tableTop = 300;
+        doc.moveDown(3);
+        doc.fillColor("#f3f4f6").rect(50, tableTop, 500, 25).fill();
+        doc.fillColor("#1f2937").fontSize(10).text("PLAN DESCRIPTION", 60, tableTop + 8);
+        doc.text("CREDITS", 300, tableTop + 8);
+        doc.text("AMOUNT", 450, tableTop + 8, { align: 'right' });
+
+        // Table Row
+        const plan = PLANS[transaction.planId] || { name: transaction.planId, credits: transaction.credits };
+        doc.fillColor("#444").text(`${plan.name} Plan`, 60, tableTop + 35);
+        doc.text(`${transaction.credits}`, 300, tableTop + 35);
+        doc.text(`INR ${transaction.amount.toFixed(2)}`, 450, tableTop + 35, { align: 'right' });
+
+        doc.strokeColor("#eee").lineWidth(1).moveTo(50, tableTop + 60).lineTo(550, tableTop + 60).stroke();
+
+        // Total
+        doc.moveDown(2);
+        doc.fontSize(12).fillColor("#1f2937").text("TOTAL AMOUNT:", 350, tableTop + 80);
+        doc.fontSize(14).fillColor("#4f46e5").text(`INR ${transaction.amount.toFixed(2)}`, 450, tableTop + 78, { align: 'right' });
+
+        // Footer
+        const footerPosition = 700;
+        doc.fillColor("#9ca3af")
+            .fontSize(8)
+            .text("This is a computer generated receipt. No physical signature is required.", 50, footerPosition, { align: 'center', width: 500 });
+
+        doc.end();
+
+    } catch (error) {
+        Sentry.captureException(error);
+        console.error("Receipt Generation Error:", error);
+        if (!res.headersSent) {
+            res.status(500).json({ message: "Failed to generate receipt" });
+        }
     }
 };
