@@ -9,11 +9,11 @@ const razorpay = new Razorpay({
     key_secret: process.env.RAZORPAY_KEY_SECRET,
 });
 
-// Plans Configuration (Reduced 100x for LIVE testing)
+// Plans Configuration (Reduced 10x for phase-2 testing)
 const PLANS = {
-    starter: { credits: 100, amount: 4.99, name: "Starter" }, // ₹4.99
-    pro: { credits: 500, amount: 19.99, name: "Pro" },     // ₹19.99
-    agency: { credits: 2000, amount: 49.99, name: "Agency" } // ₹49.99
+    starter: { credits: 100, amount: 49.9, name: "Starter" }, // ₹49.9
+    pro: { credits: 500, amount: 199.9, name: "Pro" },     // ₹199.9
+    agency: { credits: 2000, amount: 499.9, name: "Agency" } // ₹499.9
 };
 
 export const createOrder = async (req, res) => {
