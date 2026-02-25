@@ -318,35 +318,57 @@ const EditGeneration = () => {
 
                             <div className="space-y-4">
                                 <div className="flex flex-wrap gap-2">
-                                    {(editMode === "image" ? IMAGE_PRESETS : VIDEO_PRESETS).map((preset) => (
-                                        <button
-                                            key={preset.label}
-                                            onClick={() => setForm(f => ({ ...f, userPrompt: (f.userPrompt + preset.prompt).trim() }))}
-                                            className="px-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-[10px] font-bold hover:bg-cyan-500/20 hover:border-cyan-500/40 transition-all flex items-center gap-1.5"
-                                        >
-                                            {preset.icon}
-                                            {preset.label}
-                                        </button>
-                                    ))}
+                                    {(editMode === "image" ? IMAGE_PRESETS : VIDEO_PRESETS).map((preset) => {
+                                        const isActive = form.userPrompt.includes(preset.prompt.trim());
+                                        return (
+                                            <button
+                                                key={preset.label}
+                                                onClick={() => {
+                                                    const p = preset.prompt.trim();
+                                                    setForm(prev => {
+                                                        const hasPrompt = prev.userPrompt.includes(p);
+                                                        let newPrompt = prev.userPrompt;
+                                                        if (hasPrompt) {
+                                                            newPrompt = newPrompt.split(p).join("").replace(/\s+/g, " ").trim();
+                                                        } else {
+                                                            newPrompt = (newPrompt + " " + p).trim();
+                                                        }
+                                                        return { ...prev, userPrompt: newPrompt };
+                                                    });
+                                                }}
+                                                className={`px-3 py-1.5 rounded-full border text-[10px] font-bold transition-all flex items-center gap-1.5 ${isActive
+                                                    ? "bg-cyan-500/20 border-cyan-500/50 text-cyan-400"
+                                                    : "bg-white/5 border-white/10 text-gray-400 hover:bg-white/10"
+                                                    }`}
+                                            >
+                                                {preset.icon}
+                                                {preset.label}
+                                            </button>
+                                        );
+                                    })}
                                     {editMode === "image" && (
                                         <button
                                             type="button"
                                             onClick={() => {
-                                                const fidelity = " Priority: Subject Identity / Face Structure.";
-                                                setForm(prev => ({
-                                                    ...prev,
-                                                    userPrompt: prev.userPrompt.includes('Priority: Subject Identity')
-                                                        ? prev.userPrompt.replace(fidelity, '').trim()
-                                                        : (prev.userPrompt + fidelity).trim()
-                                                }));
+                                                const fidelity = "Priority: Subject Identity / Face Structure.";
+                                                setForm(prev => {
+                                                    const hasFidelity = prev.userPrompt.includes(fidelity);
+                                                    let newPrompt = prev.userPrompt;
+                                                    if (hasFidelity) {
+                                                        newPrompt = newPrompt.split(fidelity).join("").replace(/\s+/g, " ").trim();
+                                                    } else {
+                                                        newPrompt = (newPrompt + " " + fidelity).trim();
+                                                    }
+                                                    return { ...prev, userPrompt: newPrompt };
+                                                });
                                             }}
-                                            className={`w-full mt-4 flex items-center justify-between p-4 rounded-xl border transition-all duration-300 ${form.userPrompt.includes('Priority: Subject Identity')
+                                            className={`w-full mt-4 flex items-center justify-between p-4 rounded-xl border transition-all duration-300 ${form.userPrompt.includes('Priority: Subject Identity / Face Structure.')
                                                 ? 'bg-emerald-500/10 border-emerald-500 text-emerald-400'
                                                 : 'bg-white/5 border-white/10 text-gray-400 hover:border-white/20'
                                                 }`}
                                         >
                                             <div className="flex items-center gap-3">
-                                                <div className={`p-2 rounded-lg transition-colors ${form.userPrompt.includes('Priority: Subject Identity') ? 'bg-emerald-500 text-white' : 'bg-white/10 text-gray-500'}`}>
+                                                <div className={`p-2 rounded-lg transition-colors ${form.userPrompt.includes('Priority: Subject Identity / Face Structure.') ? 'bg-emerald-500 text-white' : 'bg-white/10 text-gray-500'}`}>
                                                     <Sparkles size={16} />
                                                 </div>
                                                 <div className="text-left">
@@ -354,8 +376,8 @@ const EditGeneration = () => {
                                                     <div className="text-[10px] opacity-60">Prioritize exact facial preservation</div>
                                                 </div>
                                             </div>
-                                            <div className={`w-8 h-4 rounded-full p-0.5 transition-colors ${form.userPrompt.includes('Priority: Subject Identity') ? 'bg-emerald-500' : 'bg-white/20'}`}>
-                                                <div className={`w-3 h-3 rounded-full bg-white transition-transform ${form.userPrompt.includes('Priority: Subject Identity') ? 'translate-x-4' : 'translate-x-0'}`} />
+                                            <div className={`w-8 h-4 rounded-full p-0.5 transition-colors ${form.userPrompt.includes('Priority: Subject Identity / Face Structure.') ? 'bg-emerald-500' : 'bg-white/20'}`}>
+                                                <div className={`w-3 h-3 rounded-full bg-white transition-transform ${form.userPrompt.includes('Priority: Subject Identity / Face Structure.') ? 'translate-x-4' : 'translate-x-0'}`} />
                                             </div>
                                         </button>
                                     )}

@@ -51,7 +51,7 @@
 @theme {
     --color-primary: #06b6d4;
     --color-primary-hover: #0891b2;
-    --color-secondary: #6366f1;
+    --color-secondary: #0ea5e9;
     --color-dark-bg: #020617;
     --color-dark-card: #0f172a;
 }
@@ -70,5 +70,28 @@
     .cl-userProfileNavbarButton__billing,
     .cl-profileSection__billing {
         display: none !important;
+    }
+
+    /* Aggressively Hide Clerk Branding & Dev Mode Indicator */
+    [data-clerk-branding="true"],
+    .cl-internal-ph97tu,
+    .cl-internal-b3fm6y,
+    .cl-internal-ph7296,
+    .cl-internal-1dau6as,
+    .cl-internal-235889,
+    .cl-internal-1p6f1z9,
+    .cl-brandingText,
+    .cl-brandingLink,
+    .cl-footer,
+    .cl-userButtonPopoverFooter,
+    #clerk-development-mode,
+    .cl-dev-indicator {
+        display: none !important;
+        opacity: 0 !important;
+        visibility: hidden !important;
+        height: 0 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        pointer-events: none !important;
     }
 }

@@ -73,11 +73,28 @@ export default function Navbar() {
                 </div>
 
                 {!user ? (
-                    <div>
-                        <button onClick={() => openSignIn()} className='text-sm font-medium text-gray-300 hover:text-white transition'>
+                    <div className="flex items-center gap-3 md:gap-5">
+                        {/* Quick Action Buttons for Mobile (Logged Out) */}
+                        <div className="md:hidden flex items-center gap-1.5">
+                            <button
+                                onClick={() => navigate('/creator-lounge')}
+                                className="p-2 rounded-full bg-linear-to-r from-cyan-600 to-indigo-600 text-white active:scale-95 transition-transform"
+                                title="Creator Lounge"
+                            >
+                                <SparkleIcon size={16} />
+                            </button>
+                            <button
+                                onClick={() => navigate('/community')}
+                                className="p-2 rounded-full bg-white/10 text-gray-300 active:scale-95 transition-transform"
+                                title="Community"
+                            >
+                                <GalleryHorizontalEnd size={16} />
+                            </button>
+                        </div>
+                        <button onClick={() => openSignIn()} className='text-sm font-medium text-gray-300 hover:text-white transition hidden md:block'>
                             Sign in
                         </button>
-                        <PrimaryButton onClick={() => openSignUp()} className='text-xs sm:text-sm px-3 py-1.5'>Get Started</PrimaryButton>
+                        <PrimaryButton onClick={() => openSignUp()} className='text-xs sm:text-sm px-4 py-2 hidden xs:block'>Get Started</PrimaryButton>
                     </div>
                 ) : (
                     <div className="flex items-center gap-2">
@@ -114,6 +131,10 @@ export default function Navbar() {
 
                         <UserButton
                             appearance={{
+                                layout: {
+                                    branding: false,
+                                    shimmer: true,
+                                },
                                 elements: {
                                     userButtonPopoverCard: 'bg-[#0f0f13] border border-white/10 shadow-2xl rounded-2xl overflow-hidden',
                                     userButtonPopoverActionButton: 'hover:bg-white/5 transition-all py-3 px-4',
@@ -123,6 +144,7 @@ export default function Navbar() {
                                     userPreviewMainIdentifier: 'text-white text-sm font-bold',
                                     userButtonTrigger: 'focus:shadow-none focus:outline-none hover:opacity-80 transition-opacity',
                                     navbarButton__billing: 'hidden',
+                                    userButtonPopoverFooter: { display: 'none' }, // Hides footer specifically in UserButton
                                 }
                             }}>
                             <UserButton.MenuItems>

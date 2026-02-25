@@ -16,10 +16,15 @@ createRoot(document.getElementById('root')).render(
     <ClerkProvider publishableKey={PUBLISHABLE_KEY}
         appearance={{
             theme: dark,
+            layout: {
+                branding: false,
+                shimmer: true,
+            },
             variables: {
                 colorPrimary: '#0891b2',
                 colorTextOnPrimaryBackground: "#ffffff",
                 colorBackground: '#0a0a0c',
+                colorTextSecondary: '#444444',
                 borderRadius: '1rem',
                 fontFamily: 'Inter, sans-serif'
             },
@@ -34,6 +39,9 @@ createRoot(document.getElementById('root')).render(
                 footerActionLink: 'text-cyan-400 hover:text-cyan-300 font-bold',
                 dividerLine: 'bg-white/10',
                 dividerText: 'text-gray-500 text-[10px] uppercase font-bold tracking-widest',
+                footer: 'hidden',
+                userButtonPopoverFooter: 'hidden',
+                footerAction: 'hidden',
             }
         }}>
         <BrowserRouter>

@@ -477,7 +477,7 @@ export const getAllPublishedProjects = async (req, res) => {
 //delete project
 export const deleteProject = async (req, res) => {
     try {
-        const userId = req.auth?.userId;
+        const { userId } = req.auth();
 
         if (!userId) {
             return res.status(401).json({ message: "Unauthorized" });
@@ -514,7 +514,7 @@ export const deleteProject = async (req, res) => {
 export const getProjectById = async (req, res) => {
     try {
         const projectId = req.params.projectId;
-        const userId = req.auth?.userId;
+        const { userId } = req.auth();
 
 
         if (!projectId) {
@@ -811,7 +811,7 @@ CREATIVE RE-IMAGINING RULES:
 
         // ✅ Upload to Cloudinary
         const uploadResult = await cloudinary.uploader.upload(
-            `data: image / png; base64, ${finalBuffer.toString("base64")} `,
+            `data:image/png;base64,${finalBuffer.toString("base64")}`,
             {
                 resource_type: "image",
                 folder: "adalchemist/generated",
@@ -996,12 +996,12 @@ A breathtakingly professional 5 - second commercial segment that looks like it w
             });
         }
 
-        if (!operation.response.generatedVideos) {
+        if (!operation.response?.generatedVideos) {
             throw new Error("Video regeneration failed");
         }
 
         // ✅ Save temp video
-        const fileName = `${userId}_${Date.now()} _edit.mp4`;
+        const fileName = `${userId}_${Date.now()}_edit.mp4`;
         const filePath = path.join("videos", fileName);
 
         fs.mkdirSync("videos", { recursive: true });
