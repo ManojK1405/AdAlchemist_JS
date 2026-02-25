@@ -83,10 +83,38 @@ export default function Navbar() {
                         </div>
                     </div>
                 ) : (
-                    <div className="flex gap-2">
-                        <GhostButton onClick={() => navigate('/plans')} className="border-none text-gray-300 sm:py-1.5">
-                            Credits: {credits}
+                    <div className="flex items-center gap-2">
+                        <GhostButton onClick={() => navigate('/plans')} className="border-none text-gray-300 sm:py-1.5 max-sm:px-2 max-sm:text-[10px] max-sm:bg-transparent">
+                            <span className="hidden sm:inline">Credits:</span> {credits}
                         </GhostButton>
+
+                        {/* Quick Action Buttons for Mobile */}
+                        <div className="md:hidden flex items-center gap-1.5">
+                            <button
+                                onClick={() => navigate('/generate')}
+                                className="p-2 rounded-full bg-linear-to-r from-cyan-600 to-indigo-600 text-white active:scale-95 transition-transform"
+                                title="Create New Ad"
+                            >
+                                <SparkleIcon size={16} />
+                            </button>
+
+                            <button
+                                onClick={() => navigate('/my-generations')}
+                                className="p-2 rounded-full bg-white/10 text-gray-300 active:scale-95 transition-transform"
+                                title="My Generations"
+                            >
+                                <FolderEditIcon size={16} />
+                            </button>
+
+                            <button
+                                onClick={() => navigate('/community')}
+                                className="p-2 rounded-full bg-white/10 text-gray-300 active:scale-95 transition-transform"
+                                title="Community"
+                            >
+                                <GalleryHorizontalEnd size={16} />
+                            </button>
+                        </div>
+
                         <UserButton userProfileProps={{
                             appearance: {
                                 elements: {
@@ -113,24 +141,37 @@ export default function Navbar() {
 
                 )}
 
-                {!user && (
-                    <button onClick={() => { setIsOpen(!isOpen) }} className='md:hidden'>
-                        <MenuIcon className='size-6' />
-                    </button>
-                )}
+                <button onClick={() => setIsOpen(!isOpen)} className='md:hidden p-1 text-gray-400 hover:text-white transition'>
+                    <MenuIcon className='size-6' />
+                </button>
             </div>
-            <div className={`flex flex-col items-center justify-center gap-6 text-lg font-medium fixed inset-0 bg-black/40 backdrop-blur-md z-50 transition-all duration-300 ${isOpen ? "translate-x-0" : "translate-x-full"}`}>
+            <div className={`flex flex-col items-center justify-center gap-6 text-xl font-semibold fixed inset-0 bg-black/90 backdrop-blur-xl z-50 transition-all duration-300 ${isOpen ? "translate-x-0" : "translate-x-full"}`}>
+                <div className="absolute top-8 left-8">
+                    <span className="text-2xl font-extrabold tracking-wide text-gray-500">
+                        Ad<span className="bg-linear-to-r from-cyan-600 to-indigo-600 bg-clip-text text-transparent">Alchemist</span>
+                    </span>
+                </div>
+
                 {navLinks.map((link) => (
-                    <a key={link.name} href={link.href} onClick={() => setIsOpen(false)}>
+                    <Link key={link.name} to={link.href} onClick={() => setIsOpen(false)} className={`${pathname === link.href ? 'text-cyan-500' : 'text-gray-300'} hover:text-white transition-colors`}>
                         {link.name}
-                    </a>
+                    </Link>
                 ))}
 
-
-                <button onClick={() => { setIsOpen(false); openSignIn(); }} className='font-medium text-gray-300 hover:text-white transition'>
-                    Sign in
-                </button>
-                <PrimaryButton onClick={() => { setIsOpen(false); openSignUp(); }}>Get Started</PrimaryButton>
+                {!user ? (
+                    <div className="flex flex-col gap-4 w-full px-12 mt-4">
+                        <button onClick={() => { setIsOpen(false); openSignIn(); }} className='text-lg font-medium text-gray-300 hover:text-white transition'>
+                            Sign in
+                        </button>
+                        <PrimaryButton onClick={() => { setIsOpen(false); openSignUp(); }} className="w-full text-lg py-3">Get Started</PrimaryButton>
+                    </div>
+                ) : (
+                    <div className="mt-8">
+                        <PrimaryButton onClick={() => { setIsOpen(false); navigate('/generate'); }} className="text-lg py-3 px-8">
+                            <SparkleIcon size={20} /> Create New Ad
+                        </PrimaryButton>
+                    </div>
+                )}
 
                 <button
                     onClick={() => setIsOpen(false)}

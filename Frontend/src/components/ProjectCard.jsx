@@ -142,32 +142,59 @@ const ProjectCard = ({
                         </div>
                     )}
 
-                    <div className="absolute left-4 top-4 flex gap-2 items-center">
+                    {/* Actions Overlay */}
+                    {!forCommunity && (
+                        <div className="absolute inset-0 z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col items-center justify-center bg-black/40 backdrop-blur-[2px] pointer-events-none group-hover:pointer-events-auto">
+                            <button
+                                onClick={() => navigate(`/result/${gen.id}`)}
+                                className="px-6 py-2.5 bg-white text-black font-bold text-xs uppercase tracking-widest rounded-full shadow-2xl transform translate-y-4 group-hover:translate-y-0 transition-all duration-300 hover:scale-105 active:scale-95"
+                            >
+                                Show More Details
+                            </button>
+                        </div>
+                    )}
+
+                    <div className="absolute left-4 top-4 flex gap-2 items-center z-20">
                         {gen.isGenerating && (
                             <span className="text-[10px] font-bold uppercase tracking-widest px-3 py-1 bg-yellow-500/20 text-yellow-500 border border-yellow-500/20 rounded-full backdrop-blur-md">
                                 Generating
                             </span>
                         )}
                         {gen.isPublished && (
-                            <span className="text-[10px] font-bold uppercase tracking-widest px-3 py-1 bg-green-500/20 text-green-500 border border-green-500/20 rounded-full backdrop-blur-md">
+                            <span className="text-[10px] font-bold uppercase tracking-widest px-3 py-1 bg-cyan-500/20 text-cyan-500 border border-cyan-500/20 rounded-full backdrop-blur-md">
                                 Live
                             </span>
                         )}
                     </div>
 
-                    {/*Actions for creator*/}
+                    {/* Management Controls Group (Top Right) */}
                     {!forCommunity && (
-                        <div className="absolute right-4 top-4 sm:opacity-0 group-hover:opacity-100 transition-all duration-300 flex items-center gap-2"  >
+                        <div className="absolute right-4 top-4 flex items-center gap-3 z-20 sm:opacity-0 group-hover:opacity-100 transition-all duration-300">
+
+                            {/* Publish Slash Toggle */}
+                            <div className="flex items-center gap-1.5 p-1 bg-black/40 backdrop-blur-md border border-white/5 rounded-full px-2">
+                                <span className="text-[8px] font-black text-gray-400 uppercase tracking-tighter hidden xs:inline">
+                                    {gen.isPublished ? 'Live' : 'Hidden'}
+                                </span>
+                                <button
+                                    onClick={() => togglePublish(gen.id)}
+                                    className={`relative inline-flex h-4 w-8 items-center rounded-full transition-all duration-300 focus:outline-none ${gen.isPublished ? 'bg-cyan-500' : 'bg-white/20'}`}
+                                >
+                                    <span
+                                        className={`${gen.isPublished ? 'translate-x-4' : 'translate-x-0'} inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow-md transition-transform duration-300`}
+                                    />
+                                </button>
+                            </div>
 
                             <div className="relative">
                                 <button
                                     onClick={() => setMenuOpen((prev) => !prev)}
                                     className="bg-black/60 backdrop-blur-md border border-white/10 rounded-full p-2 hover:bg-black/80 transition-colors"
                                 >
-                                    <EllipsisIcon size={18} />
+                                    <EllipsisIcon size={16} />
                                 </button>
 
-                                <ul className={`absolute right-0 mt-3 text-xs ${menuOpen ? 'block' : 'hidden'} overflow-hidden w-48 bg-[#1a1a1f] backdrop-blur-xl text-white border border-white/10 rounded-2xl shadow-2xl py-2 z-20 animate-in fade-in slide-in-from-top-2`}>
+                                <ul className={`absolute right-0 mt-3 text-xs ${menuOpen ? 'block' : 'hidden'} overflow-hidden w-48 bg-[#1a1a1f] backdrop-blur-xl text-white border border-white/10 rounded-2xl shadow-2xl py-2 z-30 animate-in fade-in slide-in-from-top-2`}>
                                     {gen.generatedImage && (
                                         <a href={gen.generatedImage} download className="flex gap-3 items-center px-4 py-2.5 hover:bg-white/5 transition-colors">
                                             <ImageIcon size={14} className="text-gray-400" />
@@ -197,7 +224,6 @@ const ProjectCard = ({
                                     </button>
                                 </ul>
                             </div>
-
                         </div>
                     )}
 
@@ -284,23 +310,6 @@ const ProjectCard = ({
                                 </button>
                             )}
                         </div>
-
-                        {!forCommunity && (
-                            <div className="flex items-center gap-2">
-                                <button
-                                    onClick={() => navigate(`/result/${gen.id}`)}
-                                    className="p-2 text-gray-500 hover:text-white transition-colors"
-                                >
-                                    <ImageIcon size={18} />
-                                </button>
-                                <PrimaryButton
-                                    onClick={() => togglePublish(gen.id)}
-                                    className="text-[10px] py-1.5 px-4 rounded-full"
-                                >
-                                    {gen.isPublished ? 'Unpublish' : 'Publish'}
-                                </PrimaryButton>
-                            </div>
-                        )}
                     </div>
 
                     {/* Expanding Comment Section */}

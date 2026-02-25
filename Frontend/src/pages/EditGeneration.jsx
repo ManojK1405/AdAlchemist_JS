@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Loader2Icon, ArrowLeftIcon, Edit2Icon, SparkleIcon, Coins, Sparkles, PlayCircle, Image as ImageIcon, Wand2, Zap, Camera, Move, Layers } from "lucide-react";
 import api from "../configs/axios";
+import UploadZone from "../components/UploadZone";
+import heic2any from "heic2any";
 import { useAuth } from "@clerk/clerk-react";
 import { toast } from "react-hot-toast";
 
@@ -27,6 +29,7 @@ const EditGeneration = () => {
     const [loading, setLoading] = useState(true);
     const [regenerating, setRegenerating] = useState(false);
     const [project, setProject] = useState(null);
+    const [logoImage, setLogoImage] = useState(null);
 
     const [editMode, setEditMode] = useState("image");
 
@@ -35,6 +38,7 @@ const EditGeneration = () => {
         productDescription: "",
         userPrompt: "",
         aspectRatio: "9:16",
+        keepOriginalScene: true,
     });
 
     const [brandKit, setBrandKit] = useState(null);
@@ -66,6 +70,7 @@ const EditGeneration = () => {
                 productDescription: data.productDescription || "",
                 userPrompt: data.userPrompt || "",
                 aspectRatio: data.aspectRatio || "9:16",
+                keepOriginalScene: true,
             });
 
             setLoading(false);
@@ -92,10 +97,26 @@ const EditGeneration = () => {
             const token = await getToken();
 
             if (editMode === "image") {
+                const formData = new FormData();
+                formData.append('productName', form.productName);
+                formData.append('productDescription', form.productDescription);
+                formData.append('userPrompt', form.userPrompt);
+                formData.append('aspectRatio', form.aspectRatio);
+                formData.append('keepOriginalScene', form.keepOriginalScene);
+
+                if (logoImage) {
+                    formData.append('logo', logoImage);
+                }
+
                 await api.post(
                     `/api/project/${projectId}/edit`,
-                    form,
-                    { headers: { Authorization: `Bearer ${token}` } }
+                    formData,
+                    {
+                        headers: {
+                            Authorization: `Bearer ${token}`,
+                            'Content-Type': 'multipart/form-data'
+                        }
+                    }
                 );
 
                 toast.success("Image regenerated successfully");
@@ -249,8 +270,43 @@ const EditGeneration = () => {
                                         onChange={handleChange}
                                         placeholder="Describe the product use case..."
                                         rows={3}
-                                        className="w-full p-4 rounded-xl bg-white/5 border border-white/10 focus:border-cyan-500/50 transition-all outline-none resize-none px-4"
                                     />
+                                </div>
+
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-bold text-gray-500 uppercase ml-1 block">Brand Logo</label>
+                                    <UploadZone
+                                        label="Change Logo"
+                                        file={logoImage || (project.brandLogo ? { name: "Current Logo" } : null)}
+                                        onClear={() => {
+                                            setLogoImage(null);
+                                            // Note: We don't clear project.brandLogo from DB here, 
+                                            // just the local selection for this edit.
+                                        }}
+                                        onChange={async (e) => {
+                                            if (e.target.files && e.target.files[0]) {
+                                                let file = e.target.files[0];
+                                                if (file.type === "image/heic" || file.name.toLowerCase().endsWith(".heic")) {
+                                                    const toastId = toast.loading("Converting logo...");
+                                                    try {
+                                                        const blob = await heic2any({ blob: file, toType: "image/jpeg" });
+                                                        file = new File([Array.isArray(blob) ? blob[0] : blob], "logo.jpg", { type: "image/jpeg" });
+                                                        toast.success("Logo ready!", { id: toastId });
+                                                    } catch (err) {
+                                                        toast.error("Format conversion failed", { id: toastId });
+                                                        return;
+                                                    }
+                                                }
+                                                setLogoImage(file);
+                                            }
+                                        }}
+                                    />
+                                    {project.brandLogo && !logoImage && (
+                                        <div className="mt-2 flex items-center gap-2 p-2 bg-white/5 rounded-lg border border-white/10">
+                                            <img src={project.brandLogo} alt="Logo" className="w-8 h-8 object-contain rounded" />
+                                            <span className="text-[8px] text-gray-400">Current Logo Active</span>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
 
@@ -300,6 +356,30 @@ const EditGeneration = () => {
                                             </div>
                                             <div className={`w-8 h-4 rounded-full p-0.5 transition-colors ${form.userPrompt.includes('Priority: Subject Identity') ? 'bg-emerald-500' : 'bg-white/20'}`}>
                                                 <div className={`w-3 h-3 rounded-full bg-white transition-transform ${form.userPrompt.includes('Priority: Subject Identity') ? 'translate-x-4' : 'translate-x-0'}`} />
+                                            </div>
+                                        </button>
+                                    )}
+
+                                    {editMode === "image" && (
+                                        <button
+                                            type="button"
+                                            onClick={() => setForm(prev => ({ ...prev, keepOriginalScene: !prev.keepOriginalScene }))}
+                                            className={`w-full mt-2 flex items-center justify-between p-4 rounded-xl border transition-all duration-300 ${form.keepOriginalScene
+                                                ? 'bg-cyan-500/10 border-cyan-500 text-cyan-400'
+                                                : 'bg-white/5 border-white/10 text-gray-400 hover:border-white/20'
+                                                }`}
+                                        >
+                                            <div className="flex items-center gap-3">
+                                                <div className={`p-2 rounded-lg transition-colors ${form.keepOriginalScene ? 'bg-cyan-500 text-white' : 'bg-white/10 text-gray-500'}`}>
+                                                    <Layers size={16} />
+                                                </div>
+                                                <div className="text-left">
+                                                    <div className="text-xs font-semibold">Preserve Original Scene</div>
+                                                    <div className="text-[10px] opacity-60">Maintain composition and lighting</div>
+                                                </div>
+                                            </div>
+                                            <div className={`w-8 h-4 rounded-full p-0.5 transition-colors ${form.keepOriginalScene ? 'bg-cyan-500' : 'bg-white/20'}`}>
+                                                <div className={`w-3 h-3 rounded-full bg-white transition-transform ${form.keepOriginalScene ? 'translate-x-4' : 'translate-x-0'}`} />
                                             </div>
                                         </button>
                                     )}

@@ -36,7 +36,8 @@ export const createProject = async (req, res) => {
             targetLength = 5,
         } = req.body;
 
-        const images = req.files;
+        const images = req.files['images'];
+        const logo = req.files['logo'] ? req.files['logo'][0] : null;
 
         if (!images || images.length < 2 || !productName) {
             return res.status(400).json({
@@ -84,6 +85,15 @@ export const createProject = async (req, res) => {
             })
         );
 
+        let brandLogoUrl = "";
+        if (logo) {
+            const logoUpload = await cloudinary.uploader.upload(logo.path, {
+                resource_type: "image",
+                folder: "adalchemist/logos",
+            });
+            brandLogoUrl = logoUpload.secure_url;
+        }
+
         // Create project
         const project = await prisma.project.create({
             data: {
@@ -95,6 +105,7 @@ export const createProject = async (req, res) => {
                 targetLength: parseInt(targetLength),
                 userId,
                 uploadedImages,
+                brandLogo: brandLogoUrl,
                 isGenerating: true,
             },
         });
@@ -161,15 +172,27 @@ BRAND ALIGNMENT:
 ${brandKit?.color ? `Incorporate Brand Color subtly: ${brandKit.color}` : ''}
 ${brandKit?.voice ? `Aesthetic Guidelines: ${brandKit.voice}` : ''}
 
+${brandLogoUrl ? `BRAND LOGO INTEGRATION (SUBTLE):
+- A Brand Logo has been provided. 
+- SUBTLY integrate this logo into the background of the scene (e.g., on a distant wall, a small sign, a premium product stand, or an elegant etched-style glass element).
+- The logo should be a complementary secondary element, NOT the main focus of the image.
+- Render it with physical accuracy: correct perspective, matching environmental lighting, and realistic texture.` : ''}
+
 ${userPrompt ? `\nCUSTOM CREATIVE DIRECTION:\n${userPrompt}` : ''}
 
 OUTPUT:
 One high-resolution, magazine-quality advertisement image.
 `;
 
+        const contents = [img1, img2];
+        if (logo) {
+            contents.push(loadImage(logo.path, logo.mimetype));
+        }
+        contents.push(promptImage);
+
         const response = await ai.models.generateContent({
             model: "gemini-3-pro-image-preview",
-            contents: [img1, img2, promptImage],
+            contents: contents,
             config: generationConfig,
         });
 
@@ -538,6 +561,7 @@ export const editGeneration = async (req, res) => {
             productName,
             productDescription,
             name,
+            keepOriginalScene = true,
         } = req.body;
 
         // ✅ Check user
@@ -621,6 +645,49 @@ export const editGeneration = async (req, res) => {
             responseType: "arraybuffer",
         });
 
+        // ✅ Handle dynamic logo upload during edit
+        const logo = req.file;
+        let brandLogoUrl = project.brandLogo;
+
+        if (logo) {
+            const logoUpload = await cloudinary.uploader.upload(logo.path, {
+                resource_type: "image",
+                folder: "adalchemist/logos",
+            });
+            brandLogoUrl = logoUpload.secure_url;
+            // Update the project with the new logo
+            await prisma.project.update({
+                where: { id: projectId },
+                data: { brandLogo: brandLogoUrl }
+            });
+        }
+
+        let prevGenImg = null;
+        if (keepOriginalScene) {
+            const prevGenResponse = await axios.get(project.generatedImage, {
+                responseType: "arraybuffer",
+            });
+            prevGenImg = {
+                inlineData: {
+                    data: Buffer.from(prevGenResponse.data).toString("base64"),
+                    mimeType: "image/png",
+                },
+            };
+        }
+
+        let brandLogoImg = null;
+        if (brandLogoUrl) {
+            const logoResponse = await axios.get(brandLogoUrl, {
+                responseType: "arraybuffer",
+            });
+            brandLogoImg = {
+                inlineData: {
+                    data: Buffer.from(logoResponse.data).toString("base64"),
+                    mimeType: "image/png",
+                },
+            };
+        }
+
         const img1 = {
             inlineData: {
                 data: Buffer.from(image1Response.data).toString("base64"),
@@ -635,17 +702,7 @@ export const editGeneration = async (req, res) => {
             },
         };
 
-        // ✅ Final prompt
-        const finalPrompt = `
-You are a world-class commercial photographer and art director. This is a REFINEMENT phase. You are taking a base concept and elevating it to magazine-standard quality.
-
-SUBJECT FIDELITY (HIGHEST PRIORITY):
-- Maintain the EXACT facial features, bone structure, and identity of the person in the source image.
-- ABSOLUTELY NO facial distortion, warping, or asymmetry.
-- Eyes must be perfectly symmetrical, sharp, and full of life.
-- Skin texture must be realistic and high-resolution, avoiding any "plastic" or over-smoothed AI look.
-- Hands and fingers must be anatomically correct with professional posing.
-
+        const commonRules = `
 PRODUCT MASTER RULES:
 • Name: ${productName || project.productName}
 • Description: ${productDescription || project.productDescription}
@@ -658,6 +715,12 @@ ${userPrompt || project.userPrompt || "Create a clean, premium commercial look."
 BRANDING & STYLE:
 ${brandKit && brandKit.color ? `Brand Signature Color (incorporate subtly): ${brandKit.color}` : ''}
 ${brandKit && brandKit.voice ? `Brand Aesthetic Guidelines: ${brandKit.voice}` : ''}
+
+${project.brandLogo ? `BRAND LOGO INTEGRATION (SUBTLE):
+- A Brand Logo has been provided.
+- SUBTLY integrate this logo into the background of the scene (e.g., on a distant wall, a small sign, a premium product stand, or an elegant etched-style glass element).
+- The logo should be a complementary secondary element, NOT the main focus of the image.
+- Render it with physical accuracy: correct perspective, matching environmental lighting, and realistic texture.` : ''}
 
 TECHNICAL SPECS:
 • Lighting: 3-point studio setup with a softbox key and back-lighting for separation.
@@ -673,12 +736,57 @@ OUTPUT:
 One ultra-high-resolution photorealistic advertisement image that looks like a high-budget global campaign.
 `;
 
+        // ✅ Final prompt
+        const finalPrompt = (keepOriginalScene
+            ? `
+You are a world-class commercial photographer and art director. This is a REFINEMENT phase. You are provided with:
+1. The Original Subject Sources (img1, img2).
+2. The CURRENT Latest Generation (img3).
 
+MISSION:
+Modify the CURRENT generation (img3) based on the user's new instructions while maintaining 95% visual consistency with img3's layout, composition, lighting, and perspective.
+
+SUBJECT FIDELITY (STRICT):
+- Maintain the EXACT facial features, bone structure, and identity of the person from the source images.
+- The person's pose and position should remain almost identical to img3 unless explicitly asked to change.
+
+REFINEMENT RULES:
+- Use img3 as a RIGID structural template. 
+- Do NOT change the background, the subject's position, or the overall lighting setup of img3.
+- ONLY apply high-fidelity modifications to the specific parts mentioned in the "NEW CREATIVE DIRECTION".
+- Ensure any color changes look physically integrated with the existing lighting and reflections.
+`
+            : `
+You are a world-class commercial photographer and art director. This is a CREATIVE RE-IMAGINING phase.
+MISSION:
+Generate a COMPLETELY NEW advertisement scene featuring the subject from the source images and the product provided.
+
+SUBJECT FIDELITY (CRITICAL):
+- Maintain the EXACT facial features, bone structure, and identity of the person in the source images.
+- You have creative freedom over the pose, environment, and background while keeping it premium.
+
+CREATIVE RE-IMAGINING RULES:
+- Explore a new fresh perspective, different from before.
+- Maintain professional studio-grade lighting.
+- Surround the subject with a high-end, photorealistic environment.
+`) + commonRules;
+
+
+
+        // ✅ Construct contents array
+        const contents = [img1, img2];
+        if (brandLogoImg) {
+            contents.push(brandLogoImg);
+        }
+        if (keepOriginalScene && prevGenImg) {
+            contents.push(prevGenImg);
+        }
+        contents.push(finalPrompt);
 
         // ✅ Generate image
         const response = await ai.models.generateContent({
             model: "gemini-3-pro-image-preview",
-            contents: [img1, img2, finalPrompt],
+            contents: contents,
             config: generationConfig,
         });
 
@@ -703,7 +811,7 @@ One ultra-high-resolution photorealistic advertisement image that looks like a h
 
         // ✅ Upload to Cloudinary
         const uploadResult = await cloudinary.uploader.upload(
-            `data:image/png;base64,${finalBuffer.toString("base64")}`,
+            `data: image / png; base64, ${finalBuffer.toString("base64")} `,
             {
                 resource_type: "image",
                 folder: "adalchemist/generated",
@@ -830,7 +938,7 @@ You are a senior video editor and motion designer refining a premium commercial 
 
 CORE TASK:
 Elevate the existing scene from a static or basic motion state into a cinematic masterpiece.
-Maintain total brand consistency while injecting high-end motion dynamics.
+Maintain total brand consistency while injecting high - end motion dynamics.
 
 BASE ASSET CONSTANTS:
 • Name: ${project.productName}
@@ -842,17 +950,17 @@ ${userPrompt || project.userPrompt || "Refine motion with smoother cinematic mov
 
 MOTION REFINEMENT RULES:
 • Parallax Effect:Foreground and background should move at slightly different offsets to create professional depth.
-• Camera Dynamics: Use high-end film equipment simulation (Dolly, Pan, or Crane shots).
-• Micro-Expressions: If a subject is visible, ensure realistic blinks, subtle smiles, or natural shifts in weight.
+• Camera Dynamics: Use high - end film equipment simulation(Dolly, Pan, or Crane shots).
+• Micro - Expressions: If a subject is visible, ensure realistic blinks, subtle smiles, or natural shifts in weight.
 • Product Interaction: Movement should highlight the product's premium features (glint of light on metal, fluid movement of liquid, etc.).
 
 TECHNICAL QUALITY:
 • 24fps cinematic cadence.
-• Zero morphing artifacts or physics-defying glitches.
-• Consistent temporal coherence (objects should not change shape during movement).
+• Zero morphing artifacts or physics - defying glitches.
+• Consistent temporal coherence(objects should not change shape during movement).
 
-OUTPUT:
-A breathtakingly professional 5-second commercial segment that looks like it was produced by a top-tier creative agency.
+    OUTPUT:
+A breathtakingly professional 5 - second commercial segment that looks like it was produced by a top - tier creative agency.
 `;
 
 
@@ -893,7 +1001,7 @@ A breathtakingly professional 5-second commercial segment that looks like it was
         }
 
         // ✅ Save temp video
-        const fileName = `${userId}_${Date.now()}_edit.mp4`;
+        const fileName = `${userId}_${Date.now()} _edit.mp4`;
         const filePath = path.join("videos", fileName);
 
         fs.mkdirSync("videos", { recursive: true });

@@ -8,7 +8,8 @@ import {
     VideoIcon,
     Facebook,
     Instagram,
-    SendIcon
+    SendIcon,
+    Coins
 } from "lucide-react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { GhostButton, PrimaryButton } from "../components/Buttons";
@@ -262,10 +263,16 @@ const Result = () => {
                             ) : !project.generatedVideo ? (
                                 <PrimaryButton
                                     onClick={handleGenerateVideo}
-                                    className="w-full justify-center"
+                                    className="w-full justify-center flex-col gap-1 py-4"
                                 >
-                                    <SparkleIcon className="size-4" />
-                                    Generate Video
+                                    <div className="flex items-center gap-2">
+                                        <SparkleIcon className="size-4" />
+                                        Generate Video
+                                    </div>
+                                    <div className="flex items-center gap-1 opacity-60">
+                                        <Coins size={10} className="text-yellow-500" />
+                                        <span className="text-[10px] font-bold uppercase tracking-tighter">Costs 40 Credits</span>
+                                    </div>
                                 </PrimaryButton>
                             ) : (
                                 <div className="p-3 bg-green-500/10 border border-green-500/20 rounded-xl text-green-400 text-center text-sm font-medium">

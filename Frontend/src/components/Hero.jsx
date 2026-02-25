@@ -1,21 +1,40 @@
 import { ArrowRightIcon, PlayIcon, ZapIcon, CheckIcon } from 'lucide-react';
 import { PrimaryButton, GhostButton } from './Buttons';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useState } from 'react';
+import { useUser, useClerk } from '@clerk/clerk-react';
+import { useNavigate } from 'react-router-dom';
+import toast from 'react-hot-toast';
 
 export default function Hero() {
+    const { user } = useUser();
+    const { openSignUp } = useClerk();
+    const navigate = useNavigate();
+
+    const galleryStripImages = [
+        'https://images.unsplash.com/photo-1542291026-7eec264c27ff?q=80&w=1000', // Red shoes
+        'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?q=80&w=1000', // Headphones
+        'https://images.unsplash.com/photo-1523275335684-37898b6baf30?q=80&w=1000', // Watch
+        'https://images.unsplash.com/photo-1620916566398-39f1143ab7be?q=80&w=1600'  // Flask
+    ];
+
+    const [currentImage, setCurrentImage] = useState(() =>
+        galleryStripImages[Math.floor(Math.random() * galleryStripImages.length)]
+    );
+
+    const handleStartGenerating = () => {
+        if (!user) {
+            toast.error("Please Login in to Generate");
+            openSignUp();
+        } else {
+            navigate('/generate');
+        }
+    };
 
     const trustedUserImages = [
         'https://images.unsplash.com/photo-1633332755192-727a05c4013d?w=50',
         'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=50',
         'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=50&h=50&fit=crop'
-    ];
-
-    const mainImageUrl = 'https://images.unsplash.com/photo-1620916566398-39f1143ab7be?q=80&w=1600&auto=format&fit=crop';
-
-    const galleryStripImages = [
-        'https://images.unsplash.com/photo-1542291026-7eec264c27ff?q=80&w=100',
-        'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?q=80&w=100',
-        'https://images.unsplash.com/photo-1523275335684-37898b6baf30?q=80&w=100',
     ];
 
     const trustedLogosText = [
@@ -83,17 +102,21 @@ export default function Hero() {
                                 viewport={{ once: true }}
                                 transition={{ type: "spring", stiffness: 250, damping: 70, mass: 1, delay: 0.3 }}
                             >
-                                <a href="/generate" className="w-full sm:w-auto">
-                                    <PrimaryButton className="max-sm:w-full py-3 px-7">
+                                <div className="w-full sm:w-auto">
+                                    <PrimaryButton
+                                        onClick={handleStartGenerating}
+                                        className="max-sm:w-full py-3 px-7"
+                                    >
                                         Start Generating - It's Free
                                         <ArrowRightIcon className="size-4" />
                                     </PrimaryButton>
+                                </div>
+                                <a href="https://youtu.be/zD1kX7LhYyA?si=t5y-nO7z8c6B-W6U" target='_blank' className='w-full sm:w-auto'>
+                                    <GhostButton className="max-sm:w-full max-sm:justify-center py-3 px-5">
+                                        <PlayIcon className="size-4" />
+                                        Watch Demo
+                                    </GhostButton>
                                 </a>
-
-                                <GhostButton className="max-sm:w-full max-sm:justify-center py-3 px-5">
-                                    <PlayIcon className="size-4" />
-                                    Watch Demo
-                                </GhostButton>
                             </motion.div>
 
                             <motion.div className="flex sm:inline-flex overflow-hidden items-center max-sm:justify-center text-sm text-gray-200 bg-white/10 rounded"
@@ -135,11 +158,18 @@ export default function Hero() {
                         >
                             <motion.div className="rounded-3xl overflow-hidden border border-white/6 shadow-2xl bg-linear-to-b from-black/50 to-transparent">
                                 <div className="relative aspect-16/10 bg-gray-900">
-                                    <img
-                                        src={mainImageUrl}
-                                        alt="agency-work-preview"
-                                        className="w-full h-full object-cover object-center"
-                                    />
+                                    <AnimatePresence mode='wait'>
+                                        <motion.img
+                                            key={currentImage}
+                                            src={currentImage}
+                                            initial={{ opacity: 0 }}
+                                            animate={{ opacity: 1 }}
+                                            exit={{ opacity: 0 }}
+                                            transition={{ duration: 0.3 }}
+                                            alt="agency-work-preview"
+                                            className="w-full h-full object-cover object-center"
+                                        />
+                                    </AnimatePresence>
 
                                     <div className="absolute left-4 top-4 px-3 py-1 rounded-full bg-black/15 backdrop-blur-sm text-xs">
                                         Social Ready • 16:9 & 9:16
@@ -158,11 +188,14 @@ export default function Hero() {
                                 {galleryStripImages.map((src, i) => (
                                     <motion.div
                                         key={i}
+                                        onClick={() => setCurrentImage(src)}
                                         initial={{ y: 20, opacity: 0 }}
                                         whileInView={{ y: 0, opacity: 1 }}
                                         viewport={{ once: true }}
+                                        whileHover={{ scale: 1.05 }}
+                                        whileTap={{ scale: 0.95 }}
                                         transition={{ type: "spring", stiffness: 250, damping: 70, mass: 1, delay: 0.1 + i * 0.1 }}
-                                        className="w-14 h-10 rounded-lg overflow-hidden border border-white/6"
+                                        className={`w-14 h-10 rounded-lg overflow-hidden border cursor-pointer transition-colors ${currentImage === src ? 'border-cyan-500 shadow-[0_0_10px_rgba(6,182,212,0.5)]' : 'border-white/6 hover:border-white/20'}`}
                                     >
                                         <img
                                             src={src}

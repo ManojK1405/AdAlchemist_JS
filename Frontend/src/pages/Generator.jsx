@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react"
-import { Loader2, Camera, Video, User, Layers, Zap, Sparkles, Palette, MessageSquare, ChevronDown, Check } from "lucide-react"
+import { Loader2, Camera, Video, User, Layers, Zap, Sparkles, Palette, MessageSquare, ChevronDown, Check, Coins } from "lucide-react"
 import Title from "../components/Title"
 import UploadZone from "../components/UploadZone"
 import { useAuth, useUser } from "@clerk/clerk-react"
@@ -20,6 +20,7 @@ const Generator = () => {
     const [aspectRatio, setAspectRatio] = useState('9:16')
     const [productImage, setProductImage] = useState(null)
     const [modelImage, setModelImage] = useState(null)
+    const [logoImage, setLogoImage] = useState(null)
     const [userPrompt, setUserPrompt] = useState('')
     const [isGenerating, setIsGenerating] = useState(false)
     const [isVoiceDropdownOpen, setIsVoiceDropdownOpen] = useState(false)
@@ -80,7 +81,8 @@ const Generator = () => {
             }
 
             if (type === 'product') setProductImage(file)
-            else setModelImage(file)
+            else if (type === 'model') setModelImage(file)
+            else if (type === 'logo') setLogoImage(file)
         }
     }
 
@@ -113,6 +115,9 @@ const Generator = () => {
             formData.append('userPrompt', userPrompt);
             formData.append('images', productImage);
             formData.append('images', modelImage);
+            if (logoImage) {
+                formData.append('logo', logoImage);
+            }
 
             const { data } = await api.post('/api/project/create', formData, {
                 headers: {
@@ -155,6 +160,13 @@ const Generator = () => {
                             file={modelImage}
                             onClear={() => setModelImage(null)}
                             onChange={(e) => handleFileChange(e, 'model')}
+                        />
+
+                        <UploadZone
+                            label="Brand Logo (Optional)"
+                            file={logoImage}
+                            onClear={() => setLogoImage(null)}
+                            onChange={(e) => handleFileChange(e, 'logo')}
                         />
                     </div>
 
@@ -415,23 +427,46 @@ const Generator = () => {
                 </div>
 
                 {/* GENERATE BUTTON */}
-                <div className="flex justify-center pt-6">
+                <div className="flex flex-col items-center gap-6 pt-6">
+                    <div className="flex items-center gap-8 py-3 px-6 bg-white/5 border border-white/10 rounded-2xl backdrop-blur-md">
+                        <div className="flex items-center gap-2">
+                            <Coins size={14} className="text-yellow-500" />
+                            <span className="text-[10px] uppercase font-bold tracking-widest text-gray-400">Image:</span>
+                            <span className="text-sm font-black text-white">10</span>
+                        </div>
+                        <div className="w-px h-4 bg-white/10" />
+                        <div className="flex items-center gap-2">
+                            <Video size={14} className="text-cyan-400" />
+                            <span className="text-[10px] uppercase font-bold tracking-widest text-gray-400">Video:</span>
+                            <span className="text-sm font-black text-white">40</span>
+                        </div>
+                    </div>
+
                     <button
                         type="submit"
                         disabled={isGenerating}
-                        className="px-12 py-4 rounded-xl bg-linear-to-r from-cyan-500 to-cyan-600 font-semibold flex items-center gap-3 disabled:opacity-60"
+                        className="group relative px-12 py-5 rounded-2xl bg-gradient-to-r from-cyan-600 to-cyan-500 font-black uppercase tracking-[0.2em] text-xs flex items-center gap-3 shadow-2xl shadow-cyan-500/20 hover:scale-105 active:scale-95 transition-all disabled:opacity-50"
                     >
                         {isGenerating ? (
                             <>
-                                <Loader2 className="animate-spin h-5 w-5" />
-                                Generating...
+                                <Loader2 className="animate-spin h-4 w-4" />
+                                Processing Protocol...
                             </>
                         ) : user ? (
-                            <>Generate Image</>
+                            <>
+                                <Sparkles size={16} />
+                                Initialize Generation
+                            </>
                         ) : (
                             <>Sign In To Generate</>
                         )}
                     </button>
+
+                    {user && (
+                        <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest animate-pulse">
+                            Deducts <span className="text-cyan-400">10 Credits</span> on success
+                        </p>
+                    )}
                 </div>
 
 
