@@ -1,4 +1,4 @@
-import { DollarSignIcon, FolderEditIcon, GalleryHorizontalEnd, MenuIcon, SparkleIcon, XIcon, Receipt } from 'lucide-react';
+import { DollarSignIcon, FolderEditIcon, GalleryHorizontalEnd, SparkleIcon, Receipt, Coins } from 'lucide-react';
 import { GhostButton, PrimaryButton } from './Buttons';
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
@@ -13,7 +13,6 @@ export default function Navbar() {
     const navigate = useNavigate();
     const { user } = useUser();
     const { openSignIn, openSignUp } = useClerk();
-    const [isOpen, setIsOpen] = useState(false);
     const [credits, setCredits] = useState(0);
 
     const { pathname } = useLocation();
@@ -75,18 +74,25 @@ export default function Navbar() {
 
                 {!user ? (
                     <div>
-                        <div className='hidden md:flex items-center gap-3'>
-                            <button onClick={() => openSignIn()} className='text-sm font-medium text-gray-300 hover:text-white transition max-sm:hidden'>
-                                Sign in
-                            </button>
-                            <PrimaryButton onClick={() => openSignUp()} className='max-sm:text-xs hidden sm:inline-block'>Get Started</PrimaryButton>
-                        </div>
+                        <button onClick={() => openSignIn()} className='text-sm font-medium text-gray-300 hover:text-white transition'>
+                            Sign in
+                        </button>
+                        <PrimaryButton onClick={() => openSignUp()} className='text-xs sm:text-sm px-3 py-1.5'>Get Started</PrimaryButton>
                     </div>
                 ) : (
                     <div className="flex items-center gap-2">
-                        <GhostButton onClick={() => navigate('/plans')} className="border-none text-gray-300 sm:py-1.5 max-sm:px-2 max-sm:text-[10px] max-sm:bg-transparent">
-                            <span className="hidden sm:inline">Credits:</span> {credits}
-                        </GhostButton>
+                        <button
+                            onClick={() => navigate('/plans')}
+                            className="group flex items-center gap-2 px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-full transition-all active:scale-95"
+                        >
+                            <div className="flex items-center justify-center w-6 h-6 rounded-full bg-yellow-500/20 text-yellow-500 group-hover:bg-yellow-500 group-hover:text-black transition-all">
+                                <Coins size={14} />
+                            </div>
+                            <div className="flex flex-col items-start leading-none">
+                                <span className="text-[8px] font-bold text-gray-500 uppercase tracking-tighter">Credits</span>
+                                <span className="text-xs font-black text-white">{credits}</span>
+                            </div>
+                        </button>
 
                         {/* Quick Action Buttons for Mobile */}
                         <div className="md:hidden flex items-center gap-1.5">
@@ -97,15 +103,6 @@ export default function Navbar() {
                             >
                                 <SparkleIcon size={16} />
                             </button>
-
-                            <button
-                                onClick={() => navigate('/my-generations')}
-                                className="p-2 rounded-full bg-white/10 text-gray-300 active:scale-95 transition-transform"
-                                title="My Generations"
-                            >
-                                <FolderEditIcon size={16} />
-                            </button>
-
                             <button
                                 onClick={() => navigate('/community')}
                                 className="p-2 rounded-full bg-white/10 text-gray-300 active:scale-95 transition-transform"
@@ -115,13 +112,19 @@ export default function Navbar() {
                             </button>
                         </div>
 
-                        <UserButton userProfileProps={{
-                            appearance: {
+                        <UserButton
+                            appearance={{
                                 elements: {
+                                    userButtonPopoverCard: 'bg-[#0f0f13] border border-white/10 shadow-2xl rounded-2xl overflow-hidden',
+                                    userButtonPopoverActionButton: 'hover:bg-white/5 transition-all py-3 px-4',
+                                    userButtonPopoverActionButtonText: 'text-gray-300 font-medium text-xs',
+                                    userButtonPopoverActionButtonIcon: 'text-cyan-400',
+                                    userPreviewSecondaryIdentifier: 'text-gray-500 text-[10px]',
+                                    userPreviewMainIdentifier: 'text-white text-sm font-bold',
+                                    userButtonTrigger: 'focus:shadow-none focus:outline-none hover:opacity-80 transition-opacity',
                                     navbarButton__billing: 'hidden',
                                 }
-                            }
-                        }}>
+                            }}>
                             <UserButton.MenuItems>
                                 <UserButton.Action label='Generate' labelIcon={<SparkleIcon size={14} />} onClick={() => navigate('/generate')} />
 
@@ -141,44 +144,6 @@ export default function Navbar() {
 
                 )}
 
-                <button onClick={() => setIsOpen(!isOpen)} className='md:hidden p-1 text-gray-400 hover:text-white transition'>
-                    <MenuIcon className='size-6' />
-                </button>
-            </div>
-            <div className={`flex flex-col items-center justify-center gap-6 text-xl font-semibold fixed inset-0 bg-black/90 backdrop-blur-xl z-50 transition-all duration-300 ${isOpen ? "translate-x-0" : "translate-x-full"}`}>
-                <div className="absolute top-8 left-8">
-                    <span className="text-2xl font-extrabold tracking-wide text-gray-500">
-                        Ad<span className="bg-linear-to-r from-cyan-600 to-indigo-600 bg-clip-text text-transparent">Alchemist</span>
-                    </span>
-                </div>
-
-                {navLinks.map((link) => (
-                    <Link key={link.name} to={link.href} onClick={() => setIsOpen(false)} className={`${pathname === link.href ? 'text-cyan-500' : 'text-gray-300'} hover:text-white transition-colors`}>
-                        {link.name}
-                    </Link>
-                ))}
-
-                {!user ? (
-                    <div className="flex flex-col gap-4 w-full px-12 mt-4">
-                        <button onClick={() => { setIsOpen(false); openSignIn(); }} className='text-lg font-medium text-gray-300 hover:text-white transition'>
-                            Sign in
-                        </button>
-                        <PrimaryButton onClick={() => { setIsOpen(false); openSignUp(); }} className="w-full text-lg py-3">Get Started</PrimaryButton>
-                    </div>
-                ) : (
-                    <div className="mt-8">
-                        <PrimaryButton onClick={() => { setIsOpen(false); navigate('/generate'); }} className="text-lg py-3 px-8">
-                            <SparkleIcon size={20} /> Create New Ad
-                        </PrimaryButton>
-                    </div>
-                )}
-
-                <button
-                    onClick={() => setIsOpen(false)}
-                    className="rounded-md bg-white p-2 text-gray-800 ring-white active:ring-2"
-                >
-                    <XIcon />
-                </button>
             </div>
         </motion.nav>
     );

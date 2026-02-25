@@ -14,15 +14,28 @@ if (!PUBLISHABLE_KEY) {
 
 createRoot(document.getElementById('root')).render(
     <ClerkProvider publishableKey={PUBLISHABLE_KEY}
-        appearance={
-            {
-                theme: dark,
-                variables: {
-                    colorPrimary: '#4f39f6',
-                    colorTextOnPrimaryBackground: "ffffff"
-                }
+        appearance={{
+            theme: dark,
+            variables: {
+                colorPrimary: '#0891b2',
+                colorTextOnPrimaryBackground: "#ffffff",
+                colorBackground: '#0a0a0c',
+                borderRadius: '1rem',
+                fontFamily: 'Inter, sans-serif'
+            },
+            elements: {
+                card: 'bg-black/40 backdrop-blur-xl border border-white/10 shadow-2xl',
+                formButtonPrimary: 'bg-gradient-to-r from-cyan-600 to-indigo-600 border-none hover:opacity-90 transition-all font-bold uppercase tracking-widest text-xs py-3',
+                headerTitle: 'text-2xl font-bold tracking-tight',
+                headerSubtitle: 'text-gray-400',
+                socialButtonsBlockButton: 'bg-white/5 border-white/10 hover:bg-white/10 transition-colors',
+                socialButtonsBlockButtonText: 'font-semibold',
+                formFieldInput: 'bg-white/5 border-white/10 focus:border-cyan-500/50 transition-all',
+                footerActionLink: 'text-cyan-400 hover:text-cyan-300 font-bold',
+                dividerLine: 'bg-white/10',
+                dividerText: 'text-gray-500 text-[10px] uppercase font-bold tracking-widest',
             }
-        }>
+        }}>
         <BrowserRouter>
             <App />
         </BrowserRouter>

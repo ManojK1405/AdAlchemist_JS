@@ -14,7 +14,7 @@ export default function Hero() {
     const galleryStripImages = [
         'https://images.unsplash.com/photo-1542291026-7eec264c27ff?q=80&w=1000', // Red shoes
         'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?q=80&w=1000', // Headphones
-        'https://images.unsplash.com/photo-1523275335684-37898b6baf30?q=80&w=1000', // Watch
+        '/blue-car.png', // Vibrant Blue Car
         'https://images.unsplash.com/photo-1620916566398-39f1143ab7be?q=80&w=1600'  // Flask
     ];
 
