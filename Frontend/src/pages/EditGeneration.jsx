@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Loader2Icon, ArrowLeftIcon, Edit2Icon, SparkleIcon, Coins, Sparkles, PlayCircle, Image as ImageIcon, Wand2, Zap, Camera, Move, Layers } from "lucide-react";
+import { Loader2Icon, ArrowLeftIcon, Edit2Icon, SparkleIcon, Coins, Sparkles, PlayCircle, Image as ImageIcon, Wand2, Zap, Camera, Move, Layers, Settings2 } from "lucide-react";
 import api from "../configs/axios";
 import UploadZone from "../components/UploadZone";
 import heic2any from "heic2any";
@@ -30,6 +30,9 @@ const EditGeneration = () => {
     const [regenerating, setRegenerating] = useState(false);
     const [project, setProject] = useState(null);
     const [logoImage, setLogoImage] = useState(null);
+
+    const [selectedImageIdx, setSelectedImageIdx] = useState(0);
+    const [selectedVideoIdx, setSelectedVideoIdx] = useState(0);
 
     const [editMode, setEditMode] = useState("image");
 
@@ -64,6 +67,8 @@ const EditGeneration = () => {
             });
 
             setProject(data);
+            setSelectedImageIdx(data.imageVersions?.length ? data.imageVersions.length - 1 : 0);
+            setSelectedVideoIdx(data.videoVersions?.length ? data.videoVersions.length - 1 : 0);
 
             setForm({
                 productName: data.productName || "",
@@ -132,10 +137,11 @@ const EditGeneration = () => {
                     { headers: { Authorization: `Bearer ${token}` } }
                 );
 
-                toast.success("Video regeneration started");
+                // toast.success("Video regeneration started");
             }
 
-            navigate(`/result/${projectId}`);
+            // Refresh project to show new version
+            await fetchProject();
 
         } catch (error) {
             toast.error(
@@ -172,8 +178,17 @@ const EditGeneration = () => {
                         Edit Studio
                     </h1>
 
-                    <div className="text-sm text-gray-400">
-                        Cost: {editMode === "image" ? "5" : "20"} Credits
+                    <div className="flex items-center gap-4">
+                        <button
+                            onClick={() => navigate(`/pro-edit/${projectId}`)}
+                            className="px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-xs font-bold hover:bg-white/10 transition flex items-center gap-2"
+                        >
+                            <Settings2 size={14} className="text-cyan-400" />
+                            Switch to Pro Studio
+                        </button>
+                        <div className="text-sm text-gray-400">
+                            Cost: {editMode === "image" ? "5" : "20"} Credits
+                        </div>
                     </div>
                 </div>
 
@@ -207,8 +222,8 @@ const EditGeneration = () => {
                 <div className="grid lg:grid-cols-3 gap-10">
 
                     {/* LEFT SIDE: Preview */}
-                    <div className="lg:col-span-2">
-                        <div className="relative rounded-3xl overflow-hidden border border-white/10">
+                    <div className="lg:col-span-2 space-y-6">
+                        <div className="relative rounded-3xl overflow-hidden border border-white/10 h-[600px] flex items-center justify-center bg-black/20">
 
                             {regenerating && (
                                 <div className="absolute inset-0 bg-black/70 flex items-center justify-center z-10">
@@ -218,18 +233,64 @@ const EditGeneration = () => {
 
                             {editMode === "video" && project.generatedVideo ? (
                                 <video
-                                    src={project.generatedVideo}
+                                    src={project.videoVersions?.[selectedVideoIdx] || project.generatedVideo}
                                     controls
-                                    className="w-full h-full object-cover"
+                                    className="w-full h-full object-contain"
                                 />
                             ) : (
                                 <img
-                                    src={project.generatedImage}
+                                    src={project.imageVersions?.[selectedImageIdx] || project.generatedImage}
                                     alt="Preview"
-                                    className="w-full h-full object-cover"
+                                    className="w-full h-full object-contain"
                                 />
                             )}
                         </div>
+
+                        {/* Version Selector */}
+                        {editMode === "image" && project.imageVersions?.length > 0 && (
+                            <div className="flex flex-col gap-3">
+                                <h3 className="text-sm font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
+                                    <Layers size={14} /> Version History
+                                </h3>
+                                <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
+                                    {project.imageVersions.map((ver, idx) => (
+                                        <button
+                                            key={idx}
+                                            onClick={() => setSelectedImageIdx(idx)}
+                                            className={`relative shrink-0 w-24 h-32 rounded-xl overflow-hidden border-2 transition-all duration-300 ${selectedImageIdx === idx ? 'border-cyan-500 shadow-[0_0_15px_rgba(6,182,212,0.5)]' : 'border-transparent opacity-60 hover:opacity-100'}`}
+                                        >
+                                            <img src={ver} alt={`Version ${idx + 1}`} className="w-full h-full object-cover" />
+                                            <div className="absolute top-1.5 left-1.5 bg-black/80 px-2 py-0.5 rounded-md text-[10px] font-bold border border-white/10">v{idx + 1}</div>
+                                            {selectedImageIdx === idx && (
+                                                <div className="absolute bottom-1.5 left-1/2 -translate-x-1/2 bg-cyan-600 px-2 py-0.5 rounded-md text-[9px] font-bold">Selected</div>
+                                            )}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                        {editMode === "video" && project.videoVersions?.length > 0 && (
+                            <div className="flex flex-col gap-3">
+                                <h3 className="text-sm font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
+                                    <Layers size={14} /> Version History
+                                </h3>
+                                <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
+                                    {project.videoVersions.map((ver, idx) => (
+                                        <button
+                                            key={idx}
+                                            onClick={() => setSelectedVideoIdx(idx)}
+                                            className={`relative shrink-0 w-32 h-24 rounded-xl overflow-hidden border-2 transition-all duration-300 ${selectedVideoIdx === idx ? 'border-cyan-500 shadow-[0_0_15px_rgba(6,182,212,0.5)]' : 'border-transparent opacity-60 hover:opacity-100 bg-white/5'}`}
+                                        >
+                                            <video src={ver} className="w-full h-full object-cover absolute inset-0 opacity-40" />
+                                            <div className="absolute inset-0 flex items-center justify-center">
+                                                <PlayCircle className={`size-6 ${selectedVideoIdx === idx ? 'text-cyan-400' : 'text-white'}`} />
+                                            </div>
+                                            <div className="absolute top-1.5 left-1.5 bg-black/80 px-2 py-0.5 rounded-md text-[10px] font-bold border border-white/10 z-10">v{idx + 1}</div>
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
                     </div>
 
                     {/* RIGHT SIDE: Controls */}

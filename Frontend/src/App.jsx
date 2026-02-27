@@ -3,7 +3,7 @@ import Home from './pages/Home';
 import SoftBackdrop from './components/SoftBackdrop';
 import Footer from './components/Footer';
 import LenisScroll from './components/lenis';
-import { Route, Routes } from 'react-router-dom';
+import { Route, Routes, useLocation } from 'react-router-dom';
 import Result from './pages/Result';
 import Community from './pages/Community';
 import Plans from './pages/Plans';
@@ -18,15 +18,19 @@ import CreatorLounge from './pages/CreatorLounge';
 import Billing from './pages/Billing';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import TermsOfService from './pages/TermsOfService';
+import ProfessionalEdit from './pages/ProfessionalEdit/index';
 
 
 function App() {
+    const location = useLocation();
+    const isProEdit = location.pathname.startsWith('/pro-edit');
+
     return (
         <>
             <Toaster toastOptions={{ style: { background: "#333", color: "#fff" } }} />
             <SoftBackdrop />
             <LenisScroll />
-            <Navbar />
+            {!isProEdit && <Navbar />}
 
             <Routes>
                 <Route path="/" element={<Home />} />
@@ -43,10 +47,11 @@ function App() {
                 <Route path="/terms" element={<TermsOfService />} />
                 <Route path="/result/:projectId" element={<Result />} />
                 <Route path="/edit/:projectId" element={<EditGeneration />} />
+                <Route path="/pro-edit/:projectId" element={<ProfessionalEdit />} />
                 <Route path="/loading" element={<Loading />} />
             </Routes>
 
-            <Footer />
+            {!isProEdit && <Footer />}
         </>
     );
 }

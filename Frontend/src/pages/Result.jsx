@@ -9,7 +9,8 @@ import {
     Facebook,
     Instagram,
     SendIcon,
-    Coins
+    Coins,
+    Settings2
 } from "lucide-react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { GhostButton, PrimaryButton } from "../components/Buttons";
@@ -160,6 +161,14 @@ const Result = () => {
                         >
                             <Edit2Icon className="w-4 h-4" />
                             Edit Generation
+                        </Link>
+
+                        <Link
+                            to={`/pro-edit/${project.id}`}
+                            className="flex items-center gap-2 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 px-5 py-3 rounded-xl text-white transition font-bold shadow-lg shadow-cyan-500/10"
+                        >
+                            <Settings2 className="w-4 h-4" />
+                            Pro Studio
                         </Link>
 
 

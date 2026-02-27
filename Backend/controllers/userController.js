@@ -45,7 +45,7 @@ export const getUserCredits = async (req, res) => {
             });
         }
 
-        res.json({ credits: user.credits });
+        res.json({ credits: user.credits, hasProAccess: user.hasProAccess });
     } catch (error) {
         Sentry.captureException(error);
         res.status(500).json({ message: 'Internal server error' });
@@ -159,6 +159,44 @@ export const updateBrandKit = async (req, res) => {
         });
 
         res.json({ brandKit, message: "Brand Kit successfully updated!" });
+    } catch (error) {
+        Sentry.captureException(error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+};
+
+// Unlock Pro Studio with credits
+export const unlockProStudio = async (req, res) => {
+    try {
+        const { userId } = req.auth();
+
+        const user = await prisma.user.findUnique({
+            where: { id: userId }
+        });
+
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        if (user.hasProAccess) {
+            return res.status(400).json({ message: 'You already have Pro Studio Access unlocked.' });
+        }
+
+        const UNLOCK_COST = 250; // Defining a cost
+
+        if (user.credits < UNLOCK_COST) {
+            return res.status(400).json({ message: `Insufficient credits. You need ${UNLOCK_COST} credits to unlock Pro Studio. Please purchase more from the Billing page.` });
+        }
+
+        await prisma.user.update({
+            where: { id: userId },
+            data: {
+                credits: { decrement: UNLOCK_COST },
+                hasProAccess: true
+            }
+        });
+
+        res.json({ message: "Pro Studio Successully Unlocked! Enjoy lifetime access." });
     } catch (error) {
         Sentry.captureException(error);
         res.status(500).json({ message: 'Internal server error' });

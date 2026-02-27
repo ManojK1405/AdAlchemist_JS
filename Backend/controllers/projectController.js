@@ -228,6 +228,7 @@ One high-resolution, magazine-quality advertisement image.
             where: { id: tempProjectId },
             data: {
                 generatedImage: uploadResult.secure_url,
+                imageVersions: [uploadResult.secure_url],
                 isGenerating: false,
             },
         });
@@ -258,7 +259,7 @@ One high-resolution, magazine-quality advertisement image.
         Sentry.captureException(error);
         console.error(error);
 
-        return res.status(500).json({ message: "Internal server error" });
+        console.error(error); return res.status(500).json({ message: error.message || "Internal server error" });
     }
 };
 
@@ -405,10 +406,12 @@ A stunningly realistic, brand-quality commercial segment ready for prime-time ma
         });
 
         //Update project with generated video url
+        const videoVersions = project.videoVersions || [];
         await prisma.project.update({
             where: { id: project.id },
             data: {
                 generatedVideo: uploadResult.secure_url,
+                videoVersions: [...videoVersions, uploadResult.secure_url],
                 isGenerating: false,
             },
         });
@@ -506,7 +509,7 @@ export const deleteProject = async (req, res) => {
     } catch (error) {
         Sentry.captureException(error);
         console.error(error);
-        return res.status(500).json({ message: "Internal server error" });
+        console.error(error); return res.status(500).json({ message: error.message || "Internal server error" });
     }
 };
 
@@ -541,7 +544,7 @@ export const getProjectById = async (req, res) => {
 
     } catch (error) {
         console.error(error);
-        return res.status(500).json({ message: "Internal server error" });
+        console.error(error); return res.status(500).json({ message: error.message || "Internal server error" });
     }
 };
 
@@ -562,6 +565,9 @@ export const editGeneration = async (req, res) => {
             productDescription,
             name,
             keepOriginalScene = true,
+            guidance_scale,
+            inference_steps,
+            negative_prompt
         } = req.body;
 
         // ✅ Check user
@@ -624,6 +630,9 @@ export const editGeneration = async (req, res) => {
                 aspectRatio: aspectRatio || project.aspectRatio || "9:16",
                 imageSize: "1K",
             },
+            guidanceScale: guidance_scale ? parseFloat(guidance_scale) : undefined,
+            negativePrompt: negative_prompt || undefined,
+            inferenceSteps: inference_steps ? parseInt(inference_steps) : undefined,
             safetySettings: [
                 {
                     category: HarmCategory.HARM_CATEGORY_HATE_SPEECH,
@@ -818,6 +827,8 @@ CREATIVE RE-IMAGINING RULES:
             }
         );
 
+        const imageVersions = project.imageVersions || [];
+
         // ✅ Update project with new values
         await prisma.project.update({
             where: { id: projectId },
@@ -829,6 +840,7 @@ CREATIVE RE-IMAGINING RULES:
                 productDescription:
                     productDescription ?? project.productDescription,
                 generatedImage: uploadResult.secure_url,
+                imageVersions: [...imageVersions, uploadResult.secure_url],
                 isGenerating: false,
                 error: "",
             },
@@ -853,17 +865,22 @@ CREATIVE RE-IMAGINING RULES:
 
         // ✅ Safely reset project generating state
         if (project) {
-            await prisma.project.update({
-                where: { id: project.id },
-                data: {
-                    isGenerating: false,
-                    error: error.message,
-                },
-            });
+            try {
+                await prisma.project.update({
+                    where: { id: project.id },
+                    data: {
+                        isGenerating: false,
+                        error: error.message ? error.message.toString() : "Unknown error",
+                    },
+                });
+            } catch (innerError) {
+                console.error("Error updating project in catch block:", innerError);
+            }
         }
 
         Sentry.captureException(error);
-        return res.status(500).json({ message: "Internal server error" });
+        console.error("Main error:", error);
+        return res.status(500).json({ message: error.message || "Internal server error" });
     }
 };
 
@@ -1018,10 +1035,12 @@ A breathtakingly professional 5 - second commercial segment that looks like it w
         });
 
         // ✅ Update project
+        const videoVersions = project.videoVersions || [];
         await prisma.project.update({
             where: { id: projectId },
             data: {
                 generatedVideo: uploadResult.secure_url,
+                videoVersions: [...videoVersions, uploadResult.secure_url],
                 isGenerating: false,
                 userPrompt: userPrompt ?? project.userPrompt,
                 error: "",
@@ -1099,5 +1118,49 @@ export const getTrendingProjects = async (req, res) => {
     } catch (error) {
         Sentry.captureException(error);
         res.status(500).json({ message: 'Internal server error' });
+    }
+};
+
+// Save a baked/cropped edit from the Pro Studio
+export const saveEditedImage = async (req, res) => {
+    try {
+        const { userId } = req.auth();
+        const projectId = req.params.projectId;
+        const { imageBase64 } = req.body;
+
+        if (!imageBase64) {
+            return res.status(400).json({ message: "Image data is required" });
+        }
+
+        const project = await prisma.project.findUnique({
+            where: { id: projectId },
+        });
+
+        if (!project || project.userId !== userId) {
+            return res.status(404).json({ message: "Project not found or unauthorized" });
+        }
+
+        // Upload to cloudinary directly from base64 data URI
+        const uploadResult = await cloudinary.uploader.upload(imageBase64, {
+            folder: "adalchemist/edits",
+        });
+
+        const newImageUrl = uploadResult.secure_url;
+
+        // Update project with the new master version
+        const imageVersions = project.imageVersions || [];
+        const updatedProject = await prisma.project.update({
+            where: { id: projectId },
+            data: {
+                generatedImage: newImageUrl,
+                imageVersions: [...imageVersions, newImageUrl]
+            }
+        });
+
+        res.json(updatedProject);
+    } catch (error) {
+        console.error("Save Edit Error:", error);
+        Sentry.captureException(error);
+        res.status(500).json({ message: "Failed to save edit" });
     }
 };
