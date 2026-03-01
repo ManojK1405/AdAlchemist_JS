@@ -33,8 +33,25 @@ const EditGeneration = () => {
 
     const [selectedImageIdx, setSelectedImageIdx] = useState(0);
     const [selectedVideoIdx, setSelectedVideoIdx] = useState(0);
+    const [detectedRatio, setDetectedRatio] = useState(null);
 
     const [editMode, setEditMode] = useState("image");
+
+    const handleImageLoad = (e) => {
+        const { naturalWidth, naturalHeight } = e.target;
+        const ratio = (naturalWidth / naturalHeight).toFixed(2);
+        if (ratio < 0.8) setDetectedRatio("9/16");
+        else if (ratio > 1.2) setDetectedRatio("16/9");
+        else setDetectedRatio("1/1");
+    };
+
+    const handleVideoMetadata = (e) => {
+        const { videoWidth, videoHeight } = e.target;
+        const ratio = (videoWidth / videoHeight).toFixed(2);
+        if (ratio < 0.8) setDetectedRatio("9/16");
+        else if (ratio > 1.2) setDetectedRatio("16/9");
+        else setDetectedRatio("1/1");
+    };
 
     const [form, setForm] = useState({
         productName: "",
@@ -160,6 +177,14 @@ const EditGeneration = () => {
         );
     }
 
+    // Determine which aspect ratio class to use for preview
+    const currentRatio = detectedRatio || project.aspectRatio.replace(":", "/");
+    const ratioClass = currentRatio === "9/16"
+        ? "aspect-[9/16] h-[600px]"
+        : currentRatio === "1/1" || currentRatio === "1:1"
+            ? "aspect-square h-[600px]"
+            : "aspect-video w-full";
+
     return (
         <div className="min-h-screen text-white p-6 md:p-10 mt-16">
             <div className="max-w-7xl mx-auto">
@@ -223,7 +248,7 @@ const EditGeneration = () => {
 
                     {/* LEFT SIDE: Preview */}
                     <div className="lg:col-span-2 space-y-6">
-                        <div className={`relative rounded-3xl overflow-hidden border border-white/10 flex items-center justify-center bg-black/20 mx-auto transition-all duration-500 ${project.aspectRatio === "9:16" ? "aspect-[9/16] h-[600px]" : project.aspectRatio === "1:1" ? "aspect-square h-[600px]" : "aspect-video w-full"}`}>
+                        <div className={`relative rounded-3xl overflow-hidden border border-white/10 flex items-center justify-center bg-black/20 mx-auto transition-all duration-500 ${ratioClass}`}>
 
                             {regenerating && (
                                 <div className="absolute inset-0 bg-black/70 flex items-center justify-center z-10">
@@ -233,13 +258,17 @@ const EditGeneration = () => {
 
                             {editMode === "video" && project.generatedVideo ? (
                                 <video
+                                    key={selectedVideoIdx}
                                     src={selectedVideoIdx === -1 ? project.generatedVideo : (project.videoVersions?.[selectedVideoIdx] || project.generatedVideo)}
+                                    onLoadedMetadata={handleVideoMetadata}
                                     controls
                                     className="w-full h-full object-contain"
                                 />
                             ) : (
                                 <img
+                                    key={selectedImageIdx}
                                     src={selectedImageIdx === -1 ? project.generatedImage : (project.imageVersions?.[selectedImageIdx] || project.generatedImage)}
+                                    onLoad={handleImageLoad}
                                     alt="Preview"
                                     className="w-full h-full object-contain"
                                 />

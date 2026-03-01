@@ -35,6 +35,7 @@ const Result = () => {
     const [viewMode, setViewMode] = useState("image");
     const [selectedImageIdx, setSelectedImageIdx] = useState(-1);
     const [selectedVideoIdx, setSelectedVideoIdx] = useState(-1);
+    const [detectedRatio, setDetectedRatio] = useState(null); // String like "9/16" or "16/9"
 
     // Facebook Publish States
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -180,6 +181,22 @@ const Result = () => {
 
 
 
+    const handleImageLoad = (e) => {
+        const { naturalWidth, naturalHeight } = e.target;
+        const ratio = (naturalWidth / naturalHeight).toFixed(2);
+        if (ratio < 0.8) setDetectedRatio("9/16");
+        else if (ratio > 1.2) setDetectedRatio("16/9");
+        else setDetectedRatio("1/1");
+    };
+
+    const handleVideoMetadata = (e) => {
+        const { videoWidth, videoHeight } = e.target;
+        const ratio = (videoWidth / videoHeight).toFixed(2);
+        if (ratio < 0.8) setDetectedRatio("9/16");
+        else if (ratio > 1.2) setDetectedRatio("16/9");
+        else setDetectedRatio("1/1");
+    };
+
     // Loading Screen
     if (loading || !project) {
         return (
@@ -188,6 +205,14 @@ const Result = () => {
             </div>
         );
     }
+
+    // Determine which aspect ratio class to use
+    const currentRatio = detectedRatio || project.aspectRatio.replace(":", "/");
+    const ratioClass = currentRatio === "9/16"
+        ? "aspect-[9/16] max-w-sm"
+        : currentRatio === "1/1" || currentRatio === "1:1"
+            ? "aspect-square max-w-2xl"
+            : "aspect-video w-full";
 
     return (
         <div className="min-h-screen text-white p-6 md:p-12 mt-20">
@@ -263,18 +288,12 @@ const Result = () => {
                         )}
 
                         <div className="glass-panel p-3 rounded-3xl w-full shadow-2xl border border-white/10">
-                            <div
-                                className={`${project.aspectRatio === "9:16"
-                                    ? "aspect-[9/16] max-w-sm mx-auto"
-                                    : project.aspectRatio === "1:1"
-                                        ? "aspect-square max-w-2xl mx-auto"
-                                        : "aspect-video"
-                                    } w-full rounded-2xl overflow-hidden bg-gray-950 relative`}
-                            >
+                            <div className={`${ratioClass} transition-all duration-500 mx-auto rounded-2xl overflow-hidden bg-gray-950 relative`}>
                                 {viewMode === "video" && project.generatedVideo ? (
                                     <video
                                         key={selectedVideoIdx}
                                         src={selectedVideoIdx === -1 ? project.generatedVideo : (project.videoVersions?.[selectedVideoIdx] || project.generatedVideo)}
+                                        onLoadedMetadata={handleVideoMetadata}
                                         controls
                                         autoPlay
                                         loop
@@ -282,7 +301,9 @@ const Result = () => {
                                     />
                                 ) : (
                                     <img
+                                        key={selectedImageIdx}
                                         src={selectedImageIdx === -1 ? project.generatedImage : (project.imageVersions?.[selectedImageIdx] || project.generatedImage)}
+                                        onLoad={handleImageLoad}
                                         alt="Generated Result"
                                         className="w-full h-full object-cover"
                                     />
