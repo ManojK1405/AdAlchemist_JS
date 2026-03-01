@@ -10,6 +10,7 @@ import projectRouter from './routes/projectRoutes.js';
 import socialRouter from './routes/socialRoutes.js';
 import metaRouter from './routes/metaRoutes.js';
 import paymentRouter from './routes/paymentRoutes.js';
+import adminRouter from './routes/adminRoutes.js';
 
 
 const app = express();
@@ -31,6 +32,7 @@ app.use('/api/project', projectRouter);
 app.use('/api/social', socialRouter);
 app.use('/api/meta', metaRouter);
 app.use('/api/payment', paymentRouter);
+app.use('/api/admin', adminRouter);
 
 
 app.get('/', (req, res) => {

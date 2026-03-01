@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom"
-import { useState } from "react"
-import { EllipsisIcon, Heart, ImageIcon, Loader2Icon, MessageCircle, Share2Icon, Trash2Icon, VideoIcon, Coins, Copy } from "lucide-react"
+import { useState, useRef } from "react"
+import { EllipsisIcon, Heart, ImageIcon, Loader2Icon, MessageCircle, Share2Icon, Trash2Icon, VideoIcon, Coins, Copy, Play } from "lucide-react"
 import { PrimaryButton } from "./Buttons"
 import { useAuth, useUser } from "@clerk/clerk-react"
 import toast from "react-hot-toast"
@@ -21,6 +21,8 @@ const ProjectCard = ({
     const navigate = useNavigate()
     const [menuOpen, setMenuOpen] = useState(false)
     const [showComments, setShowComments] = useState(false)
+    const [isPlaying, setIsPlaying] = useState(false)
+    const videoRef = useRef(null)
 
     const isLiked = gen.projectLikes?.some(l => l.userId === user?.id)
 
@@ -109,31 +111,78 @@ const ProjectCard = ({
     }
 
 
+    const handleToggleVideo = (e) => {
+        if (e && e.target.closest('button')) return;
+        if (!gen.generatedVideo || !videoRef.current) return;
+        if (isPlaying) {
+            videoRef.current.pause();
+            setIsPlaying(false);
+        } else {
+            const playPromise = videoRef.current.play();
+            if (playPromise !== undefined) {
+                playPromise.catch(err => {
+                    if (err.name !== 'AbortError') console.error('Video play error:', err);
+                });
+            }
+            setIsPlaying(true);
+        }
+    };
+
+    const handleMouseEnter = () => {
+        if (!gen.generatedVideo || !videoRef.current) return;
+        const playPromise = videoRef.current.play();
+        if (playPromise !== undefined) {
+            playPromise.catch(err => {
+                if (err.name !== 'AbortError') console.error('Video play error:', err);
+            });
+        }
+        setIsPlaying(true);
+    };
+
+    const handleMouseLeave = () => {
+        if (!gen.generatedVideo || !videoRef.current) return;
+        videoRef.current.pause();
+        setIsPlaying(false);
+    };
+
     return (
         <div key={gen.id} className="mb-6 break-inside-avoid animate-in fade-in zoom-in-95 duration-500">
             <div className="bg-[#13131a] border border-white/5 rounded-[2rem] overflow-hidden hover:border-white/10 transition-all duration-300 group shadow-xl hover:shadow-cyan-500/5">
 
                 {/* preview image */}
-                <div className={`${gen?.aspectRatio === '9:16' ? 'aspect-9/16' : 'aspect-video'} relative overflow-hidden`}>
+                <div
+                    className={`${gen?.aspectRatio === '9:16' ? 'aspect-9/16' : 'aspect-video'} relative overflow-hidden cursor-pointer`}
+                    onClick={handleToggleVideo}
+                    onMouseEnter={handleMouseEnter}
+                    onMouseLeave={handleMouseLeave}
+                >
 
                     {gen.generatedImage && (
                         <img
                             src={gen.generatedImage}
                             alt={gen.productName}
-                            className={`absolute inset-0 w-full h-full object-cover transition duration-700 ${gen.generatedVideo ? 'group-hover:opacity-0' : 'group-hover:scale-110'}`}
+                            className={`absolute inset-0 w-full h-full object-cover transition duration-700 ${(gen.generatedVideo && isPlaying) ? 'opacity-0' : 'opacity-100 group-hover:scale-110'}`}
                         />
                     )}
 
                     {gen.generatedVideo && (
-                        <video
-                            src={gen.generatedVideo}
-                            muted
-                            loop
-                            playsInline
-                            className="absolute inset-0 w-full h-full object-cover opacity-0 group-hover:opacity-100 transition duration-700"
-                            onMouseEnter={(e) => e.currentTarget.play()}
-                            onMouseLeave={(e) => e.currentTarget.pause()}
-                        />
+                        <>
+                            <video
+                                ref={videoRef}
+                                src={gen.generatedVideo}
+                                muted
+                                loop
+                                playsInline
+                                className={`absolute inset-0 w-full h-full object-cover transition duration-700 ${isPlaying ? 'opacity-100' : 'opacity-0'}`}
+                            />
+                            {!isPlaying && (
+                                <div className="absolute inset-0 flex items-center justify-center pointer-events-none md:hidden z-10">
+                                    <div className="w-12 h-12 bg-black/50 backdrop-blur text-white flex items-center justify-center rounded-full border border-white/20 shadow-xl">
+                                        <Play fill="white" size={20} className="ml-1 opacity-80" />
+                                    </div>
+                                </div>
+                            )}
+                        </>
                     )}
 
                     {(!gen?.generatedImage && !gen?.generatedVideo) && (

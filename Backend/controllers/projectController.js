@@ -10,6 +10,7 @@ import fs from "fs";
 import ai from "../configs/ai.js";
 import axios from "axios";
 import path from "path";
+import { checkFeature } from "../configs/features.js";
 
 const loadImage = (filePath, mimeType) => {
     return {
@@ -22,6 +23,7 @@ const loadImage = (filePath, mimeType) => {
 
 // Create project
 export const createProject = async (req, res) => {
+    if (await checkFeature('imageGeneration', res) !== true) return;
     let tempProjectId = null;
     let isCreditDeducted = false;
 
@@ -266,6 +268,7 @@ One high-resolution, magazine-quality advertisement image.
 
 //create video
 export const createVideo = async (req, res) => {
+    if (await checkFeature('videoGeneration', res) !== true) return;
     const { userId } = req.auth();
     const { projectId } = req.body;
 
@@ -550,6 +553,7 @@ export const getProjectById = async (req, res) => {
 
 // Edit & Regenerate Image (5 credits only)
 export const editGeneration = async (req, res) => {
+    if (await checkFeature('imageGeneration', res) !== true) return;
     let isCreditDeducted = false;
     let project = null;
 
@@ -886,6 +890,7 @@ CREATIVE RE-IMAGINING RULES:
 
 
 export const editVideo = async (req, res) => {
+    if (await checkFeature('videoGeneration', res) !== true) return;
     const { userId } = req.auth();
     const { projectId, userPrompt } = req.body;
 
@@ -1118,6 +1123,48 @@ export const getTrendingProjects = async (req, res) => {
     } catch (error) {
         Sentry.captureException(error);
         res.status(500).json({ message: 'Internal server error' });
+    }
+};
+
+// Set a specific version from history as the primary (master) asset
+export const setAsMaster = async (req, res) => {
+    try {
+        const { userId } = req.auth();
+        const projectId = req.params.projectId;
+        const { url, type } = req.body;
+
+        if (!url || !type) {
+            return res.status(400).json({ message: "URL and Type (image/video) are required" });
+        }
+
+        const project = await prisma.project.findUnique({
+            where: { id: projectId },
+        });
+
+        if (!project || project.userId !== userId) {
+            return res.status(404).json({ message: "Project not found or unauthorized" });
+        }
+
+        const data = {};
+        if (type === "image") {
+            data.generatedImage = url;
+            // Also update history to ensure it's still there (should already be)
+        } else if (type === "video") {
+            data.generatedVideo = url;
+        } else {
+            return res.status(400).json({ message: "Invalid type. Must be image or video" });
+        }
+
+        const updatedProject = await prisma.project.update({
+            where: { id: projectId },
+            data
+        });
+
+        res.json(updatedProject);
+    } catch (error) {
+        console.error("Set Master Error:", error);
+        Sentry.captureException(error);
+        res.status(500).json({ message: "Failed to set master version" });
     }
 };
 

@@ -10,7 +10,9 @@ import {
     Instagram,
     SendIcon,
     Coins,
-    Settings2
+    Settings2,
+    Layers,
+    PlayCircle
 } from "lucide-react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { GhostButton, PrimaryButton } from "../components/Buttons";
@@ -30,6 +32,10 @@ const Result = () => {
     const [loading, setLoading] = useState(true);
     const [isGenerating, setIsGenerating] = useState(false);
 
+    const [viewMode, setViewMode] = useState("image");
+    const [selectedImageIdx, setSelectedImageIdx] = useState(-1);
+    const [selectedVideoIdx, setSelectedVideoIdx] = useState(-1);
+
     // Facebook Publish States
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [targetPlatform, setTargetPlatform] = useState('Facebook');
@@ -45,6 +51,25 @@ const Result = () => {
             });
             setProjectData(data);
             setIsGenerating(data.isGenerating);
+
+            // Set initial view mode and indices
+            if (data.generatedVideo) {
+                setViewMode("video");
+            } else {
+                setViewMode("image");
+            }
+
+            if (data.imageVersions?.length > 0) {
+                setSelectedImageIdx(data.imageVersions.length - 1);
+            } else {
+                setSelectedImageIdx(-1);
+            }
+
+            if (data.videoVersions?.length > 0) {
+                setSelectedVideoIdx(data.videoVersions.length - 1);
+            } else {
+                setSelectedVideoIdx(-1);
+            }
 
             setLoading(false);
 
@@ -88,6 +113,23 @@ const Result = () => {
     const handleSocialPublish = (platform) => {
         setTargetPlatform(platform);
         setIsModalOpen(true);
+    };
+
+    const handleSetMaster = async (url, type) => {
+        try {
+            const token = await getToken();
+            const { data } = await api.post(`/api/project/${projectId}/set-master`, {
+                url,
+                type
+            }, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+
+            setProjectData(data);
+            toast.success("Primary version updated");
+        } catch (error) {
+            toast.error("Failed to update primary version");
+        }
     };
 
 
@@ -187,17 +229,47 @@ const Result = () => {
                 <div className="grid lg:grid-cols-3 gap-10">
 
                     {/* Main Result Display */}
-                    <div className="lg:col-span-2">
-                        <div className="glass-panel p-3 rounded-3xl w-full">
+                    <div className="lg:col-span-2 space-y-8">
+                        {/* Toggle */}
+                        {project.generatedVideo && (
+                            <div className="flex justify-center">
+                                <div className="bg-white/5 backdrop-blur-md p-1.5 rounded-2xl flex border border-white/10 shadow-2xl">
+                                    <button
+                                        onClick={() => setViewMode("image")}
+                                        className={`px-6 py-2.5 rounded-xl transition-all duration-300 flex items-center gap-2 text-sm font-bold ${viewMode === "image"
+                                            ? "bg-cyan-600 text-white shadow-[0_0_20px_rgba(6,182,212,0.4)]"
+                                            : "text-gray-400 hover:text-white"
+                                            }`}
+                                    >
+                                        <ImageIcon size={16} />
+                                        Image
+                                    </button>
+
+                                    <button
+                                        onClick={() => setViewMode("video")}
+                                        className={`px-6 py-2.5 rounded-xl transition-all duration-300 flex items-center gap-2 text-sm font-bold ${viewMode === "video"
+                                            ? "bg-cyan-600 text-white shadow-[0_0_20px_rgba(6,182,212,0.4)]"
+                                            : "text-gray-400 hover:text-white"
+                                            }`}
+                                    >
+                                        <VideoIcon size={16} />
+                                        Video
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+
+                        <div className="glass-panel p-3 rounded-3xl w-full shadow-2xl border border-white/10">
                             <div
                                 className={`${project.aspectRatio === "9:16"
                                     ? "aspect-9/16"
                                     : "aspect-video"
-                                    } w-full rounded-2xl overflow-hidden bg-gray-900`}
+                                    } w-full rounded-2xl overflow-hidden bg-gray-950 relative`}
                             >
-                                {project.generatedVideo ? (
+                                {viewMode === "video" && project.generatedVideo ? (
                                     <video
-                                        src={project.generatedVideo}
+                                        key={selectedVideoIdx}
+                                        src={selectedVideoIdx === -1 ? project.generatedVideo : (project.videoVersions?.[selectedVideoIdx] || project.generatedVideo)}
                                         controls
                                         autoPlay
                                         loop
@@ -205,12 +277,128 @@ const Result = () => {
                                     />
                                 ) : (
                                     <img
-                                        src={project.generatedImage}
+                                        src={selectedImageIdx === -1 ? project.generatedImage : (project.imageVersions?.[selectedImageIdx] || project.generatedImage)}
                                         alt="Generated Result"
                                         className="w-full h-full object-cover"
                                     />
                                 )}
                             </div>
+                        </div>
+
+                        {/* Version History In Results */}
+                        <div className="space-y-6">
+                            {viewMode === "image" && (
+                                <div className="flex flex-col gap-4 p-6 bg-white/[0.02] border border-white/10 rounded-3xl backdrop-blur-sm">
+                                    <div className="flex items-center justify-between">
+                                        <h3 className="text-sm font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
+                                            <Layers size={14} className="text-cyan-500" /> Image History
+                                        </h3>
+                                        <span className="text-[10px] font-bold text-gray-500 bg-white/5 px-2 py-0.5 rounded-full border border-white/10 uppercase tracking-tighter">
+                                            {Math.max((project.imageVersions || []).length, 1)} Variations
+                                        </span>
+                                    </div>
+                                    <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide min-h-[160px]">
+                                        {/* Final Master Fallback */}
+                                        {project.generatedImage && (
+                                            <button
+                                                onClick={() => setSelectedImageIdx(-1)}
+                                                className={`relative shrink-0 w-28 h-40 rounded-2xl overflow-hidden border-2 transition-all duration-300 ${selectedImageIdx === -1 ? 'border-cyan-500 shadow-[0_0_20px_rgba(6,182,212,0.3)] scale-[1.02]' : 'border-white/5 opacity-50 hover:opacity-100 hover:border-white/20'}`}
+                                            >
+                                                <img src={project.generatedImage} className="w-full h-full object-cover" alt="Master" />
+                                                <div className="absolute top-2 left-2 bg-black/60 backdrop-blur-md px-2 py-0.5 rounded-md text-[10px] font-black border border-white/10 text-white">Latest</div>
+                                                {selectedImageIdx === -1 && (
+                                                    <div className="absolute inset-x-2 bottom-2 bg-cyan-600/90 backdrop-blur-sm py-1 rounded-lg text-[9px] font-bold text-center uppercase tracking-widest shadow-lg">Active</div>
+                                                )}
+                                            </button>
+                                        )}
+
+                                        {(project.imageVersions || []).map((ver, idx) => (
+                                            <button
+                                                key={idx}
+                                                onClick={() => setSelectedImageIdx(idx)}
+                                                className={`relative shrink-0 w-28 h-40 rounded-2xl overflow-hidden border-2 transition-all duration-300 group/item ${selectedImageIdx === idx ? 'border-cyan-500 shadow-[0_0_20px_rgba(6,182,212,0.3)] scale-[1.02]' : 'border-white/5 opacity-50 hover:opacity-100 hover:border-white/20'}`}
+                                            >
+                                                <img src={ver} alt={`Version ${idx + 1}`} className="w-full h-full object-cover transition-transform duration-500 group-hover/item:scale-110" />
+                                                <div className="absolute top-2 left-2 bg-black/60 backdrop-blur-md px-2 py-0.5 rounded-md text-[10px] font-black border border-white/10 text-white shadow-xl">V{idx + 1}</div>
+                                                {selectedImageIdx === idx && (
+                                                    <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px] flex items-center justify-center opacity-0 group-hover/item:opacity-100 transition-opacity">
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                handleSetMaster(ver, "image");
+                                                            }}
+                                                            className="px-3 py-1.5 bg-cyan-600 rounded-lg text-[10px] font-bold shadow-xl hover:bg-cyan-500 transition-colors"
+                                                        >
+                                                            Set as Main
+                                                        </button>
+                                                    </div>
+                                                )}
+                                                {selectedImageIdx === idx && (
+                                                    <div className="absolute inset-x-2 bottom-2 bg-cyan-600/90 backdrop-blur-sm py-1 rounded-lg text-[9px] font-bold text-center uppercase tracking-widest shadow-lg">Active</div>
+                                                )}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            {viewMode === "video" && project.generatedVideo && (
+                                <div className="flex flex-col gap-4 p-6 bg-white/[0.02] border border-white/10 rounded-3xl backdrop-blur-sm">
+                                    <div className="flex items-center justify-between">
+                                        <h3 className="text-sm font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
+                                            <Layers size={14} className="text-cyan-500" /> Video History
+                                        </h3>
+                                        <span className="text-[10px] font-bold text-gray-500 bg-white/5 px-2 py-0.5 rounded-full border border-white/10 uppercase tracking-tighter">
+                                            {Math.max((project.videoVersions || []).length, 1)} Variations
+                                        </span>
+                                    </div>
+                                    <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide min-h-[120px]">
+                                        {project.generatedVideo && (
+                                            <button
+                                                onClick={() => setSelectedVideoIdx(-1)}
+                                                className={`relative shrink-0 w-40 h-28 rounded-2xl overflow-hidden border-2 transition-all duration-300 ${selectedVideoIdx === -1 ? 'border-cyan-500 shadow-[0_0_20px_rgba(6,182,212,0.3)] scale-[1.02]' : 'border-white/5 opacity-50 hover:opacity-100 hover:border-white/20'}`}
+                                            >
+                                                <video src={project.generatedVideo} className="w-full h-full object-cover opacity-40" />
+                                                <PlayCircle className="absolute inset-0 m-auto size-8 text-white" />
+                                                <div className="absolute top-2 left-2 bg-black/60 px-2 py-0.5 rounded-md text-[10px] font-black border border-white/10 text-white">Latest</div>
+                                                {selectedVideoIdx === -1 && (
+                                                    <div className="absolute inset-x-2 bottom-2 bg-cyan-600/90 backdrop-blur-sm py-1 rounded-lg text-[9px] font-bold text-center uppercase tracking-widest shadow-lg">Active</div>
+                                                )}
+                                            </button>
+                                        )}
+
+                                        {(project.videoVersions || []).map((ver, idx) => (
+                                            <button
+                                                key={idx}
+                                                onClick={() => setSelectedVideoIdx(idx)}
+                                                className={`relative shrink-0 w-40 h-28 rounded-2xl overflow-hidden border-2 transition-all duration-300 group/item ${selectedVideoIdx === idx ? 'border-cyan-500 shadow-[0_0_20px_rgba(6,182,212,0.3)] scale-[1.02]' : 'border-white/5 opacity-50 hover:opacity-100 hover:border-white/20'}`}
+                                            >
+                                                <video src={ver} className="w-full h-full object-cover absolute inset-0 opacity-40 group-hover/item:opacity-60 transition-opacity" />
+                                                <div className="absolute inset-0 flex items-center justify-center">
+                                                    <PlayCircle className={`size-8 transition-transform duration-300 group-hover/item:scale-110 ${selectedVideoIdx === idx ? 'text-cyan-400 drop-shadow-[0_0_10px_rgba(6,182,212,0.5)]' : 'text-white'}`} />
+                                                </div>
+                                                <div className="absolute top-2 left-2 bg-black/60 backdrop-blur-md px-2 py-0.5 rounded-md text-[10px] font-black border border-white/10 text-white z-10">V{idx + 1}</div>
+                                                {selectedVideoIdx === idx && (
+                                                    <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px] flex items-center justify-center opacity-0 group-hover/item:opacity-100 transition-opacity z-20">
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                handleSetMaster(ver, "video");
+                                                            }}
+                                                            className="px-3 py-1.5 bg-cyan-600 rounded-lg text-[10px] font-bold shadow-xl hover:bg-cyan-500 transition-colors"
+                                                        >
+                                                            Set as Main
+                                                        </button>
+                                                    </div>
+                                                )}
+                                                {selectedVideoIdx === idx && (
+                                                    <div className="absolute inset-x-2 bottom-2 bg-cyan-600/90 backdrop-blur-sm py-1 rounded-lg text-[9px] font-bold text-center uppercase tracking-widest shadow-lg z-10">Active</div>
+                                                )}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     </div>
 
@@ -225,7 +413,10 @@ const Result = () => {
 
                                 <GhostButton
                                     onClick={() =>
-                                        handleDownload(project?.generatedImage, `image-${project?.id}.jpg`)
+                                        handleDownload(
+                                            selectedImageIdx === -1 ? project?.generatedImage : project.imageVersions?.[selectedImageIdx],
+                                            `image-${project?.id}-v${selectedImageIdx + 2}.jpg`
+                                        )
                                     }
                                     disabled={!project?.generatedImage}
                                     className="w-full justify-center rounded-md py-3 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -236,7 +427,10 @@ const Result = () => {
 
 
                                 <GhostButton
-                                    onClick={() => handleDownload(project?.generatedVideo, `video-${project?.id}.mp4`)}
+                                    onClick={() => handleDownload(
+                                        selectedVideoIdx === -1 ? project?.generatedVideo : project.videoVersions?.[selectedVideoIdx],
+                                        `video-${project?.id}-v${selectedVideoIdx + 2}.mp4`
+                                    )}
                                     disabled={!project?.generatedVideo || project?.generatedVideo.trim() === ""}
                                     className="w-full justify-center rounded-md py-3 disabled:opacity-50 disabled:cursor-not-allowed"
                                 >

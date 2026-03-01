@@ -151,3 +151,10 @@ model BrandKit {
   color   String? @default("#4f46e5")
   voice   String? @default("")
 }
+
+model GlobalSettings {
+  id               String  @id @default("system")
+  enableImageGen   Boolean @default(true)
+  enableVideoGen   Boolean @default(true)
+  updatedAt        DateTime @updatedAt
+}

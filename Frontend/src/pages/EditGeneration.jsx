@@ -233,13 +233,13 @@ const EditGeneration = () => {
 
                             {editMode === "video" && project.generatedVideo ? (
                                 <video
-                                    src={project.videoVersions?.[selectedVideoIdx] || project.generatedVideo}
+                                    src={selectedVideoIdx === -1 ? project.generatedVideo : (project.videoVersions?.[selectedVideoIdx] || project.generatedVideo)}
                                     controls
                                     className="w-full h-full object-contain"
                                 />
                             ) : (
                                 <img
-                                    src={project.imageVersions?.[selectedImageIdx] || project.generatedImage}
+                                    src={selectedImageIdx === -1 ? project.generatedImage : (project.imageVersions?.[selectedImageIdx] || project.generatedImage)}
                                     alt="Preview"
                                     className="w-full h-full object-contain"
                                 />
@@ -247,45 +247,89 @@ const EditGeneration = () => {
                         </div>
 
                         {/* Version Selector */}
-                        {editMode === "image" && project.imageVersions?.length > 0 && (
-                            <div className="flex flex-col gap-3">
-                                <h3 className="text-sm font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
-                                    <Layers size={14} /> Version History
-                                </h3>
-                                <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
-                                    {project.imageVersions.map((ver, idx) => (
+                        {editMode === "image" && (
+                            <div className="flex flex-col gap-4 p-6 bg-white/[0.02] border border-white/10 rounded-3xl backdrop-blur-sm">
+                                <div className="flex items-center justify-between">
+                                    <h3 className="text-sm font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
+                                        <Layers size={14} className="text-cyan-500" /> Image History
+                                    </h3>
+                                    <span className="text-[10px] font-bold text-gray-500 bg-white/5 px-2 py-0.5 rounded-full border border-white/10 uppercase tracking-tighter">
+                                        {Math.max((project.imageVersions || []).length, 1)} Variations
+                                    </span>
+                                </div>
+                                <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide min-h-[160px]">
+                                    {/* Final Master Fallback if array is somehow empty but DB says it has it */}
+                                    {((project.imageVersions || []).length === 0 && project.generatedImage) && (
+                                        <button
+                                            onClick={() => setSelectedImageIdx(-1)}
+                                            className={`relative shrink-0 w-28 h-40 rounded-2xl overflow-hidden border-2 transition-all duration-300 ${selectedImageIdx === -1 ? 'border-cyan-500 shadow-[0_0_20px_rgba(6,182,212,0.3)]' : 'border-white/5'}`}
+                                        >
+                                            <img src={project.generatedImage} className="w-full h-full object-cover" alt="Master" />
+                                            <div className="absolute top-2 left-2 bg-black/60 px-2 py-0.5 rounded-md text-[10px] font-black border border-white/10 text-white">Latest</div>
+                                        </button>
+                                    )}
+
+                                    {(project.imageVersions || []).map((ver, idx) => (
                                         <button
                                             key={idx}
                                             onClick={() => setSelectedImageIdx(idx)}
-                                            className={`relative shrink-0 w-24 h-32 rounded-xl overflow-hidden border-2 transition-all duration-300 ${selectedImageIdx === idx ? 'border-cyan-500 shadow-[0_0_15px_rgba(6,182,212,0.5)]' : 'border-transparent opacity-60 hover:opacity-100'}`}
+                                            className={`relative shrink-0 w-28 h-40 rounded-2xl overflow-hidden border-2 transition-all duration-300 group/item ${selectedImageIdx === idx ? 'border-cyan-500 shadow-[0_0_20px_rgba(6,182,212,0.3)] scale-[1.02]' : 'border-white/5 opacity-50 hover:opacity-100 hover:border-white/20'}`}
                                         >
-                                            <img src={ver} alt={`Version ${idx + 1}`} className="w-full h-full object-cover" />
-                                            <div className="absolute top-1.5 left-1.5 bg-black/80 px-2 py-0.5 rounded-md text-[10px] font-bold border border-white/10">v{idx + 1}</div>
+                                            <img src={ver} alt={`Version ${idx + 1}`} className="w-full h-full object-cover transition-transform duration-500 group-hover/item:scale-110" />
+                                            <div className="absolute top-2 left-2 bg-black/60 backdrop-blur-md px-2 py-0.5 rounded-md text-[10px] font-black border border-white/10 text-white shadow-xl">
+                                                V{idx + 1}
+                                            </div>
                                             {selectedImageIdx === idx && (
-                                                <div className="absolute bottom-1.5 left-1/2 -translate-x-1/2 bg-cyan-600 px-2 py-0.5 rounded-md text-[9px] font-bold">Selected</div>
+                                                <div className="absolute inset-x-2 bottom-2 bg-cyan-600/90 backdrop-blur-sm py-1 rounded-lg text-[9px] font-bold text-center uppercase tracking-widest shadow-lg">
+                                                    Active
+                                                </div>
                                             )}
                                         </button>
                                     ))}
                                 </div>
                             </div>
                         )}
-                        {editMode === "video" && project.videoVersions?.length > 0 && (
-                            <div className="flex flex-col gap-3">
-                                <h3 className="text-sm font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
-                                    <Layers size={14} /> Version History
-                                </h3>
-                                <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
-                                    {project.videoVersions.map((ver, idx) => (
+
+                        {editMode === "video" && (
+                            <div className="flex flex-col gap-4 p-6 bg-white/[0.02] border border-white/10 rounded-3xl backdrop-blur-sm">
+                                <div className="flex items-center justify-between">
+                                    <h3 className="text-sm font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
+                                        <Layers size={14} className="text-cyan-500" /> Video History
+                                    </h3>
+                                    <span className="text-[10px] font-bold text-gray-500 bg-white/5 px-2 py-0.5 rounded-full border border-white/10 uppercase tracking-tighter">
+                                        {Math.max((project.videoVersions || []).length, 1)} Variations
+                                    </span>
+                                </div>
+                                <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide min-h-[120px]">
+                                    {((project.videoVersions || []).length === 0 && project.generatedVideo) && (
+                                        <button
+                                            onClick={() => setSelectedVideoIdx(-1)}
+                                            className={`relative shrink-0 w-40 h-28 rounded-2xl overflow-hidden border-2 transition-all duration-300 ${selectedVideoIdx === -1 ? 'border-cyan-500 shadow-[0_0_20px_rgba(6,182,212,0.3)]' : 'border-white/5'}`}
+                                        >
+                                            <video src={project.generatedVideo} className="w-full h-full object-cover opacity-40" />
+                                            <PlayCircle className="absolute inset-0 m-auto size-8 text-white" />
+                                            <div className="absolute top-2 left-2 bg-black/60 px-2 py-0.5 rounded-md text-[10px] font-black border border-white/10 text-white">Latest</div>
+                                        </button>
+                                    )}
+
+                                    {(project.videoVersions || []).map((ver, idx) => (
                                         <button
                                             key={idx}
                                             onClick={() => setSelectedVideoIdx(idx)}
-                                            className={`relative shrink-0 w-32 h-24 rounded-xl overflow-hidden border-2 transition-all duration-300 ${selectedVideoIdx === idx ? 'border-cyan-500 shadow-[0_0_15px_rgba(6,182,212,0.5)]' : 'border-transparent opacity-60 hover:opacity-100 bg-white/5'}`}
+                                            className={`relative shrink-0 w-40 h-28 rounded-2xl overflow-hidden border-2 transition-all duration-300 group/item ${selectedVideoIdx === idx ? 'border-cyan-500 shadow-[0_0_20px_rgba(6,182,212,0.3)] scale-[1.02]' : 'border-white/5 opacity-50 hover:opacity-100 hover:border-white/20 bg-black/40'}`}
                                         >
-                                            <video src={ver} className="w-full h-full object-cover absolute inset-0 opacity-40" />
+                                            <video src={ver} className="w-full h-full object-cover absolute inset-0 opacity-40 group-hover/item:opacity-60 transition-opacity" />
                                             <div className="absolute inset-0 flex items-center justify-center">
-                                                <PlayCircle className={`size-6 ${selectedVideoIdx === idx ? 'text-cyan-400' : 'text-white'}`} />
+                                                <PlayCircle className={`size-8 transition-transform duration-300 group-hover/item:scale-110 ${selectedVideoIdx === idx ? 'text-cyan-400 drop-shadow-[0_0_10px_rgba(6,182,212,0.5)]' : 'text-white'}`} />
                                             </div>
-                                            <div className="absolute top-1.5 left-1.5 bg-black/80 px-2 py-0.5 rounded-md text-[10px] font-bold border border-white/10 z-10">v{idx + 1}</div>
+                                            <div className="absolute top-2 left-2 bg-black/60 backdrop-blur-md px-2 py-0.5 rounded-md text-[10px] font-black border border-white/10 text-white z-10">
+                                                V{idx + 1}
+                                            </div>
+                                            {selectedVideoIdx === idx && (
+                                                <div className="absolute inset-x-2 bottom-2 bg-cyan-600/90 backdrop-blur-sm py-1 rounded-lg text-[9px] font-bold text-center uppercase tracking-widest shadow-lg z-10">
+                                                    Active
+                                                </div>
+                                            )}
                                         </button>
                                     ))}
                                 </div>
