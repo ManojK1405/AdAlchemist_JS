@@ -382,7 +382,7 @@ const EditGeneration = () => {
                                     <label className="text-[10px] font-bold text-gray-500 uppercase ml-1 block">Brand Logo</label>
                                     <UploadZone
                                         label="Change Logo"
-                                        file={logoImage || (project.brandLogo ? { name: "Current Logo" } : null)}
+                                        file={logoImage || project.brandLogo}
                                         onClear={() => {
                                             setLogoImage(null);
                                             // Note: We don't clear project.brandLogo from DB here, 

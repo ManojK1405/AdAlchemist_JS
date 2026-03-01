@@ -1,19 +1,43 @@
 import { XIcon, UploadIcon } from "lucide-react"
+import { useState, useEffect } from "react"
 
 const UploadZone = ({ label, file, onClear, onChange }) => {
+    const [preview, setPreview] = useState("")
+
+    useEffect(() => {
+        if (!file) {
+            setPreview("")
+            return
+        }
+
+        if (file instanceof Blob) {
+            const url = URL.createObjectURL(file)
+            setPreview(url)
+            return () => URL.revokeObjectURL(url)
+        } else if (typeof file === "string") {
+            setPreview(file)
+        }
+    }, [file])
+
     return (
         <div className="relative group">
             <div className={`relative aspect-square max-w-xs mx-auto rounded-2xl border-2 border-dashed bg-white/2 p-6 flex flex-col items-center justify-center cursor-pointer transition-all duration-300 ${file ? 'border-cyan-600/50 bg-cyan-500/5' : 'border-white/10 hover:border-cyan-500/30 hover:bg-white/5'}`}>
                 {file ? (
                     <>
-                        <img src={URL.createObjectURL(file)} alt="Preview" className="absolute h-full w-full inset-0 object-cover rounded-xl opacity-60" />
+                        <img
+                            src={preview}
+                            alt="Preview"
+                            className="absolute h-full w-full inset-0 object-cover rounded-xl opacity-60"
+                        />
                         <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/40 rounded-xl backdrop-blur-sm">
                             <button type="button" onClick={onClear} className="p-2 rounded-full bg-white/10 hover:bg-red-500/20 text-white hover:text-red-400 transition-colors">
                                 <XIcon className="w-5 h-5 " />
                             </button>
                         </div>
                         <div className="absolute bottom-4 left-4 right-4 bg-black/50 backdrop-blur-md p-3 rounded-lg border border-white/10">
-                            <p className="text-sm font-medium truncate">{file.name}</p>
+                            <p className="text-sm font-medium truncate">
+                                {file instanceof Blob ? file.name : (typeof file === 'string' ? "Current Image" : "Attachment")}
+                            </p>
                         </div>
                     </>
                 ) : (

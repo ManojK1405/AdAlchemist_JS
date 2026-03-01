@@ -165,10 +165,13 @@ const Result = () => {
             const response = await fetch(url);
             const blob = await response.blob();
 
+            const urlObj = window.URL.createObjectURL(blob);
             const link = document.createElement("a");
-            link.href = window.URL.createObjectURL(blob);
+            link.href = urlObj;
             link.download = filename;
             link.click();
+            // Small delay to ensure browser triggers download before revoking
+            setTimeout(() => window.URL.revokeObjectURL(urlObj), 100);
         } catch (err) {
             console.error("Download failed", err);
         }
