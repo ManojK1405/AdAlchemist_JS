@@ -151,7 +151,7 @@ const ProjectCard = ({
 
                 {/* preview image */}
                 <div
-                    className={`${gen?.aspectRatio === '9:16' ? 'aspect-9/16' : 'aspect-video'} relative overflow-hidden cursor-pointer`}
+                    className={`${gen?.aspectRatio === '9:16' ? 'aspect-[9/16]' : gen?.aspectRatio === '1:1' ? 'aspect-square' : 'aspect-video'} relative overflow-hidden cursor-pointer`}
                     onClick={handleToggleVideo}
                     onMouseEnter={handleMouseEnter}
                     onMouseLeave={handleMouseLeave}

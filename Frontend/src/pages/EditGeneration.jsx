@@ -223,7 +223,7 @@ const EditGeneration = () => {
 
                     {/* LEFT SIDE: Preview */}
                     <div className="lg:col-span-2 space-y-6">
-                        <div className="relative rounded-3xl overflow-hidden border border-white/10 h-[600px] flex items-center justify-center bg-black/20">
+                        <div className={`relative rounded-3xl overflow-hidden border border-white/10 flex items-center justify-center bg-black/20 mx-auto transition-all duration-500 ${project.aspectRatio === "9:16" ? "aspect-[9/16] h-[600px]" : project.aspectRatio === "1:1" ? "aspect-square h-[600px]" : "aspect-video w-full"}`}>
 
                             {regenerating && (
                                 <div className="absolute inset-0 bg-black/70 flex items-center justify-center z-10">

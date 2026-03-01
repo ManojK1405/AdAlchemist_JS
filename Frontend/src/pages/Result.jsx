@@ -265,8 +265,10 @@ const Result = () => {
                         <div className="glass-panel p-3 rounded-3xl w-full shadow-2xl border border-white/10">
                             <div
                                 className={`${project.aspectRatio === "9:16"
-                                    ? "aspect-9/16"
-                                    : "aspect-video"
+                                    ? "aspect-[9/16] max-w-sm mx-auto"
+                                    : project.aspectRatio === "1:1"
+                                        ? "aspect-square max-w-2xl mx-auto"
+                                        : "aspect-video"
                                     } w-full rounded-2xl overflow-hidden bg-gray-950 relative`}
                             >
                                 {viewMode === "video" && project.generatedVideo ? (
