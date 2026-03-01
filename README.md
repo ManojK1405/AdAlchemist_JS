@@ -8,7 +8,7 @@ AdAlchemist is a sophisticated, full-stack AdTech platform built to empower mark
 
 # 🚀 Live Demo  
 
-🔗 **https://ad-alchemist.vercel.app**
+🔗 **https://ad-alchemist.shop**
 
 ---
 
@@ -16,45 +16,49 @@ AdAlchemist is a sophisticated, full-stack AdTech platform built to empower mark
 
 ## 🪄 AI Image & Video Magic
 - **Instant Ad Generation:** Feed in a product image and seamlessly generate engaging background contexts.
+- **Queue Management:** Intelligent background processing for generation tasks with real-time status updates ([worker.js](file:///Users/manojk./Desktop/AdAlchemist-JS/Backend/worker.js)).
 - **Video Motion Generation:** One-click transformation of static image ads into dynamic, scrolling-stopping video mockups optimized for reels and short-form content.
 - **Targeted Aspect Ratios:** Render ads specifically tailored for 16:9 (YouTube), 1:1 (Instagram), and 9:16 (TikTok/Reels).
 
+## 🎟️ Promotional & Growth Systems
+- **Coupon System:** Robust discount and free credit management with unique/global code support.
+- **Growth Tactics:** Integrated social proof, scarcity, and urgency triggers to drive conversions ([GrowthSocialProof.jsx](file:///Users/manojk./Desktop/AdAlchemist-JS/Frontend/src/components/GrowthSocialProof.jsx)).
+- **Admin Dashboard:** Centralized control for feature toggles, service health, and platform settings.
+
 ## 🏘️ Creator Lounge & Community
 - **Discussion Forums:** A dedicated "Creator Lounge" for users to interact, share prompts, discuss tutorials, and provide feedback on AI ad generation.
-- **Community Showcase:** A beautifully masonry-styled grid showcasing publicly published generations from fellow creators. Allows others to draw inspiration and track trending marketing styles.
+- **Community Showcase:** A beautifully masonry-styled grid showcasing publicly published generations from fellow creators. 
 - **Social Interactions:** Engage with community-published projects by liking and instantly opening comment threads to foster creative collaboration.
-- **Real-time Search:** Effortlessly filter user discussions using integrated search and intelligent topic recommendation chips.
 
 ## 📁 Intelligent Project Management
 - **Dashboard:** Safely store, preview, and manage all your historical AI generations.
 - **Edit Studio:** Retouch previously generated assets directly inside the platform.
-- **Safe Cloud Storage:** Assets are stored robustly for 24/7 access, with intuitive quick-download capabilities for pictures and MP4 video formats.
+- **Safe Cloud Storage:** Assets are stored robustly for 24/7 access, with quick-download capabilities for pictures and MP4 video formats.
 
 ## 🔐 Secure & Managed Access
 - **Clerk Authentication:** Bank-grade user authentication encompassing social logins and standard email handling.
-- **Smart Credit System:** A built-in economy system to track AI usage. Distinct generation actions gracefully consume differing values of platform credits.
+- **Smart Credit System:** A built-in economy system to track AI usage.
 
 ---
 
 # 🏗️ Modern Tech Stack  
 
 ## 💻 Frontend
-- **React.js & Vite** for blazing-fast development and optimized production bundling.
-- **JavaScript (ES6+)** codebase.
-- **Tailwind CSS** providing utility-first, highly-customizable and aesthetic visual stylings.
-- **Framer Motion** integrating buttery-smooth micro-animations, page transitions, and interactive visual feedback.
-- **Clerk UI Components** for secure sign-in, sign-up, and user profile management.
+- **React.js & Vite** for blazing-fast development.
+- **Tailwind CSS** providing utility-first, highly-aesthetic visual stylings.
+- **Framer Motion** for buttery-smooth micro-animations and transitions.
+- **Clerk SDK** for authentication and user management.
 
 ## ⚙️ Backend
-- **Node.js runtime** powered by **Express.js** handling robust asynchronous API routing.
-- **Prisma ORM** facilitating strongly-typed, predictable database interactions.
-- **NeonDB (PostgreSQL)** acting as the scalable, serverless cloud persistence layer.
-- **Replicate / OpenAI APIs** powering the core generative image and temporal video capabilities.
-- **Sentry** proactively capturing and isolating production errors.
+- **Node.js & Express.js** handling API routing and business logic.
+- **Prisma ORM** for type-safe database interactions.
+- **NeonDB & PostgreSQL** for scalable cloud persistence.
+- **Redis (BullMQ)** facilitating background job queues and worker processing.
+- **Replicate / OpenAI / Meta APIs** powering generative capabilities and social integrations.
 
 ## ☁️ Deployment
-- **Frontend:** Vercel (Edge-network static hosting)
-- **Backend:** Render (Web services)
+- **Frontend:** Vercel
+- **Backend:** Render / Railway
 
 ---
 
@@ -65,21 +69,20 @@ AdAlchemist/
 │
 ├── Frontend/                 # React SPA bundled using Vite
 │   ├── src/
-│   │   ├── components/       # Reusable UI pieces (Buttons, Navbar, ProjectCards, DiscussionPanels)
-│   │   ├── configs/          # Axios interception and global config 
-│   │   ├── pages/            # Application routes (Home, Community, CreatorLounge, Generator)
-│   │   ├── assets/           # Dummy data, base css
+│   │   ├── components/       # Reusable UI (QueueManager, GrowthSocialProof, Pricing)
+│   │   ├── configs/          # Axios and global configuration
+│   │   ├── pages/            # Application routes (AdminSettings, Generator, Result)
 │   │   └── App.jsx           # Master route orchestration
 │   └── vite.config.js
 │
 └── Backend/                  # Express RESTful API
-    ├── server.js             # Express app entry & middleware composition
-    ├── configs/              # Environment binding and Prisma singleton
-    ├── controllers/          # Business logic handlers (Social, Credits, Ads)
+    ├── server.js             # Express app entry
+    ├── worker.js             # Background task worker
+    ├── controllers/          # Business logic (Coupon, Queue, Social, Credits)
     ├── routes/               # Modular Express routing structures
-    ├── middlewares/          # Security checkpoints (auth checks via Clerk SDK)
-    └── prisma/
-        └── schema.prisma     # Relational persistence layout
+    ├── prisma/
+    │   └── schema.prisma     # Relational persistence layout
+    └── utils/                # Helper utilities (Generation, Email)
 ```
 
 ---
@@ -88,61 +91,50 @@ AdAlchemist/
 
 ```prisma
 model User {
-  id          String        @id @default(cuid())
-  clerkId     String        @unique
-  email       String
-  name        String?
-  image       String?
-  credits     Int           @default(100)
-  projects    Project[]
-  discussions Discussion[]
-  comments    Comment[]
-  projectLikes ProjectLike[]
-  commentLikes CommentLike[]
-  createdAt   DateTime      @default(now())
+  id                String          @id
+  email             String
+  name              String
+  credits           Int             @default(20)
+  hasProAccess      Boolean         @default(false)
+  projects          Project[]
+  generationJobs    GenerationJob[]
+  couponUsages      CouponUsage[]
 }
 
 model Project {
-  id                 String        @id @default(cuid())
-  productName        String?
-  productDescription String?       @db.Text
-  aspectRatio        String?
+  id                 String          @id @default(uuid())
+  productName        String   
   uploadedImages     String[]
-  generatedImage     String?
-  generatedVideo     String?
-  isGenerating       Boolean       @default(false)
-  isPublished        Boolean       @default(false)
-  userId             String
-  user               User          @relation(fields: [userId], references: [id])
-  comments           Comment[]
-  projectLikes       ProjectLike[]
-  createdAt          DateTime      @default(now())
+  generatedImage     String          @default("")
+  generatedVideo     String          @default("")
+  isGenerating       Boolean         @default(false)
+  generationJobs     GenerationJob[]
 }
 
-model Discussion {
-  id        String    @id @default(cuid())
-  title     String
-  content   String    @db.Text
+model GenerationJob {
+  id        String   @id @default(uuid())
   userId    String
-  user      User      @relation(fields: [userId], references: [id])
-  comments  Comment[]
-  createdAt DateTime  @default(now())
+  projectId String?
+  type      String   // IMAGE, VIDEO, EDIT_IMAGE, EDIT_VIDEO
+  status    String   @default("PENDING") // PENDING, PROCESSING, COMPLETED, FAILED
+  payload   Json     
+  position  Int      @default(0)
 }
 
-model Comment {
-  id           String        @id @default(cuid())
-  content      String        @db.Text
-  userId       String
-  user         User          @relation(fields: [userId], references: [id])
-  projectId    String?
-  project      Project?      @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  discussionId String?
-  discussion   Discussion?   @relation(fields: [discussionId], references: [id], onDelete: Cascade)
-  parentId     String?
-  parent       Comment?      @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
-  replies      Comment[]     @relation("CommentReplies")
-  likes        CommentLike[]
-  createdAt    DateTime      @default(now())
+model Coupon {
+  id        String   @id @default(uuid())
+  code      String   @unique
+  type      String   // FREE_CREDITS, DISCOUNT
+  value     Float    
+  isActive  Boolean  @default(true)
+  usages    CouponUsage[]
+}
+
+model CouponUsage {
+  id        String   @id @default(uuid())
+  userId    String
+  couponId  String
+  usedAt    DateTime @default(now())
 }
 ```
 
