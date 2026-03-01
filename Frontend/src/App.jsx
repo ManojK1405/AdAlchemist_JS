@@ -19,6 +19,9 @@ import Billing from './pages/Billing';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import TermsOfService from './pages/TermsOfService';
 import ProfessionalEdit from './pages/ProfessionalEdit/index';
+import QueueManager from './components/QueueManager';
+import GrowthSocialProof from './components/GrowthSocialProof';
+import AdminSettings from './pages/AdminSettings';
 
 
 function App() {
@@ -31,6 +34,8 @@ function App() {
             <SoftBackdrop />
             <LenisScroll />
             {!isProEdit && <Navbar />}
+            {!isProEdit && <QueueManager />}
+            {!isProEdit && <GrowthSocialProof />}
 
             <Routes>
                 <Route path="/" element={<Home />} />
@@ -49,6 +54,7 @@ function App() {
                 <Route path="/edit/:projectId" element={<EditGeneration />} />
                 <Route path="/pro-edit/:projectId" element={<ProfessionalEdit />} />
                 <Route path="/loading" element={<Loading />} />
+                <Route path="/admin/settings" element={<AdminSettings />} />
             </Routes>
 
             {!isProEdit && <Footer />}

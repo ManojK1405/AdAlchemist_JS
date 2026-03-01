@@ -295,16 +295,28 @@ export const tipCreator = async (req, res) => {
         const { userId } = req.auth();
         const { recipientId, amount = 5 } = req.body;
 
-        if (!userId) {
-            return res.status(401).json({ message: "Unauthorized" });
+        // 1. ANTI-FRAUD: Check if sender is a PAYING user
+        const transactions = await prisma.transaction.count({
+            where: { userId, status: "success" }
+        });
+
+        if (transactions === 0) {
+            return res.status(403).json({ message: "Only users who have purchased a plan can send tips. This prevents bot abuse." });
         }
 
-        if (userId === recipientId) {
-            return res.status(400).json({ message: "You cannot tip yourself." });
-        }
+        // 2. ANTI-FRAUD: Check if sender is an ACTIVE creator (at least 5 generations)
+        const projectsCount = await prisma.project.count({
+            where: {
+                userId,
+                OR: [
+                    { generatedImage: { not: "" } },
+                    { generatedVideo: { not: "" } }
+                ]
+            }
+        });
 
-        if (amount <= 0) {
-            return res.status(400).json({ message: "Invalid tip amount." });
+        if (projectsCount < 5) {
+            return res.status(403).json({ message: "You must complete at least 5 generations before you can tip other creators." });
         }
 
         // Fetch sender
@@ -327,6 +339,22 @@ export const tipCreator = async (req, res) => {
             return res.status(404).json({ message: "Recipient user not found." });
         }
 
+        // 3. TAXATION: Calculate if 20% platform fee applies
+        // Limit: 50 credits total received
+        const totalReceivedAgg = await prisma.tip.aggregate({
+            where: { recipientId },
+            _sum: { amount: true }
+        });
+
+        const totalReceived = totalReceivedAgg._sum.amount || 0;
+        let finalAmountToRecipient = amount;
+        let platformFee = 0;
+
+        if (totalReceived >= 50) {
+            platformFee = Math.floor(amount * 0.2);
+            finalAmountToRecipient = amount - platformFee;
+        }
+
         // Perform atomic transaction
         await prisma.$transaction([
             prisma.user.update({
@@ -335,7 +363,7 @@ export const tipCreator = async (req, res) => {
             }),
             prisma.user.update({
                 where: { id: recipientId },
-                data: { credits: { increment: amount } },
+                data: { credits: { increment: finalAmountToRecipient } },
             }),
             prisma.tip.create({
                 data: {

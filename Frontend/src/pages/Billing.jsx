@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth, useUser } from '@clerk/clerk-react';
 import api from '../configs/axios';
-import { Receipt, Clock, CheckCircle, XCircle, Download, CreditCard, Coins, Loader2 } from 'lucide-react';
+import { Receipt, Clock, CheckCircle, XCircle, Download, CreditCard, Coins, Loader2, Zap } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 const Billing = () => {
@@ -9,6 +9,7 @@ const Billing = () => {
     const { user } = useUser();
     const [transactions, setTransactions] = useState([]);
     const [credits, setCredits] = useState(0);
+    const [hasPipelineAccess, setHasPipelineAccess] = useState(false);
     const [loading, setLoading] = useState(true);
     const [downloadingId, setDownloadingId] = useState(null);
 
@@ -23,11 +24,12 @@ const Billing = () => {
                 });
                 setTransactions(txData.transactions);
 
-                // Fetch Credits
+                // Fetch User Status (Credits + Pipeline Access)
                 const { data: userData } = await api.get('/api/user/credits', {
                     headers: { Authorization: `Bearer ${token}` }
                 });
                 setCredits(userData.credits);
+                setHasPipelineAccess(userData.hasPipelineAccess);
 
             } catch (error) {
                 toast.error("Failed to load billing details");
@@ -49,18 +51,15 @@ const Billing = () => {
                 responseType: 'blob'
             });
 
-            // Create a blob from the response data
             const blob = new Blob([response.data], { type: 'application/pdf' });
             const url = window.URL.createObjectURL(blob);
 
-            // Create a temporary link and trigger download
             const link = document.createElement('a');
             link.href = url;
             link.setAttribute('download', `receipt_${orderId}.pdf`);
             document.body.appendChild(link);
             link.click();
 
-            // Cleanup
             link.parentNode.removeChild(link);
             window.URL.revokeObjectURL(url);
 
@@ -127,6 +126,29 @@ const Billing = () => {
                         </div>
 
                         <div className="glass-panel p-6 rounded-3xl border border-white/10 bg-white/[0.02]">
+                            <h3 className="text-sm font-bold text-gray-500 uppercase tracking-widest mb-6 block">Premium Features</h3>
+                            <div className="flex items-center gap-4">
+                                <div className={`p-4 rounded-2xl ${hasPipelineAccess ? 'bg-cyan-500/10 text-cyan-500' : 'bg-white/5 text-gray-600'}`}>
+                                    <Zap size={24} />
+                                </div>
+                                <div>
+                                    <span className="text-xl font-bold block">Generation Pipeline</span>
+                                    <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full border ${hasPipelineAccess ? 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20' : 'bg-white/5 text-gray-500 border-white/10'}`}>
+                                        {hasPipelineAccess ? 'Unlocked' : 'Locked'}
+                                    </span>
+                                </div>
+                            </div>
+                            {!hasPipelineAccess && (
+                                <button
+                                    onClick={() => window.location.href = '/plans'}
+                                    className="w-full mt-6 py-3 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all font-bold text-[10px] uppercase tracking-widest flex items-center justify-center gap-2"
+                                >
+                                    Unlock Pipeline Features
+                                </button>
+                            )}
+                        </div>
+
+                        <div className="glass-panel p-6 rounded-3xl border border-white/10 bg-white/[0.02]">
                             <h3 className="text-sm font-bold text-gray-500 uppercase tracking-widest mb-4">Need Help?</h3>
                             <p className="text-sm text-gray-400 mb-6 leading-relaxed">If you have any issues with your payments or credits, please contact our support team.</p>
                             <a href="mailto:manojadalchemist@gmail.com" className="text-cyan-400 font-bold hover:underline">manojadalchemist@gmail.com</a>
@@ -178,7 +200,14 @@ const Billing = () => {
                                                         <div className="font-bold text-sm capitalize">{tx.planId}</div>
                                                         <div className="text-[10px] text-gray-500">+{tx.credits} Credits</div>
                                                     </td>
-                                                    <td className="px-6 py-5 font-bold">₹{tx.amount?.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
+                                                    <td className="px-6 py-5">
+                                                        <div className="font-bold">₹{tx.amount?.toLocaleString(undefined, { minimumFractionDigits: 2 })}</div>
+                                                        {tx.discountApplied > 0 && (
+                                                            <div className="text-[9px] text-green-500 font-bold uppercase tracking-tighter">
+                                                                -₹{tx.discountApplied.toLocaleString()} OFF
+                                                            </div>
+                                                        )}
+                                                    </td>
                                                     <td className="px-6 py-5">
                                                         <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold border uppercase tracking-wider ${getStatusStyle(tx.status)}`}>
                                                             {getStatusIcon(tx.status)}

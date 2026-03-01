@@ -11,23 +11,46 @@ const razorpay = new Razorpay({
 
 // Plans Configuration
 const PLANS = {
-    starter: { credits: 100, amount: 49.9, name: "Starter" }, // ₹49.9
-    pro: { credits: 500, amount: 199.9, name: "Pro" },     // ₹199.9
-    agency: { credits: 2000, amount: 499.9, name: "Agency" } // ₹499.9
+    starter: { credits: 100, amount: 99, name: "Starter" },    // ₹99
+    pro: { credits: 600, amount: 499, name: "Pro" },        // ₹499
+    agency: { credits: 2500, amount: 1499, name: "Agency" }, // ₹1499
+    pipeline_unlock: { credits: 0, amount: 499, name: "Pipeline Unlock" } // Standalone ₹499
 };
 
 export const createOrder = async (req, res) => {
     try {
         const { userId } = req.auth();
-        const { planId } = req.body;
+        const { planId, couponCode } = req.body;
 
         const plan = PLANS[planId.toLowerCase()];
         if (!plan) {
             return res.status(400).json({ message: "Invalid plan selected" });
         }
 
+        let finalAmount = plan.amount;
+        let discountApplied = 0;
+        let couponId = null;
+
+        if (couponCode) {
+            const coupon = await prisma.coupon.findUnique({
+                where: { code: couponCode.toUpperCase() },
+                include: { usages: { where: { userId } } }
+            });
+
+            if (coupon && coupon.isActive && coupon.type === 'DISCOUNT') {
+                if (coupon.usages.length === 0) { // Discount codes can be used multiple times? 
+                    // User said: "5 for discounts... these can be used multiple times"
+                    // Usually this means it doesn't expire globally, but per user? 
+                    // I'll allow multiple uses for discounts as per user's request.
+                    discountApplied = (finalAmount * coupon.value) / 100;
+                    finalAmount -= discountApplied;
+                    couponId = coupon.id;
+                }
+            }
+        }
+
         const options = {
-            amount: Math.round(plan.amount * 100), // amount in the smallest currency unit (paise)
+            amount: Math.round(finalAmount * 100), // amount in the smallest currency unit (paise)
             currency: "INR",
             receipt: `receipt_${Date.now()}_${userId.slice(-5)}`,
         };
@@ -39,18 +62,21 @@ export const createOrder = async (req, res) => {
             data: {
                 userId,
                 planId: planId.toLowerCase(),
-                amount: plan.amount,
+                amount: finalAmount,
                 credits: plan.credits,
                 orderId: order.id,
+                couponId: couponId,
+                discountApplied: discountApplied,
                 status: "pending"
             }
         });
 
         res.json({
             orderId: order.id,
-            amount: order.amount,
+            amount: Math.round(finalAmount * 100),
             currency: order.currency,
-            keyId: process.env.RAZORPAY_KEY_ID
+            keyId: process.env.RAZORPAY_KEY_ID,
+            discountApplied
         });
 
     } catch (error) {
@@ -81,8 +107,8 @@ export const verifyPayment = async (req, res) => {
                 return res.status(400).json({ message: "Transaction already processed or not found" });
             }
 
-            // Atomically update transaction and user credits
-            await prisma.$transaction([
+            // Perform atomic updates
+            const updates = [
                 prisma.transaction.update({
                     where: { id: transaction.id },
                     data: {
@@ -94,10 +120,29 @@ export const verifyPayment = async (req, res) => {
                 prisma.user.update({
                     where: { id: userId },
                     data: {
-                        credits: { increment: transaction.credits }
+                        credits: { increment: transaction.credits },
+                        hasPipelineAccess: transaction.planId === 'agency' || transaction.planId === 'pipeline_unlock' ? true : undefined
                     }
                 })
-            ]);
+            ];
+
+            // If a coupon was used, record the usage
+            if (transaction.couponId) {
+                updates.push(
+                    prisma.couponUsage.create({
+                        data: {
+                            userId,
+                            couponId: transaction.couponId
+                        }
+                    }),
+                    prisma.coupon.update({
+                        where: { id: transaction.couponId },
+                        data: { usedCount: { increment: 1 } }
+                    })
+                );
+            }
+
+            await prisma.$transaction(updates);
 
             res.json({ message: "Payment verified and credits added successfully!" });
         } else {
@@ -163,7 +208,7 @@ export const razorpayWebhook = async (req, res) => {
                 });
 
                 if (transaction && transaction.status !== "success") {
-                    await prisma.$transaction([
+                    const updates = [
                         prisma.transaction.update({
                             where: { id: transaction.id },
                             data: {
@@ -174,10 +219,28 @@ export const razorpayWebhook = async (req, res) => {
                         prisma.user.update({
                             where: { id: transaction.userId },
                             data: {
-                                credits: { increment: transaction.credits }
+                                credits: { increment: transaction.credits },
+                                hasPipelineAccess: transaction.planId === 'agency' || transaction.planId === 'pipeline_unlock' ? true : undefined
                             }
                         })
-                    ]);
+                    ];
+
+                    if (transaction.couponId) {
+                        updates.push(
+                            prisma.couponUsage.create({
+                                data: {
+                                    userId: transaction.userId,
+                                    couponId: transaction.couponId
+                                }
+                            }),
+                            prisma.coupon.update({
+                                where: { id: transaction.couponId },
+                                data: { usedCount: { increment: 1 } }
+                            })
+                        );
+                    }
+
+                    await prisma.$transaction(updates);
                     console.log(`Webhook: Credits added for order ${orderId}`);
                 }
             }

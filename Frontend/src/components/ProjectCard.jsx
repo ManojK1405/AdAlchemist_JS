@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom"
 import { useState, useRef } from "react"
-import { EllipsisIcon, Heart, ImageIcon, Loader2Icon, MessageCircle, Share2Icon, Trash2Icon, VideoIcon, Coins, Copy, Play } from "lucide-react"
+import { EllipsisIcon, Heart, ImageIcon, Loader2Icon, MessageCircle, Share2Icon, Trash2Icon, VideoIcon, Coins, Copy, Play, Info } from "lucide-react"
 import { PrimaryButton } from "./Buttons"
 import { useAuth, useUser } from "@clerk/clerk-react"
 import toast from "react-hot-toast"
@@ -108,6 +108,18 @@ const ProjectCard = ({
         } catch (error) {
             toast.error(error?.response?.data?.message || 'Failed to tip creator');
         }
+    }
+
+    const showTippingRules = (e) => {
+        e.stopPropagation();
+        toast((t) => (
+            <div className="text-xs space-y-2">
+                <p className="font-bold underline">Creator Economy Rules:</p>
+                <p>• Only <span className="text-cyan-400">Paying Users</span> with <span className="text-cyan-400">5+ Generations</span> can send tips.</p>
+                <p>• First 50 credits you receive are <span className="text-green-500">Free</span>.</p>
+                <p>• After 50 credits, a <span className="text-yellow-500">20% Maintenance Fee</span> applies to incoming tips.</p>
+            </div>
+        ), { duration: 5000, icon: '🛡️' });
     }
 
 
@@ -338,13 +350,18 @@ const ProjectCard = ({
                                 <span className="text-xs font-bold">{gen.comments?.length || 0}</span>
                             </button>
                             {user?.id !== gen.userId && (
-                                <button
-                                    onClick={handleTip}
-                                    className="flex items-center gap-1.5 transition-colors text-gray-500 hover:text-yellow-400"
-                                >
-                                    <Coins size={20} />
-                                    <span className="text-xs font-bold">Tip</span>
-                                </button>
+                                <div className="flex items-center gap-1 group/tip">
+                                    <button
+                                        onClick={handleTip}
+                                        className="flex items-center gap-1.5 transition-colors text-gray-500 hover:text-yellow-400"
+                                    >
+                                        <Coins size={20} />
+                                        <span className="text-xs font-bold">Tip</span>
+                                    </button>
+                                    <button onClick={showTippingRules} className="text-gray-700 hover:text-white transition-colors">
+                                        <Info size={12} />
+                                    </button>
+                                </div>
                             )}
                             {gen.userPrompt && (
                                 <button

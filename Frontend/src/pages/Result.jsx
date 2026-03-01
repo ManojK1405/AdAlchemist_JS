@@ -12,7 +12,8 @@ import {
     Coins,
     Settings2,
     Layers,
-    PlayCircle
+    PlayCircle,
+    Clock
 } from "lucide-react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { GhostButton, PrimaryButton } from "../components/Buttons";
@@ -31,6 +32,8 @@ const Result = () => {
     const [project, setProjectData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [isGenerating, setIsGenerating] = useState(false);
+    const [isQueuing, setIsQueuing] = useState(false);
+    const [hasPipelineAccess, setHasPipelineAccess] = useState(false);
 
     const [viewMode, setViewMode] = useState("image");
     const [selectedImageIdx, setSelectedImageIdx] = useState(-1);
@@ -41,10 +44,23 @@ const Result = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [targetPlatform, setTargetPlatform] = useState('Facebook');
 
+    const fetchUserStatus = async () => {
+        try {
+            const token = await getToken();
+            const { data } = await api.get('/api/user/credits', {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            setHasPipelineAccess(data.hasPipelineAccess);
+        } catch (error) {
+            console.error("Error fetching user status", error);
+        }
+    };
+
     // Fetch project
     const fetchProjectData = async () => {
         try {
             const token = await getToken();
+            fetchUserStatus();
             const { data } = await api.get(`/api/project/${projectId}`, {
                 headers: {
                     Authorization: `Bearer ${token}`
@@ -105,9 +121,44 @@ const Result = () => {
             setIsGenerating(false);
 
         } catch (error) {
-            // toast.error("Video Generation Disabled By Manoj K.");
             toast.error(error?.response?.data?.message || "Failed to generate video");
             setIsGenerating(false);
+        }
+    };
+
+    const handleQueueVideo = async () => {
+        if (!hasPipelineAccess) {
+            toast.error("Pipeline Scheduling is a Pro feature. Please unlock it to continue.");
+            navigate('/plans');
+            return;
+        }
+        try {
+            setIsQueuing(true);
+            const token = await getToken();
+
+            // 1. Schedule video generation (deducts credits)
+            await api.post(`/api/project/video`, { projectId, queueOnly: true }, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+
+            // 2. Add to actual queue
+            await api.post('/api/project/queue', {
+                projectId,
+                type: 'VIDEO',
+                payload: {
+                    productName: project.productName,
+                    aspectRatio: project.aspectRatio
+                }
+            }, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+
+            toast.success("Video added to pipeline!");
+            setIsQueuing(false);
+            navigate('/my-generations');
+        } catch (error) {
+            setIsQueuing(false);
+            toast.error(error?.response?.data?.message || "Failed to schedule video");
         }
     };
 
@@ -338,32 +389,34 @@ const Result = () => {
                                             </button>
                                         )}
 
-                                        {(project.imageVersions || []).map((ver, idx) => (
-                                            <button
-                                                key={idx}
-                                                onClick={() => setSelectedImageIdx(idx)}
-                                                className={`relative shrink-0 w-28 h-40 rounded-2xl overflow-hidden border-2 transition-all duration-300 group/item ${selectedImageIdx === idx ? 'border-cyan-500 shadow-[0_0_20px_rgba(6,182,212,0.3)] scale-[1.02]' : 'border-white/5 opacity-50 hover:opacity-100 hover:border-white/20'}`}
-                                            >
-                                                <img src={ver} alt={`Version ${idx + 1}`} className="w-full h-full object-cover transition-transform duration-500 group-hover/item:scale-110" />
-                                                <div className="absolute top-2 left-2 bg-black/60 backdrop-blur-md px-2 py-0.5 rounded-md text-[10px] font-black border border-white/10 text-white shadow-xl">V{idx + 1}</div>
-                                                {selectedImageIdx === idx && (
-                                                    <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px] flex items-center justify-center opacity-0 group-hover/item:opacity-100 transition-opacity">
-                                                        <button
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                handleSetMaster(ver, "image");
-                                                            }}
-                                                            className="px-3 py-1.5 bg-cyan-600 rounded-lg text-[10px] font-bold shadow-xl hover:bg-cyan-500 transition-colors"
-                                                        >
-                                                            Set as Main
-                                                        </button>
-                                                    </div>
-                                                )}
-                                                {selectedImageIdx === idx && (
-                                                    <div className="absolute inset-x-2 bottom-2 bg-cyan-600/90 backdrop-blur-sm py-1 rounded-lg text-[9px] font-bold text-center uppercase tracking-widest shadow-lg">Active</div>
-                                                )}
-                                            </button>
-                                        ))}
+                                        {(project.imageVersions || [])
+                                            .filter(ver => ver !== project.generatedImage)
+                                            .map((ver, idx) => (
+                                                <button
+                                                    key={idx}
+                                                    onClick={() => setSelectedImageIdx(idx)}
+                                                    className={`relative shrink-0 w-28 h-40 rounded-2xl overflow-hidden border-2 transition-all duration-300 group/item ${selectedImageIdx === idx ? 'border-cyan-500 shadow-[0_0_20px_rgba(6,182,212,0.3)] scale-[1.02]' : 'border-white/5 opacity-50 hover:opacity-100 hover:border-white/20'}`}
+                                                >
+                                                    <img src={ver} alt={`Version ${idx + 1}`} className="w-full h-full object-cover transition-transform duration-500 group-hover/item:scale-110" />
+                                                    <div className="absolute top-2 left-2 bg-black/60 backdrop-blur-md px-2 py-0.5 rounded-md text-[10px] font-black border border-white/10 text-white shadow-xl">V{idx + 1}</div>
+                                                    {selectedImageIdx === idx && (
+                                                        <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px] flex items-center justify-center opacity-0 group-hover/item:opacity-100 transition-opacity">
+                                                            <button
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    handleSetMaster(ver, "image");
+                                                                }}
+                                                                className="px-3 py-1.5 bg-cyan-600 rounded-lg text-[10px] font-bold shadow-xl hover:bg-cyan-500 transition-colors"
+                                                            >
+                                                                Set as Main
+                                                            </button>
+                                                        </div>
+                                                    )}
+                                                    {selectedImageIdx === idx && (
+                                                        <div className="absolute inset-x-2 bottom-2 bg-cyan-600/90 backdrop-blur-sm py-1 rounded-lg text-[9px] font-bold text-center uppercase tracking-widest shadow-lg">Active</div>
+                                                    )}
+                                                </button>
+                                            ))}
                                     </div>
                                 </div>
                             )}
@@ -393,35 +446,37 @@ const Result = () => {
                                             </button>
                                         )}
 
-                                        {(project.videoVersions || []).map((ver, idx) => (
-                                            <button
-                                                key={idx}
-                                                onClick={() => setSelectedVideoIdx(idx)}
-                                                className={`relative shrink-0 w-40 h-28 rounded-2xl overflow-hidden border-2 transition-all duration-300 group/item ${selectedVideoIdx === idx ? 'border-cyan-500 shadow-[0_0_20px_rgba(6,182,212,0.3)] scale-[1.02]' : 'border-white/5 opacity-50 hover:opacity-100 hover:border-white/20'}`}
-                                            >
-                                                <video src={ver} className="w-full h-full object-cover absolute inset-0 opacity-40 group-hover/item:opacity-60 transition-opacity" />
-                                                <div className="absolute inset-0 flex items-center justify-center">
-                                                    <PlayCircle className={`size-8 transition-transform duration-300 group-hover/item:scale-110 ${selectedVideoIdx === idx ? 'text-cyan-400 drop-shadow-[0_0_10px_rgba(6,182,212,0.5)]' : 'text-white'}`} />
-                                                </div>
-                                                <div className="absolute top-2 left-2 bg-black/60 backdrop-blur-md px-2 py-0.5 rounded-md text-[10px] font-black border border-white/10 text-white z-10">V{idx + 1}</div>
-                                                {selectedVideoIdx === idx && (
-                                                    <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px] flex items-center justify-center opacity-0 group-hover/item:opacity-100 transition-opacity z-20">
-                                                        <button
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                handleSetMaster(ver, "video");
-                                                            }}
-                                                            className="px-3 py-1.5 bg-cyan-600 rounded-lg text-[10px] font-bold shadow-xl hover:bg-cyan-500 transition-colors"
-                                                        >
-                                                            Set as Main
-                                                        </button>
+                                        {(project.videoVersions || [])
+                                            .filter(ver => ver !== project.generatedVideo)
+                                            .map((ver, idx) => (
+                                                <button
+                                                    key={idx}
+                                                    onClick={() => setSelectedVideoIdx(idx)}
+                                                    className={`relative shrink-0 w-40 h-28 rounded-2xl overflow-hidden border-2 transition-all duration-300 group/item ${selectedVideoIdx === idx ? 'border-cyan-500 shadow-[0_0_20px_rgba(6,182,212,0.3)] scale-[1.02]' : 'border-white/5 opacity-50 hover:opacity-100 hover:border-white/20 bg-black/40'}`}
+                                                >
+                                                    <video src={ver} className="w-full h-full object-cover absolute inset-0 opacity-40 group-hover/item:opacity-60 transition-opacity" />
+                                                    <div className="absolute inset-0 flex items-center justify-center">
+                                                        <PlayCircle className={`size-8 transition-transform duration-300 group-hover/item:scale-110 ${selectedVideoIdx === idx ? 'text-cyan-400 drop-shadow-[0_0_10px_rgba(6,182,212,0.5)]' : 'text-white'}`} />
                                                     </div>
-                                                )}
-                                                {selectedVideoIdx === idx && (
-                                                    <div className="absolute inset-x-2 bottom-2 bg-cyan-600/90 backdrop-blur-sm py-1 rounded-lg text-[9px] font-bold text-center uppercase tracking-widest shadow-lg z-10">Active</div>
-                                                )}
-                                            </button>
-                                        ))}
+                                                    <div className="absolute top-2 left-2 bg-black/60 backdrop-blur-md px-2 py-0.5 rounded-md text-[10px] font-black border border-white/10 text-white z-10">V{idx + 1}</div>
+                                                    {selectedVideoIdx === idx && (
+                                                        <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px] flex items-center justify-center opacity-0 group-hover/item:opacity-100 transition-opacity z-20">
+                                                            <button
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    handleSetMaster(ver, "video");
+                                                                }}
+                                                                className="px-3 py-1.5 bg-cyan-600 rounded-lg text-[10px] font-bold shadow-xl hover:bg-cyan-500 transition-colors"
+                                                            >
+                                                                Set as Main
+                                                            </button>
+                                                        </div>
+                                                    )}
+                                                    {selectedVideoIdx === idx && (
+                                                        <div className="absolute inset-x-2 bottom-2 bg-cyan-600/90 backdrop-blur-sm py-1 rounded-lg text-[9px] font-bold text-center uppercase tracking-widest shadow-lg z-10">Active</div>
+                                                    )}
+                                                </button>
+                                            ))}
                                     </div>
                                 </div>
                             )}
@@ -490,19 +545,34 @@ const Result = () => {
                                     Generating Video...
                                 </PrimaryButton>
                             ) : !project.generatedVideo ? (
-                                <PrimaryButton
-                                    onClick={handleGenerateVideo}
-                                    className="w-full justify-center flex-col gap-1 py-4"
-                                >
-                                    <div className="flex items-center gap-2">
-                                        <SparkleIcon className="size-4" />
-                                        Generate Video
-                                    </div>
-                                    <div className="flex items-center gap-1 opacity-60">
-                                        <Coins size={10} className="text-yellow-500" />
-                                        <span className="text-[10px] font-bold uppercase tracking-tighter">Costs 40 Credits</span>
-                                    </div>
-                                </PrimaryButton>
+                                <div className="flex flex-col gap-3">
+                                    <PrimaryButton
+                                        onClick={handleGenerateVideo}
+                                        disabled={isQueuing}
+                                        className="w-full justify-center flex-col gap-1 py-4"
+                                    >
+                                        <div className="flex items-center gap-2 text-xs font-black uppercase tracking-widest">
+                                            <SparkleIcon className="size-4" />
+                                            Generate Now
+                                        </div>
+                                        <div className="flex items-center gap-1 opacity-60">
+                                            <Coins size={10} className="text-yellow-500" />
+                                            <span className="text-[9px] font-bold uppercase tracking-tighter">Costs 40 Credits</span>
+                                        </div>
+                                    </PrimaryButton>
+
+                                    <button
+                                        onClick={handleQueueVideo}
+                                        disabled={isQueuing}
+                                        className="w-full py-4 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/20 transition-all flex flex-col items-center justify-center gap-1"
+                                    >
+                                        <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-gray-300">
+                                            {isQueuing ? <Loader2Icon className="size-3 animate-spin" /> : <Clock className="size-3" />}
+                                            Schedule in Pipeline
+                                        </div>
+                                        <span className="text-[8px] font-bold text-gray-500 uppercase tracking-tighter italic">Process in Background</span>
+                                    </button>
+                                </div>
                             ) : (
                                 <div className="p-3 bg-green-500/10 border border-green-500/20 rounded-xl text-green-400 text-center text-sm font-medium">
                                     Video Generated Successfully!

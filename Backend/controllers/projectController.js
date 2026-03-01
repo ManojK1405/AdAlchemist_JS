@@ -108,9 +108,13 @@ export const createProject = async (req, res) => {
                 userId,
                 uploadedImages,
                 brandLogo: brandLogoUrl,
-                isGenerating: true,
+                isGenerating: !req.body.queueOnly,
             },
         });
+
+        if (req.body.queueOnly) {
+            return res.json({ projectId: project.id, message: "Project prepared for queue" });
+        }
 
         tempProjectId = project.id;
 
@@ -318,9 +322,13 @@ export const createVideo = async (req, res) => {
         await prisma.project.update({
             where: { id: projectId },
             data: {
-                isGenerating: true,
+                isGenerating: !req.body.queueOnly,
             },
         });
+
+        if (req.body.queueOnly) {
+            return res.json({ message: 'Video generation scheduled' });
+        }
 
         const prompt = `
 Create a high-end cinematic commercial video featuring: ${project.productName}.
@@ -620,9 +628,13 @@ export const editGeneration = async (req, res) => {
         await prisma.project.update({
             where: { id: projectId },
             data: {
-                isGenerating: true,
+                isGenerating: !req.body.queueOnly,
             },
         });
+
+        if (req.body.queueOnly) {
+            return res.json({ message: "Image regeneration scheduled" });
+        }
 
         // ✅ Gemini config
         const generationConfig = {
@@ -950,9 +962,13 @@ export const editVideo = async (req, res) => {
         await prisma.project.update({
             where: { id: projectId },
             data: {
-                isGenerating: true,
+                isGenerating: !req.body.queueOnly,
             },
         });
+
+        if (req.body.queueOnly) {
+            return res.json({ message: "Video regeneration scheduled" });
+        }
 
         // 🔥 Build enhanced motion prompt
         const prompt = `

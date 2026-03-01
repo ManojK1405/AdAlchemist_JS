@@ -45,7 +45,7 @@ export const getUserCredits = async (req, res) => {
             });
         }
 
-        res.json({ credits: user.credits, hasProAccess: user.hasProAccess });
+        res.json({ credits: user.credits, hasProAccess: user.hasProAccess, hasPipelineAccess: user.hasPipelineAccess });
     } catch (error) {
         Sentry.captureException(error);
         res.status(500).json({ message: 'Internal server error' });
@@ -197,6 +197,44 @@ export const unlockProStudio = async (req, res) => {
         });
 
         res.json({ message: "Pro Studio Successully Unlocked! Enjoy lifetime access." });
+    } catch (error) {
+        Sentry.captureException(error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+};
+
+// Unlock Generation Pipeline with credits
+export const unlockPipeline = async (req, res) => {
+    try {
+        const { userId } = req.auth();
+
+        const user = await prisma.user.findUnique({
+            where: { id: userId }
+        });
+
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        if (user.hasPipelineAccess) {
+            return res.status(400).json({ message: 'You already have Pipeline Access unlocked.' });
+        }
+
+        const UNLOCK_COST = 1000; // Loophole Fix: Direct cash (₹499) should be the cheaper route.
+
+        if (user.credits < UNLOCK_COST) {
+            return res.status(400).json({ message: `Insufficient credits. You need ${UNLOCK_COST} credits to unlock the Generation Pipeline. Direct cash payment (₹499) is the recommended cheaper alternative.` });
+        }
+
+        await prisma.user.update({
+            where: { id: userId },
+            data: {
+                credits: { decrement: UNLOCK_COST },
+                hasPipelineAccess: true
+            }
+        });
+
+        res.json({ message: "Generation Pipeline Successfully Unlocked! Enjoy lifetime access." });
     } catch (error) {
         Sentry.captureException(error);
         res.status(500).json({ message: 'Internal server error' });

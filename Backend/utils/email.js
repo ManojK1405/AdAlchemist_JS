@@ -77,3 +77,20 @@ export const getVideoCompleteEmailTemplate = (projectTitle, videoUrl) => {
     </div>
     `;
 };
+
+export const getQueueCompleteEmailTemplate = (userName, projectCount) => {
+    return `
+    <div style="font-family: 'Outfit', sans-serif; max-width: 600px; margin: auto; padding: 20px; background: #0f172a; color: #ffffff; border-radius: 20px; border: 1px solid rgba(255,255,255,0.1);">
+        <h2 style="color: #06b6d4;">Pipeline Processed! 🚀</h2>
+        <p>Hello ${userName},</p>
+        <p>Your generation pipeline has finished processing. All <strong>${projectCount}</strong> scheduled tasks have been completed successfully.</p>
+        <div style="padding: 20px; background: rgba(6,182,212,0.1); border-radius: 12px; margin: 20px 0; text-align: center;">
+            <span style="font-size: 24px; font-weight: bold; color: #06b6d4;">All Generations Ready</span>
+        </div>
+        <p>You can now view, edit, and download your new content in your dashboard.</p>
+        <a href="https://adalchemist.vercel.app/my-generations" style="display: inline-block; padding: 12px 24px; background: #06b6d4; color: white; text-decoration: none; border-radius: 10px; font-weight: bold; margin-top: 20px;">Open My Dashboard</a>
+        <p style="margin-top: 40px; font-size: 12px; color: #64748b;">This is an automated notification from AdAlchemist.</p>
+    </div>
+    `;
+};
+

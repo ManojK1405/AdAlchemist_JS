@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react"
-import { Loader2, Camera, Video, User, Layers, Zap, Sparkles, Palette, MessageSquare, ChevronDown, Check, Coins } from "lucide-react"
+import { Loader2, Camera, Video, User, Layers, Zap, Sparkles, Palette, MessageSquare, ChevronDown, Check, Coins, Clock } from "lucide-react"
 import Title from "../components/Title"
 import UploadZone from "../components/UploadZone"
 import { useAuth, useUser } from "@clerk/clerk-react"
@@ -23,7 +23,9 @@ const Generator = () => {
     const [logoImage, setLogoImage] = useState(null)
     const [userPrompt, setUserPrompt] = useState('')
     const [isGenerating, setIsGenerating] = useState(false)
+    const [isQueuing, setIsQueuing] = useState(false)
     const [isVoiceDropdownOpen, setIsVoiceDropdownOpen] = useState(false)
+    const [hasPipelineAccess, setHasPipelineAccess] = useState(false);
     const [brandKit, setBrandKit] = useState({
         color: '#06b6d4',
         voice: ''
@@ -36,6 +38,18 @@ const Generator = () => {
         { name: 'Luxury', desc: 'Sophisticated and elegant' },
         { name: 'Bold', desc: 'High energy and impactful' }
     ];
+
+    const fetchUserStatus = async () => {
+        try {
+            const token = await getToken();
+            const { data } = await api.get('/api/user/credits', {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            setHasPipelineAccess(data.hasPipelineAccess);
+        } catch (error) {
+            console.error("Error fetching user status", error);
+        }
+    }
 
     const fetchBrandKit = async () => {
         try {
@@ -52,7 +66,10 @@ const Generator = () => {
     }
 
     useEffect(() => {
-        if (getToken) fetchBrandKit();
+        if (getToken) {
+            fetchBrandKit();
+            fetchUserStatus();
+        }
     }, [getToken]);
 
     const handleFileChange = async (e, type) => {
@@ -88,18 +105,13 @@ const Generator = () => {
 
     const handleGenerate = async (e) => {
         e.preventDefault();
-
-        if (!user) {
-            return toast("Please sign in to generate images")
-        }
-
+        if (!user) return toast("Please sign in to generate images");
         if (!productImage || !modelImage || !name || !productName || !aspectRatio) {
-            return toast("Please fill in all required fields")
+            return toast("Please fill in all required fields");
         }
 
         try {
             setIsGenerating(true);
-
             const token = await getToken();
 
             // ✅ Save/Update Brand Kit First
@@ -115,25 +127,75 @@ const Generator = () => {
             formData.append('userPrompt', userPrompt);
             formData.append('images', productImage);
             formData.append('images', modelImage);
-            if (logoImage) {
-                formData.append('logo', logoImage);
-            }
+            if (logoImage) formData.append('logo', logoImage);
 
             const { data } = await api.post('/api/project/create', formData, {
-                headers: {
-                    Authorization: `Bearer ${token}`
-                }
+                headers: { Authorization: `Bearer ${token}` }
             });
 
             toast.success("Project created successfully");
             navigate(`/result/${data.projectId}`);
-
         } catch (error) {
             setIsGenerating(false);
-            toast.error(error?.response?.data?.message || "Failed to generate project")
+            toast.error(error?.response?.data?.message || "Failed to generate project");
+        }
+    }
+
+    const handleQueue = async (e) => {
+        e.preventDefault();
+        if (!user) return toast("Please sign in to schedule generations");
+        if (!hasPipelineAccess) {
+            toast.error("Pipeline Scheduling is a Pro feature. Please unlock it to continue.");
+            navigate('/plans');
+            return;
+        }
+        if (!productImage || !modelImage || !name || !productName || !aspectRatio) {
+            return toast("Please fill in all required fields");
         }
 
-    }
+        try {
+            setIsQueuing(true);
+            const token = await getToken();
+
+            // 1. Create project with queueOnly flag
+            const formData = new FormData();
+            formData.append('name', name);
+            formData.append('productName', productName);
+            formData.append('productDescription', productDescription);
+            formData.append('aspectRatio', aspectRatio);
+            formData.append('userPrompt', userPrompt);
+            formData.append('images', productImage);
+            formData.append('images', modelImage);
+            formData.append('queueOnly', 'true');
+            if (logoImage) formData.append('logo', logoImage);
+
+            const { data: projectData } = await api.post('/api/project/create', formData, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+
+            // 2. Add to actual queue
+            await api.post('/api/project/queue', {
+                projectId: projectData.projectId,
+                type: 'IMAGE',
+                payload: {
+                    productName,
+                    productDescription,
+                    userPrompt,
+                    aspectRatio,
+                    brandKit
+                }
+            }, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+
+            toast.success("Added to Pipeline!");
+            setIsQueuing(false);
+            navigate('/my-generations');
+        } catch (error) {
+            setIsQueuing(false);
+            toast.error(error?.response?.data?.message || "Failed to queue generation");
+        }
+    };
 
     return (
         <div className="min-h-screen text-white p-6 md:p-12 mt-28">
@@ -442,25 +504,44 @@ const Generator = () => {
                         </div>
                     </div>
 
-                    <button
-                        type="submit"
-                        disabled={isGenerating}
-                        className="group relative px-12 py-5 rounded-2xl bg-gradient-to-r from-cyan-600 to-cyan-500 font-black uppercase tracking-[0.2em] text-xs flex items-center gap-3 shadow-2xl shadow-cyan-500/20 hover:scale-105 active:scale-95 transition-all disabled:opacity-50"
-                    >
-                        {isGenerating ? (
-                            <>
-                                <Loader2 className="animate-spin h-4 w-4" />
-                                Processing Protocol...
-                            </>
-                        ) : user ? (
-                            <>
-                                <Sparkles size={16} />
-                                Initialize Generation
-                            </>
-                        ) : (
-                            <>Sign In To Generate</>
-                        )}
-                    </button>
+                    <div className="flex flex-col md:flex-row gap-4 w-full justify-center px-4">
+                        <button
+                            type="submit"
+                            disabled={isGenerating || isQueuing}
+                            className="flex-1 max-w-sm group relative px-8 py-5 rounded-2xl bg-gradient-to-r from-cyan-600 to-cyan-500 font-black uppercase tracking-[0.2em] text-[10px] flex items-center justify-center gap-3 shadow-2xl shadow-cyan-500/20 hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-50"
+                        >
+                            {isGenerating ? (
+                                <>
+                                    <Loader2 className="animate-spin h-4 w-4" />
+                                    Processing...
+                                </>
+                            ) : (
+                                <>
+                                    <Sparkles size={16} />
+                                    Initialize Now
+                                </>
+                            )}
+                        </button>
+
+                        <button
+                            type="button"
+                            onClick={handleQueue}
+                            disabled={isGenerating || isQueuing}
+                            className="flex-1 max-w-sm group relative px-8 py-5 rounded-2xl bg-white/5 border border-white/10 font-black uppercase tracking-[0.2em] text-[10px] flex items-center justify-center gap-3 hover:bg-white/10 hover:border-white/20 active:scale-95 transition-all disabled:opacity-50"
+                        >
+                            {isQueuing ? (
+                                <>
+                                    <Loader2 className="animate-spin h-4 w-4" />
+                                    Queuing...
+                                </>
+                            ) : (
+                                <>
+                                    <Clock size={16} />
+                                    Schedule in Pipeline
+                                </>
+                            )}
+                        </button>
+                    </div>
 
                     {user && (
                         <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest animate-pulse">

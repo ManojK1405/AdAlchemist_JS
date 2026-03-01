@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth, useUser } from '@clerk/clerk-react';
-import { MessageCircle, Plus, Users, ArrowRight, Sparkles, Search, Trash2, Coins } from 'lucide-react';
+import { MessageCircle, Plus, Users, ArrowRight, Sparkles, Search, Trash2, Coins, Info } from 'lucide-react';
 import api from '../configs/axios';
 import toast from 'react-hot-toast';
 import CommentSection from './CommentSection';
@@ -93,6 +93,18 @@ const DiscussionPanel = () => {
             toast.error(error?.response?.data?.message || 'Failed to tip creator');
         }
     };
+
+    const showTippingRules = (e) => {
+        e.stopPropagation();
+        toast((t) => (
+            <div className="text-xs space-y-2">
+                <p className="font-bold underline">Creator Economy Rules:</p>
+                <p>• Only <span className="text-cyan-400">Paying Users</span> with <span className="text-cyan-400">5+ Generations</span> can send tips.</p>
+                <p>• First 50 credits you receive are <span className="text-green-500">Free</span>.</p>
+                <p>• After 50 credits, a <span className="text-yellow-500">20% Maintenance Fee</span> applies to incoming tips.</p>
+            </div>
+        ), { duration: 5000, icon: '🛡️' });
+    }
 
     const filteredDiscussions = discussions.filter(d => {
         if (!searchTerm) return true;
@@ -236,13 +248,18 @@ const DiscussionPanel = () => {
                                 </div>
                                 <div className="flex items-center gap-4 text-[10px] font-bold text-white/30">
                                     {clerkUser?.id !== discussion.userId && (
-                                        <span
-                                            onClick={(e) => handleTip(e, discussion)}
-                                            className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-yellow-500 hover:text-yellow-400 hover:bg-yellow-500/10 transition-colors cursor-pointer"
-                                        >
-                                            <Coins size={12} />
-                                            Tip
-                                        </span>
+                                        <div className="flex items-center gap-1 group/tip">
+                                            <span
+                                                onClick={(e) => handleTip(e, discussion)}
+                                                className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-yellow-500 hover:text-yellow-400 hover:bg-yellow-500/10 transition-colors cursor-pointer"
+                                            >
+                                                <Coins size={12} />
+                                                Tip
+                                            </span>
+                                            <button onClick={showTippingRules} className="text-white/10 hover:text-white transition-colors">
+                                                <Info size={10} />
+                                            </button>
+                                        </div>
                                     )}
                                     <span className="flex items-center gap-1.5 bg-white/5 px-2.5 py-1 rounded-full border border-white/5">
                                         <MessageCircle size={12} className="text-cyan-400/60" />

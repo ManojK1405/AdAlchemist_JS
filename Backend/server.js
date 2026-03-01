@@ -11,6 +11,8 @@ import socialRouter from './routes/socialRoutes.js';
 import metaRouter from './routes/metaRoutes.js';
 import paymentRouter from './routes/paymentRoutes.js';
 import adminRouter from './routes/adminRoutes.js';
+import couponRouter from './routes/couponRoutes.js';
+import { startWorker } from './worker.js';
 
 
 const app = express();
@@ -34,6 +36,7 @@ app.use('/api/social', socialRouter);
 app.use('/api/meta', metaRouter);
 app.use('/api/payment', paymentRouter);
 app.use('/api/admin', adminRouter);
+app.use('/api/coupon', couponRouter);
 
 
 app.get('/', (req, res) => {
@@ -42,6 +45,9 @@ app.get('/', (req, res) => {
 
 // The error handler must be registered before any other error middleware and after all controllers
 Sentry.setupExpressErrorHandler(app);
+
+// Start background worker
+startWorker();
 
 app.listen(process.env.PORT, () => {
     console.log(`Server is running on port ${process.env.PORT}`);

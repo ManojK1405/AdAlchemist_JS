@@ -23,6 +23,7 @@ model User {
   metaAccessToken String?
   metaPageId      String?
   hasProAccess    Boolean  @default(false)
+  hasPipelineAccess Boolean @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -36,6 +37,8 @@ model User {
   sentTips     Tip[]         @relation("SentTips")
   receivedTips Tip[]         @relation("ReceivedTips")
   transactions Transaction[]
+  generationJobs GenerationJob[]
+  couponUsages   CouponUsage[]
 }
 
 model Transaction {
@@ -48,6 +51,8 @@ model Transaction {
   orderId         String   @unique // Razorpay Order ID
   signature       String?  // Razorpay Signature
   status          String   @default("pending") // pending, success, failed
+  couponId        String?  // ID of the coupon used
+  discountApplied Float    @default(0)
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
@@ -91,6 +96,24 @@ model Project {
   user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   comments     Comment[]
   projectLikes ProjectLike[]
+  generationJobs GenerationJob[]
+}
+
+model GenerationJob {
+  id        String   @id @default(uuid())
+  userId    String
+  projectId String?
+  type      String   // IMAGE, VIDEO, EDIT_IMAGE, EDIT_VIDEO
+  status    String   @default("PENDING") // PENDING, PROCESSING, COMPLETED, FAILED
+  payload   Json     // Input data for generation
+  position  Int      @default(0)
+  error     String?
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  project Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
 }
 
 model Comment {
@@ -153,8 +176,43 @@ model BrandKit {
 }
 
 model GlobalSettings {
-  id               String  @id @default("system")
-  enableImageGen   Boolean @default(true)
-  enableVideoGen   Boolean @default(true)
-  updatedAt        DateTime @updatedAt
+  id                String  @id @default("system")
+  enableImageGen    Boolean @default(true)
+  enableVideoGen    Boolean @default(true)
+  
+  // Growth & Dark Tactics
+  enableSocialProof Boolean @default(true)
+  enableScarcity    Boolean @default(true)
+  enableUrgency     Boolean @default(true)
+  enableAnchoring   Boolean @default(true)
+  enableShaming     Boolean @default(true)
+  
+  updatedAt         DateTime @updatedAt
+}
+
+model Coupon {
+  id        String   @id @default(uuid())
+  code      String   @unique
+  type      String   // FREE_CREDITS, DISCOUNT
+  value     Float    // Credit amount or Discount percentage
+  isActive  Boolean  @default(true)
+  maxUses   Int?     // Total uses allowed globally (null for unlimited)
+  usedCount Int      @default(0)
+  expiryDate DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  usages    CouponUsage[]
+}
+
+model CouponUsage {
+  id        String   @id @default(uuid())
+  userId    String
+  couponId  String
+  usedAt    DateTime @default(now())
+
+  coupon    Coupon   @relation(fields: [couponId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, couponId])
 }
