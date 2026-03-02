@@ -42,8 +42,8 @@ export const createOrder = async (req, res) => {
                     // User said: "5 for discounts... these can be used multiple times"
                     // Usually this means it doesn't expire globally, but per user? 
                     // I'll allow multiple uses for discounts as per user's request.
-                    discountApplied = (finalAmount * coupon.value) / 100;
-                    finalAmount -= discountApplied;
+                    discountApplied = parseFloat(((plan.amount * coupon.value) / 100).toFixed(2));
+                    finalAmount = parseFloat((plan.amount - discountApplied).toFixed(2));
                     couponId = coupon.id;
                 }
             }

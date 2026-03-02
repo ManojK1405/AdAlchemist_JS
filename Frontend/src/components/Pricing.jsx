@@ -321,7 +321,7 @@ export default function Pricing() {
 
                                 <div className="mb-8">
                                     <div className="flex items-baseline gap-2">
-                                        <span className="text-4xl font-black">₹{finalPrice}</span>
+                                        <span className="text-4xl font-black">₹{finalPrice.toFixed(2)}</span>
                                         {(discount > 0 || config.enableAnchoring) && (
                                             <span className="text-lg text-gray-500 line-through font-bold">
                                                 ₹{discount > 0 ? originalPrice : Math.round(originalPrice * 1.5)}

@@ -26,6 +26,7 @@ const Generator = () => {
     const [isQueuing, setIsQueuing] = useState(false)
     const [isVoiceDropdownOpen, setIsVoiceDropdownOpen] = useState(false)
     const [hasPipelineAccess, setHasPipelineAccess] = useState(false);
+    const [generationType, setGenerationType] = useState('IMAGE')
     const [brandKit, setBrandKit] = useState({
         color: '#06b6d4',
         voice: ''
@@ -127,17 +128,18 @@ const Generator = () => {
             formData.append('userPrompt', userPrompt);
             formData.append('images', productImage);
             formData.append('images', modelImage);
+            formData.append('generationType', generationType);
             if (logoImage) formData.append('logo', logoImage);
 
             const { data } = await api.post('/api/project/create', formData, {
                 headers: { Authorization: `Bearer ${token}` }
             });
 
-            toast.success("Project created successfully");
+            toast.success(`${generationType === 'IMAGE' ? 'Image' : 'Video'} generation initialized`);
             navigate(`/result/${data.projectId}`);
         } catch (error) {
             setIsGenerating(false);
-            toast.error(error?.response?.data?.message || "Failed to generate project");
+            toast.error(error?.response?.data?.message || `Failed to generate ${generationType.toLowerCase()}`);
         }
     }
 
@@ -176,19 +178,20 @@ const Generator = () => {
             // 2. Add to actual queue
             await api.post('/api/project/queue', {
                 projectId: projectData.projectId,
-                type: 'IMAGE',
+                type: generationType,
                 payload: {
                     productName,
                     productDescription,
                     userPrompt,
                     aspectRatio,
-                    brandKit
+                    brandKit,
+                    generationType
                 }
             }, {
                 headers: { Authorization: `Bearer ${token}` }
             });
 
-            toast.success("Added to Pipeline!");
+            toast.success(`Success! Added ${generationType === 'IMAGE' ? 'Still Ad' : 'Moving Ad'} to Pipeline.`);
             setIsQueuing(false);
             navigate('/my-generations');
         } catch (error) {
@@ -202,9 +205,33 @@ const Generator = () => {
             <form onSubmit={handleGenerate} className="max-w-6xl mx-auto space-y-12">
 
                 <Title
-                    heading="Create In-Context Image"
-                    description="Upload your model and product images to generate stunning UGC, short-form videos and social media posts"
+                    heading={generationType === 'IMAGE' ? 'Create In-Context Image' : 'Generate Cinematic Video Ad'}
+                    description={generationType === 'IMAGE'
+                        ? 'Upload your product to generate stunning high-fidelity marketing shots.'
+                        : 'Transform your product images into professional cinematical video ads.'}
                 />
+
+                {/* GENERATION TYPE SELECTOR */}
+                <div className="flex justify-center -mt-4">
+                    <div className="p-1 rounded-2xl bg-white/5 border border-white/10 flex items-center gap-1">
+                        <button
+                            type="button"
+                            onClick={() => setGenerationType('IMAGE')}
+                            className={`flex items-center gap-2 px-6 py-3 rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-300 ${generationType === 'IMAGE' ? 'bg-cyan-500 text-white shadow-lg' : 'text-gray-400 hover:text-gray-200'}`}
+                        >
+                            <Camera size={14} />
+                            Still Ad
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setGenerationType('VIDEO')}
+                            className={`flex items-center gap-2 px-6 py-3 rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-300 ${generationType === 'VIDEO' ? 'bg-cyan-500 text-white shadow-lg shadow-cyan-500/20' : 'text-gray-400 hover:text-gray-200'}`}
+                        >
+                            <Video size={14} />
+                            Moving Ad
+                        </button>
+                    </div>
+                </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
 
@@ -545,7 +572,7 @@ const Generator = () => {
 
                     {user && (
                         <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest animate-pulse">
-                            Deducts <span className="text-cyan-400">10 Credits</span> on success
+                            Deducts <span className="text-cyan-400">{generationType === 'IMAGE' ? '10' : '40'} Credits</span> on success
                         </p>
                     )}
                 </div>

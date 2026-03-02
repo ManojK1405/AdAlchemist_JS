@@ -15,7 +15,11 @@ import {
     Save,
     Loader2,
     ToggleLeft,
-    ToggleRight
+    ToggleRight,
+    Ticket,
+    Plus,
+    Trash2,
+    CheckCircle2
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 
@@ -49,6 +53,17 @@ const AdminSettings = () => {
     const [passcode, setPasscode] = useState('');
     const [isAuthorized, setIsAuthorized] = useState(false);
 
+    // Coupon states
+    const [coupons, setCoupons] = useState([]);
+    const [newCoupon, setNewCoupon] = useState({
+        code: '',
+        type: 'FREE_CREDITS',
+        value: 10,
+        maxUses: '',
+        expiryDate: ''
+    });
+    const [isCreatingCoupon, setIsCreatingCoupon] = useState(false);
+
     const handleVerifyCode = (e) => {
         e.preventDefault();
         if (passcode === '1405') {
@@ -69,8 +84,14 @@ const AdminSettings = () => {
                     headers: { Authorization: `Bearer ${token}` }
                 });
                 setSettings(data);
+
+                // Fetch coupons too
+                const couponRes = await api.get('/api/coupon/admin/list', {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+                setCoupons(couponRes.data.coupons);
             } catch (err) {
-                toast.error("Failed to load admin settings");
+                toast.error("Failed to load admin data");
             } finally {
                 setLoading(false);
             }
@@ -94,6 +115,45 @@ const AdminSettings = () => {
             toast.error("Failed to save settings");
         } finally {
             setSaving(false);
+        }
+    };
+
+    const handleCreateCoupon = async (e) => {
+        e.preventDefault();
+        if (!newCoupon.code || !newCoupon.value) return toast.error("Fill required fields");
+
+        setIsCreatingCoupon(true);
+        try {
+            const token = await getToken();
+            const { data } = await api.post('/api/coupon/admin/create', newCoupon, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            setCoupons(prev => [data.coupon, ...prev]);
+            setNewCoupon({ code: '', type: 'FREE_CREDITS', value: 10, maxUses: '', expiryDate: '' });
+            toast.success("Coupon generated!");
+        } catch (err) {
+            toast.error(err.response?.data?.message || "Failed to create coupon");
+        } finally {
+            setIsCreatingCoupon(false);
+        }
+    };
+
+    const generateRandomCode = () => {
+        const code = Math.random().toString(36).substring(2, 10).toUpperCase();
+        setNewCoupon(prev => ({ ...prev, code }));
+    };
+
+    const handleDeleteCoupon = async (id) => {
+        if (!window.confirm("Delete this coupon protocol?")) return;
+        try {
+            const token = await getToken();
+            await api.delete(`/api/coupon/admin/${id}`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            setCoupons(prev => prev.filter(c => c.id !== id));
+            toast.success("Protocol terminated");
+        } catch (err) {
+            toast.error("Failed to delete coupon");
         }
     };
 
@@ -214,6 +274,234 @@ const AdminSettings = () => {
                 ))}
             </div>
 
+            {/* COUPON MANAGEMENT SECTION */}
+            <div className="mt-24 space-y-10 relative">
+                {/* Background Glow for Section */}
+                <div className="absolute -top-20 -right-20 w-96 h-96 bg-cyan-500/5 rounded-full blur-[120px] pointer-events-none" />
+
+                <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-white/10 pb-8">
+                    <div>
+                        <h3 className="text-3xl font-black text-white uppercase tracking-tighter flex items-center gap-4">
+                            <div className="p-3 bg-cyan-500 rounded-2xl shadow-lg shadow-cyan-500/20">
+                                <Ticket size={28} className="text-black" />
+                            </div>
+                            Protocol Terminal
+                        </h3>
+                        <p className="text-gray-500 text-xs font-bold mt-2 uppercase tracking-[0.3em] ml-1">Forge new promotion keys & monitor active system overrides.</p>
+                    </div>
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
+                    {/* Creation Form - Premium Glass */}
+                    <div className="lg:col-span-4 p-1 bg-[#0A0A0A] border border-white/5 rounded-[3rem] shadow-2xl relative group overflow-hidden">
+                        <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
+
+                        <div className="relative p-8 bg-black/40 backdrop-blur-3xl rounded-[2.9rem] border border-white/10 space-y-8 h-full">
+                            <div>
+                                <h4 className="text-[11px] font-black text-white/40 uppercase tracking-[0.2em] flex items-center gap-2">
+                                    <Plus size={14} className="text-cyan-500" />
+                                    Forge New Protocol
+                                </h4>
+                            </div>
+
+                            <div className="space-y-6">
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Access Code</label>
+                                    <div className="relative group/input">
+                                        <input
+                                            value={newCoupon.code}
+                                            onChange={e => setNewCoupon({ ...newCoupon, code: e.target.value.toUpperCase() })}
+                                            placeholder="OFF50_PRO"
+                                            className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-sm font-black text-cyan-400 outline-none focus:border-cyan-500 focus:bg-white/[0.08] transition-all placeholder:text-white/10"
+                                        />
+                                        <button
+                                            onClick={generateRandomCode}
+                                            className="absolute right-2 top-2 bottom-2 px-4 bg-cyan-500 text-black rounded-xl font-black text-[10px] uppercase hover:bg-white transition-all active:scale-95"
+                                        >
+                                            Auto
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Type</label>
+                                        <div className="relative">
+                                            <select
+                                                value={newCoupon.type}
+                                                onChange={e => setNewCoupon({ ...newCoupon, type: e.target.value })}
+                                                className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-[10px] font-black uppercase text-white outline-none focus:border-cyan-500 appearance-none cursor-pointer"
+                                            >
+                                                <option value="FREE_CREDITS" className="text-black bg-white">FREE CREDITS</option>
+                                                <option value="DISCOUNT" className="text-black bg-white">DISCOUNT %</option>
+                                            </select>
+                                            <Layout className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-600 pointer-events-none" size={14} />
+                                        </div>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Magnitude</label>
+                                        <input
+                                            type="number"
+                                            value={newCoupon.value}
+                                            onChange={e => setNewCoupon({ ...newCoupon, value: e.target.value })}
+                                            placeholder="50"
+                                            className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-sm font-black text-white outline-none focus:border-cyan-500 transition-all"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Cap Units</label>
+                                        <input
+                                            type="number"
+                                            placeholder="∞"
+                                            value={newCoupon.maxUses}
+                                            onChange={e => setNewCoupon({ ...newCoupon, maxUses: e.target.value })}
+                                            className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-sm font-black text-white outline-none focus:border-cyan-500 transition-all placeholder:text-white/10"
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Expiry</label>
+                                        <input
+                                            type="date"
+                                            value={newCoupon.expiryDate}
+                                            onChange={e => setNewCoupon({ ...newCoupon, expiryDate: e.target.value })}
+                                            className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-[10px] font-black uppercase text-white outline-none focus:border-cyan-500 transition-all"
+                                        />
+                                    </div>
+                                </div>
+
+                                <motion.button
+                                    whileHover={{ scale: 1.02 }}
+                                    whileTap={{ scale: 0.98 }}
+                                    onClick={handleCreateCoupon}
+                                    disabled={isCreatingCoupon}
+                                    className="w-full py-5 bg-gradient-to-r from-cyan-600 to-cyan-500 text-white rounded-[1.5rem] font-black uppercase text-[11px] tracking-[0.2em] shadow-[0_20px_40px_-15px_rgba(6,182,212,0.3)] hover:shadow-cyan-500/50 transition-all flex items-center justify-center gap-3 active:brightness-110"
+                                >
+                                    {isCreatingCoupon ? <Loader2 size={18} className="animate-spin" /> : <Zap size={18} fill="currentColor" />}
+                                    Deploy Protocol
+                                </motion.button>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Premium Ticket Slider Container */}
+                    <div className="lg:col-span-8 flex flex-col">
+                        <div className="mb-6 flex items-center justify-between px-2">
+                            <h4 className="text-[10px] font-black text-gray-500 uppercase tracking-[0.3em] flex items-center gap-3">
+                                <div className="w-8 h-px bg-white/10"></div>
+                                Active System Protocols
+                                <span className="bg-cyan-500/10 text-cyan-500 px-3 py-1 rounded-full text-[9px] font-black">{coupons.length} KEYS</span>
+                            </h4>
+                        </div>
+
+                        <div className="relative overflow-hidden cursor-grab active:cursor-grabbing group/slider">
+                            {/* Glass gradient overlay edges */}
+                            <div className="absolute top-0 bottom-0 left-0 w-12 bg-gradient-to-r from-[#050505] to-transparent z-10 pointer-events-none opacity-0 group-hover/slider:opacity-100 transition-opacity" />
+                            <div className="absolute top-0 bottom-0 right-0 w-12 bg-gradient-to-l from-[#050505] to-transparent z-10 pointer-events-none opacity-0 group-hover/slider:opacity-100 transition-opacity" />
+
+                            <motion.div
+                                drag="x"
+                                dragConstraints={{ right: 0, left: -((coupons.length * 300) - 700) }}
+                                className="flex gap-8 pb-12 pt-4 px-2"
+                            >
+                                {coupons.length === 0 ? (
+                                    <div className="w-full py-24 flex flex-col items-center justify-center bg-white/2 border border-dashed border-white/10 rounded-[3rem] text-center">
+                                        <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center text-gray-700 mb-4">
+                                            <ShieldAlert size={32} />
+                                        </div>
+                                        <p className="text-[10px] font-black text-gray-600 uppercase tracking-[0.4em]">Zero protocols identified in secure memory</p>
+                                    </div>
+                                ) : (
+                                    coupons.map((coupon) => (
+                                        <motion.div
+                                            key={coupon.id}
+                                            whileHover={{ y: -10, scale: 1.02 }}
+                                            className="min-w-[280px] bg-[#0A0A0A] border border-white/10 rounded-[2.5rem] overflow-hidden relative shadow-[0_30px_60px_-15px_rgba(0,0,0,0.5)] group/card flex flex-col h-[380px]"
+                                        >
+                                            {/* Glow Overlay */}
+                                            <div className={`absolute inset-0 opacity-0 group-hover/card:opacity-20 transition-opacity duration-700 pointer-events-none ${coupon.type === 'DISCOUNT' ? 'bg-purple-500' : 'bg-cyan-500'} blur-[100px] -z-10`} />
+
+                                            {/* Ticket Notch System */}
+                                            <div className="absolute top-[60%] -left-4 w-8 h-8 bg-[#050505] rounded-full border border-white/10 shadow-[inset_-5px_0_10px_rgba(0,0,0,0.9)] z-20"></div>
+                                            <div className="absolute top-[60%] -right-4 w-8 h-8 bg-[#050505] rounded-full border border-white/10 shadow-[inset_5px_0_10px_rgba(0,0,0,0.9)] z-20"></div>
+                                            <div className="absolute top-[calc(60%+15px)] left-6 right-6 h-px border-t border-dashed border-white/10 z-20"></div>
+
+                                            {/* Header Content */}
+                                            <div className={`p-8 pb-10 flex-1 relative ${coupon.type === 'DISCOUNT' ? 'bg-gradient-to-br from-purple-500/10 to-transparent' : 'bg-gradient-to-br from-cyan-500/10 to-transparent'}`}>
+                                                <div className="flex justify-between items-start">
+                                                    <div className={`p-3 rounded-2xl ${coupon.type === 'DISCOUNT' ? 'bg-purple-500/20 text-purple-400' : 'bg-cyan-500/20 text-cyan-400'}`}>
+                                                        <Ticket size={24} />
+                                                    </div>
+                                                    <div className="flex flex-col items-end gap-2">
+                                                        {coupon.isActive ? (
+                                                            <div className="flex items-center gap-2 px-3 py-1 bg-emerald-500/10 text-emerald-400 rounded-full text-[8px] font-black uppercase tracking-widest border border-emerald-500/20">
+                                                                <div className="w-1 h-1 bg-emerald-400 rounded-full animate-pulse" />
+                                                                Active
+                                                            </div>
+                                                        ) : (
+                                                            <div className="px-3 py-1 bg-red-500/10 text-red-500 rounded-full text-[8px] font-black uppercase tracking-widest border border-red-500/20">
+                                                                Shutdown
+                                                            </div>
+                                                        )}
+                                                        <button
+                                                            onClick={(e) => { e.stopPropagation(); handleDeleteCoupon(coupon.id); }}
+                                                            className="p-2 text-gray-700 hover:text-red-500 hover:bg-red-500/10 rounded-xl transition-all opacity-0 group-hover/card:opacity-100 mt-2"
+                                                        >
+                                                            <Trash2 size={16} />
+                                                        </button>
+                                                    </div>
+                                                </div>
+
+                                                <div className="mt-8">
+                                                    <h4 className="text-3xl font-black text-white tracking-widest group-hover/card:text-cyan-400 transition-colors duration-500">{coupon.code}</h4>
+                                                    <div className="flex items-center gap-2 mt-2">
+                                                        <span className="text-[10px] font-black text-gray-600 uppercase tracking-[0.3em]">System Identity Key</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            {/* Bottom Content / Metrics */}
+                                            <div className="p-8 pt-10 bg-white/[0.02] backdrop-blur-md space-y-6">
+                                                <div className="flex items-end justify-between">
+                                                    <div>
+                                                        <p className="text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1">Magnitude</p>
+                                                        <span className={`text-4xl font-black italic tracking-tighter ${coupon.type === 'DISCOUNT' ? 'text-purple-400 text-glow-purple' : 'text-cyan-400 text-glow-cyan'}`}>
+                                                            {coupon.type === 'DISCOUNT' ? `${coupon.value}%` : `+${coupon.value}`}
+                                                        </span>
+                                                    </div>
+                                                    <div className="text-right">
+                                                        <p className="text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1">Class</p>
+                                                        <span className="text-[10px] font-black text-white uppercase tracking-tighter bg-white/10 px-3 py-1 rounded-lg">
+                                                            {coupon.type.replace('_', ' ')}
+                                                        </span>
+                                                    </div>
+                                                </div>
+
+                                                <div className="space-y-3">
+                                                    <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-wider">
+                                                        <span className="text-gray-500">Execution Frequency</span>
+                                                        <span className="text-white">{coupon.usedCount} <span className="text-gray-600">/</span> {coupon.maxUses || '∞'}</span>
+                                                    </div>
+                                                    <div className="w-full bg-white/5 h-2 rounded-full overflow-hidden p-[2px] border border-white/5">
+                                                        <motion.div
+                                                            initial={{ width: 0 }}
+                                                            animate={{ width: coupon.maxUses ? `${(coupon.usedCount / coupon.maxUses) * 100}%` : '100%' }}
+                                                            className={`h-full rounded-full ${coupon.type === 'DISCOUNT' ? 'bg-purple-500 shadow-[0_0_15px_rgba(168,85,247,0.5)]' : 'bg-cyan-500 shadow-[0_0_15px_rgba(6,182,212,0.5)]'}`}
+                                                        />
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </motion.div>
+                                    ))
+                                )}
+                            </motion.div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <div className="mt-16 p-8 bg-yellow-500/5 border border-yellow-500/10 rounded-[2.5rem] flex items-center gap-6">
                 <div className="w-12 h-12 rounded-full bg-yellow-500/20 flex items-center justify-center text-yellow-500 shrink-0">
                     <ShieldAlert size={24} />
@@ -227,6 +515,6 @@ const AdminSettings = () => {
             </div>
         </div>
     );
-}
+};
 
 export default AdminSettings;

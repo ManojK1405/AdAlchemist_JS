@@ -36,6 +36,7 @@ export const createProject = async (req, res) => {
             productName,
             productDescription,
             targetLength = 5,
+            generationType = 'IMAGE'
         } = req.body;
 
         const images = req.files['images'];
@@ -60,7 +61,9 @@ export const createProject = async (req, res) => {
 
         const brandKit = await prisma.brandKit.findUnique({ where: { userId } });
 
-        if (user.credits < 10) {
+        const creditDeduction = generationType === 'VIDEO' ? 40 : 10;
+
+        if (user.credits < creditDeduction) {
             return res
                 .status(400)
                 .json({ message: "Insufficient Credits" });
@@ -70,7 +73,7 @@ export const createProject = async (req, res) => {
         await prisma.user.update({
             where: { id: userId },
             data: {
-                credits: { decrement: 10 },
+                credits: { decrement: creditDeduction },
             },
         });
 
@@ -239,7 +242,79 @@ One high-resolution, magazine-quality advertisement image.
             },
         });
 
-        return res.json({ projectId: project.id });
+        if (generationType === 'VIDEO' && !req.body.queueOnly) {
+            // Trigger video generation immediately after image is ready
+            // We can call the internal logic or use a helper. 
+            // For now, let's use the createVideo logic but since project is now updated with image, 
+            // we can trigger it.
+
+            // To keep it clean, we'll return early and the frontend could trigger it, 
+            // but the user wants it to happen automatically.
+            // We'll call a simplified version of createVideo here or just let the worker handle it if we want to be safe.
+            // But immediate generation should be immediate.
+
+            try {
+                // This mimics the createVideo logic
+                const prompt = `Create a high-end cinematic commercial video featuring: ${project.productName}.`;
+                const imageBytes = finalBuffer; // We already have the buffer
+
+                let operation = await ai.models.generateVideos({
+                    model: 'veo-3.1-generate-preview',
+                    prompt,
+                    image: {
+                        imageBytes: imageBytes.toString('base64'),
+                        mimeType: 'image/png',
+                    },
+                    config: {
+                        aspectRatio: aspectRatio || '9:16',
+                        numberOfVideos: 1,
+                        resolution: '720p'
+                    }
+                });
+
+                while (!operation.done) {
+                    await new Promise(resolve => setTimeout(resolve, 10000));
+                    operation = await ai.operations.getVideosOperation({ operation });
+                }
+
+                if (!operation.error && operation.response?.generatedVideos) {
+                    const fileName = `${userId}_V_${Date.now()}.mp4`;
+                    const filePath = path.join('videos', fileName);
+                    fs.mkdirSync('videos', { recursive: true });
+
+                    await ai.files.download({
+                        file: operation.response.generatedVideos[0].video,
+                        downloadPath: filePath,
+                    });
+
+                    const vidUpload = await cloudinary.uploader.upload(filePath, {
+                        resource_type: "video",
+                        folder: "adalchemist/generated",
+                    });
+
+                    await prisma.project.update({
+                        where: { id: project.id },
+                        data: {
+                            generatedVideo: vidUpload.secure_url,
+                            videoVersions: [vidUpload.secure_url],
+                            isGenerating: false,
+                        },
+                    });
+
+                    fs.unlinkSync(filePath);
+                } else {
+                    throw new Error(operation.error?.message || "Video generation failed");
+                }
+            } catch (vError) {
+                console.error("Immediate Video Generation Failed:", vError);
+                await prisma.project.update({
+                    where: { id: project.id },
+                    data: { isGenerating: false, error: `Video Failed: ${vError.message}` }
+                });
+            }
+        }
+
+        return res.json({ projectId: project.id, generationType });
 
     } catch (error) {
 
@@ -254,10 +329,11 @@ One high-resolution, magazine-quality advertisement image.
         }
 
         if (isCreditDeducted) {
+            const refundAmount = generationType === 'VIDEO' ? 40 : 10;
             await prisma.user.update({
                 where: { id: req.auth()?.userId },
                 data: {
-                    credits: { increment: 10 },
+                    credits: { increment: refundAmount },
                 },
             });
         }

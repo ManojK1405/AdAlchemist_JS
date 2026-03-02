@@ -115,7 +115,7 @@ export const createCoupon = async (req, res) => {
             data: {
                 code: code.toUpperCase(),
                 type,
-                value,
+                value: parseFloat(value),
                 maxUses: maxUses ? parseInt(maxUses) : null,
                 expiryDate: expiryDate ? new Date(expiryDate) : null
             }
@@ -123,6 +123,7 @@ export const createCoupon = async (req, res) => {
 
         res.json({ success: true, coupon });
     } catch (error) {
+        console.error("Coupon Creation Error:", error);
         if (error.code === 'P2002') {
             return res.status(400).json({ message: "Coupon code already exists" });
         }
@@ -139,5 +140,18 @@ export const listCoupons = async (req, res) => {
         res.json({ success: true, coupons });
     } catch (error) {
         res.status(500).json({ message: "Error fetching coupons" });
+    }
+};
+
+// ADMIN: Delete Coupon
+export const deleteCoupon = async (req, res) => {
+    try {
+        const { id } = req.params;
+        await prisma.coupon.delete({
+            where: { id }
+        });
+        res.json({ success: true, message: "Coupon deleted successfully" });
+    } catch (error) {
+        res.status(500).json({ message: "Error deleting coupon" });
     }
 };

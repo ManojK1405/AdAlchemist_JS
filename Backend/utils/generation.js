@@ -34,7 +34,8 @@ export const processImageGeneration = async (projectId, payload) => {
 
     if (!project) throw new Error("Project not found");
 
-    const { aspectRatio, userPrompt, productName, productDescription, brandKit, brandLogoUrl } = payload;
+    const { aspectRatio, userPrompt, productName, productDescription, brandKit } = payload;
+    const brandLogoUrl = payload.brandLogoUrl || project.brandLogo;
 
     const generationConfig = {
         maxOutputTokens: 32768,
@@ -105,14 +106,33 @@ OUTPUT: One high-resolution, magazine-quality advertisement image.
 };
 
 export const processVideoGeneration = async (projectId, payload) => {
-    const project = await prisma.project.findUnique({
+    let project = await prisma.project.findUnique({
         where: { id: projectId },
         include: { user: true }
     });
 
-    if (!project || !project.generatedImage) throw new Error("Project or master image not found");
+    if (!project) throw new Error("Project not found");
 
-    const prompt = `Create a high-end cinematic commercial video featuring: ${project.productName}.`;
+    // If there's no image yet, generate it first as the reference frame
+    if (!project.generatedImage) {
+        console.log(`[Queue] No master image found for project ${projectId}. Generating image first...`);
+        await processImageGeneration(projectId, payload);
+        // Refresh project data to get the new generatedImage
+        project = await prisma.project.findUnique({
+            where: { id: projectId },
+            include: { user: true }
+        });
+    }
+
+    if (!project.generatedImage) throw new Error("Failed to secure a master image for video generation");
+
+    const prompt = `
+Create a high-end cinematic commercial video featuring: ${project.productName}.
+Context: ${project.productDescription || "Premium brand advertisement"}.
+Motion: Professional cinematic flow, focus shifts, and product-focused unboxing/interaction style.
+Brand Alignment: ${brandKit?.voice || "Premium Commercial"}.
+${userPrompt ? `Creative Narrative: ${userPrompt}` : ''}
+`;
     const image = await axios.get(project.generatedImage, { responseType: 'arraybuffer' });
     const imageBytes = Buffer.from(image.data);
 
