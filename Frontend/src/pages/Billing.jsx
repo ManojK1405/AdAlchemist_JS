@@ -204,7 +204,7 @@ const Billing = () => {
                                                         <div className="font-bold">₹{tx.amount?.toLocaleString(undefined, { minimumFractionDigits: 2 })}</div>
                                                         {tx.discountApplied > 0 && (
                                                             <div className="text-[9px] text-green-500 font-bold uppercase tracking-tighter">
-                                                                -₹{tx.discountApplied.toLocaleString()} OFF
+                                                                -₹{tx.discountApplied.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} OFF
                                                             </div>
                                                         )}
                                                     </td>

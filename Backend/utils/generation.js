@@ -34,8 +34,17 @@ export const processImageGeneration = async (projectId, payload) => {
 
     if (!project) throw new Error("Project not found");
 
-    const { aspectRatio, userPrompt, productName, productDescription, brandKit } = payload;
-    const brandLogoUrl = payload.brandLogoUrl || project.brandLogo;
+    const { aspectRatio, userPrompt, productName, productDescription } = payload;
+
+    // Fetch brand kit details if linked
+    let brandKit = payload.brandKit;
+    if (!brandKit && project.brandKitId) {
+        brandKit = await prisma.brandKit.findUnique({ where: { id: project.brandKitId } });
+    } else if (!brandKit) {
+        brandKit = await prisma.brandKit.findFirst({ where: { userId: project.userId, isDefault: true } });
+    }
+
+    const brandLogoUrl = payload.brandLogoUrl || project.brandLogo || brandKit?.logoDark;
 
     const generationConfig = {
         maxOutputTokens: 32768,
@@ -63,8 +72,10 @@ SUBJECT FIDELITY & IDENTITY (CRITICAL):
 PRODUCT INTEGRITY:
 - The product (${productName}) is the HERO. It must be rendered with perfect geometrical accuracy.
 BRAND ALIGNMENT:
-${brandKit?.color ? `Incorporate Brand Color subtly: ${brandKit.color}` : ''}
-${brandKit?.voice ? `Aesthetic Guidelines: ${brandKit.voice}` : ''}
+${brandKit?.name ? `Brand Name: ${brandKit.name}` : ''}
+${brandKit?.primaryColor ? `Incorporate Brand Color subtly: ${brandKit.primaryColor}` : (brandKit?.color ? `Incorporate Brand Color subtly: ${brandKit.color}` : '')}
+${brandKit?.brandVoice ? `Aesthetic Guidelines: ${brandKit.brandVoice}` : (brandKit?.voice ? `Aesthetic Guidelines: ${brandKit.voice}` : '')}
+${brandKit?.description ? `Brand Narrative: ${brandKit.description}` : ''}
 ${brandLogoUrl ? `BRAND LOGO INTEGRATION (SUBTLE): subtly integrate logo into the scene background.` : ''}
 ${userPrompt ? `\nCUSTOM CREATIVE DIRECTION:\n${userPrompt}` : ''}
 OUTPUT: One high-resolution, magazine-quality advertisement image.
@@ -126,12 +137,18 @@ export const processVideoGeneration = async (projectId, payload) => {
 
     if (!project.generatedImage) throw new Error("Failed to secure a master image for video generation");
 
+    // Fetch brand kit details for video
+    let brandKit = payload.brandKit;
+    if (!brandKit && project.brandKitId) {
+        brandKit = await prisma.brandKit.findUnique({ where: { id: project.brandKitId } });
+    }
+
     const prompt = `
 Create a high-end cinematic commercial video featuring: ${project.productName}.
 Context: ${project.productDescription || "Premium brand advertisement"}.
 Motion: Professional cinematic flow, focus shifts, and product-focused unboxing/interaction style.
-Brand Alignment: ${brandKit?.voice || "Premium Commercial"}.
-${userPrompt ? `Creative Narrative: ${userPrompt}` : ''}
+Brand Alignment: ${brandKit?.brandVoice || brandKit?.voice || "Premium Commercial"}.
+${payload.userPrompt ? `Creative Narrative: ${payload.userPrompt}` : ''}
 `;
     const image = await axios.get(project.generatedImage, { responseType: 'arraybuffer' });
     const imageBytes = Buffer.from(image.data);

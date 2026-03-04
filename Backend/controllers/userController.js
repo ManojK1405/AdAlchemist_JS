@@ -1,6 +1,7 @@
 import * as Sentry from "@sentry/node";
 import { prisma } from "../configs/prisma.js";
 import { clerkClient } from '@clerk/express';
+import { v2 as cloudinary } from "cloudinary";
 
 
 //Get user credits
@@ -45,7 +46,12 @@ export const getUserCredits = async (req, res) => {
             });
         }
 
-        res.json({ credits: user.credits, hasProAccess: user.hasProAccess, hasPipelineAccess: user.hasPipelineAccess });
+        res.json({
+            credits: user.credits,
+            hasProAccess: user.hasProAccess,
+            hasPipelineAccess: user.hasPipelineAccess,
+            hasBrandHubAccess: user.hasBrandHubAccess
+        });
     } catch (error) {
         Sentry.captureException(error);
         res.status(500).json({ message: 'Internal server error' });
@@ -132,36 +138,189 @@ export const toggleProjectPublic = async (req, res) => {
     }
 };
 
-// Get user brand kit
+// Get all user brand kits
 export const getBrandKit = async (req, res) => {
     try {
         const { userId } = req.auth();
-        const brandKit = await prisma.brandKit.findUnique({
-            where: { userId },
+
+        const user = await prisma.user.findUnique({
+            where: { id: userId },
+            select: { hasBrandHubAccess: true, hasProAccess: true }
         });
-        res.json({ brandKit: brandKit || { color: "#4f46e5", voice: "" } });
+
+        const brandKits = await prisma.brandKit.findMany({
+            where: { userId },
+            orderBy: { updatedAt: 'desc' }
+        });
+
+        // If no kits, return a default one in an array
+        if (brandKits.length === 0) {
+            const defaultKit = {
+                id: "default",
+                name: "My First Brand",
+                primaryColor: "#06b6d4",
+                secondaryColor: "#4f46e5",
+                fontPrimary: "Inter",
+                fontSecondary: "Montserrat",
+                brandVoice: "Professional",
+                targetAudience: "General",
+                description: "",
+                logoDark: "",
+                logoLight: "",
+                isDefault: true
+            };
+            return res.json({
+                brandKits: [defaultKit],
+                hasBrandHubAccess: user?.hasBrandHubAccess || false,
+                hasProAccess: user?.hasProAccess || false
+            });
+        }
+
+        res.json({
+            brandKits,
+            hasBrandHubAccess: user?.hasBrandHubAccess || false,
+            hasProAccess: user?.hasProAccess || false
+        });
     } catch (error) {
+        console.error("GET Brand Kit Flow Error:", error);
         Sentry.captureException(error);
-        res.status(500).json({ message: 'Internal server error' });
+        res.status(500).json({ message: 'Internal server error', details: error.message });
     }
 };
 
 // Update user brand kit
+
 export const updateBrandKit = async (req, res) => {
     try {
         const { userId } = req.auth();
-        const { color, voice } = req.body;
+        const {
+            name,
+            primaryColor,
+            secondaryColor,
+            fontPrimary,
+            fontSecondary,
+            brandVoice,
+            targetAudience,
+            description,
+            isDefault
+        } = req.body;
 
-        const brandKit = await prisma.brandKit.upsert({
-            where: { userId },
-            update: { color, voice },
-            create: { userId, color, voice },
+        let { id } = req.body;
+        if (Array.isArray(id)) id = id[id.length - 1]; // Use last assigned ID if duplicate
+
+        const files = req.files || {};
+        let logoDarkUrl = req.body.logoDark;
+        let logoLightUrl = req.body.logoLight;
+
+        if (files['logoDark']?.[0]) {
+            const result = await cloudinary.uploader.upload(files['logoDark'][0].path, {
+                folder: "adalchemist/brand/logos",
+            });
+            logoDarkUrl = result.secure_url;
+        }
+
+        if (files['logoLight']?.[0]) {
+            const result = await cloudinary.uploader.upload(files['logoLight'][0].path, {
+                folder: "adalchemist/brand/logos",
+            });
+            logoLightUrl = result.secure_url;
+        }
+
+        const user = await prisma.user.findUnique({
+            where: { id: userId },
+            select: { hasBrandHubAccess: true }
         });
 
-        res.json({ brandKit, message: "Brand Kit successfully updated!" });
+        const currentKits = await prisma.brandKit.count({
+            where: { userId }
+        });
+
+        // 🛡️ Guard: Only allow ONE identity for non-premium users
+        if ((!user || !user.hasBrandHubAccess) && currentKits >= 1 && (id === 'new' || id === 'default' || !id)) {
+            return res.status(403).json({
+                message: "Multiple identities is a Premium feature. Please upgrade to Pro to manage more than one brand."
+            });
+        }
+
+        // Logic continues... we verify ownership for updates below
+
+        let brandKit;
+        if (id && id !== "default" && id !== "new") {
+            // Verify ownership first
+            const existing = await prisma.brandKit.findUnique({ where: { id } });
+            if (!existing || existing.userId !== userId) {
+                return res.status(403).json({ message: "Unauthorized or identity not found" });
+            }
+
+            brandKit = await prisma.brandKit.update({
+                where: { id },
+                data: {
+                    name,
+                    primaryColor,
+                    secondaryColor,
+                    fontPrimary,
+                    fontSecondary,
+                    brandVoice,
+                    targetAudience,
+                    description,
+                    isDefault: isDefault === 'true' || isDefault === true,
+                    logoDark: logoDarkUrl,
+                    logoLight: logoLightUrl
+                },
+            });
+        } else {
+            brandKit = await prisma.brandKit.create({
+                data: {
+                    userId,
+                    name: name || "New Brand Identity",
+                    primaryColor,
+                    secondaryColor,
+                    fontPrimary,
+                    fontSecondary,
+                    brandVoice,
+                    targetAudience,
+                    description,
+                    isDefault: isDefault === 'true' || isDefault === true,
+                    logoDark: logoDarkUrl,
+                    logoLight: logoLightUrl
+                },
+            });
+        }
+
+        // If this is set as default, unset others (simplified)
+        if (brandKit.isDefault) {
+            await prisma.brandKit.updateMany({
+                where: { userId, id: { not: brandKit.id } },
+                data: { isDefault: false }
+            });
+        }
+
+        res.json({ brandKit, message: "Brand Identity successfully updated!" });
     } catch (error) {
+        console.error("Brand Kit Update Error:", error);
+        console.error("Payload causing error:", { id, userId, brandKitData: req.body });
         Sentry.captureException(error);
-        res.status(500).json({ message: 'Internal server error' });
+        res.status(500).json({
+            message: 'Internal server error',
+            details: error.message,
+            stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+        });
+    }
+};
+
+// Delete brand kit
+export const deleteBrandKit = async (req, res) => {
+    try {
+        const { userId } = req.auth();
+        const { id } = req.params;
+
+        await prisma.brandKit.delete({
+            where: { id, userId }
+        });
+
+        res.json({ message: "Brand Identity deleted successfully" });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
     }
 };
 
@@ -235,6 +394,44 @@ export const unlockPipeline = async (req, res) => {
         });
 
         res.json({ message: "Generation Pipeline Successfully Unlocked! Enjoy lifetime access." });
+    } catch (error) {
+        Sentry.captureException(error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+};
+// Unlock Brand Hub with credits
+export const unlockBrandHub = async (req, res) => {
+    try {
+        const { userId } = req.auth();
+
+        const user = await prisma.user.findUnique({
+            where: { id: userId }
+        });
+
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        if (user.hasBrandHubAccess) {
+            return res.status(400).json({ message: 'Brand Hub is already unlocked.' });
+        }
+
+        // 750 (Starter) vs 500 (Pro) -> 33% Discount for Pro users as requested
+        const UNLOCK_COST = user.hasProAccess ? 500 : 750;
+
+        if (user.credits < UNLOCK_COST) {
+            return res.status(400).json({ message: `Insufficient credits. You need ${UNLOCK_COST} credits to unlock the Brand Hub. (Pro users get a 33% discount).` });
+        }
+
+        await prisma.user.update({
+            where: { id: userId },
+            data: {
+                credits: { decrement: UNLOCK_COST },
+                hasBrandHubAccess: true
+            }
+        });
+
+        res.json({ message: "Brand Hub Successfully Unlocked! Craft your custom identities now." });
     } catch (error) {
         Sentry.captureException(error);
         res.status(500).json({ message: 'Internal server error' });

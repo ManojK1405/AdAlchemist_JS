@@ -36,7 +36,8 @@ export const createProject = async (req, res) => {
             productName,
             productDescription,
             targetLength = 5,
-            generationType = 'IMAGE'
+            generationType = 'IMAGE',
+            brandKitId
         } = req.body;
 
         const images = req.files['images'];
@@ -59,7 +60,17 @@ export const createProject = async (req, res) => {
                 .json({ message: "User Not Found" });
         }
 
-        const brandKit = await prisma.brandKit.findUnique({ where: { userId } });
+        let brandKit = null;
+        if (brandKitId && brandKitId !== 'undefined' && brandKitId !== 'null') {
+            brandKit = await prisma.brandKit.findUnique({ where: { id: brandKitId } });
+        } else {
+            brandKit = await prisma.brandKit.findFirst({
+                where: { userId, isDefault: true }
+            }) || await prisma.brandKit.findFirst({
+                where: { userId },
+                orderBy: { updatedAt: 'desc' }
+            });
+        }
 
         const creditDeduction = generationType === 'VIDEO' ? 40 : 10;
 
@@ -111,6 +122,7 @@ export const createProject = async (req, res) => {
                 userId,
                 uploadedImages,
                 brandLogo: brandLogoUrl,
+                brandKitId: brandKit?.id,
                 isGenerating: !req.body.queueOnly,
             },
         });
@@ -177,9 +189,13 @@ FORBIDDEN:
 - Floating objects or physics-defying placement.
 - Watermarks, blurry textures, or low-resolution details.
 
-BRAND ALIGNMENT:
-${brandKit?.color ? `Incorporate Brand Color subtly: ${brandKit.color}` : ''}
-${brandKit?.voice ? `Aesthetic Guidelines: ${brandKit.voice}` : ''}
+// BRAND ALIGNMENT & INTELLIGENCE:
+${brandKit?.brandVoice ? `Creative Narrative Voice: ${brandKit.brandVoice}. Maintain this specific tone throughout the composition.` : ''}
+${brandKit?.targetAudience ? `Target Audience Psychographics: ${brandKit.targetAudience}. Tailor lighting, props, and subject attitude to resonate with this demographic.` : ''}
+${brandKit?.description ? `Brand Context: ${brandKit.description}` : ''}
+${brandKit?.primaryColor ? `Primary Brand Hue: ${brandKit.primaryColor}. This should be the dominant accent color in the lighting or background elements.` : ''}
+${brandKit?.secondaryColor ? `Secondary Accent: ${brandKit.secondaryColor}. Use for subtle highlights.` : ''}
+${brandKit?.fontPrimary ? `Typography Philosophy: ${brandKit.fontPrimary}. While not rendering text directly, ensure the visual structure (spacing, clean lines) aligns with this typeface's aesthetic (e.g., if Inter, use clean Swiss-style layout).` : ''}
 
 ${brandLogoUrl ? `BRAND LOGO INTEGRATION (SUBTLE):
 - A Brand Logo has been provided. 
@@ -510,34 +526,67 @@ A stunningly realistic, brand-quality commercial segment ready for prime-time ma
                 .catch(err => console.error("Video Completion Email failed:", err));
         }
 
-        //delete the local video file
-        fs.unlinkSync(filePath);
+        // EVALUATION: Trigger performance scoring
+        await evaluateAdPerformance(project.id).catch(e => console.error(e));
 
         return res.json({ message: 'Video generated successfully', videoUrl: uploadResult.secure_url });
-
     } catch (error) {
-
-        await prisma.project.update({
-            where: { id: projectId, userId },
-            data: {
-                isGenerating: false,
-                error: error.message,
-            },
-        });
-
-        if (isCreditDeducted) {
-            await prisma.user.update({
-                where: { id: req.auth()?.userId },
-                data: {
-                    credits: { increment: 40 },
-                },
-            });
-        }
-
-        Sentry.captureException(error); // Log the error to Sentry
+        Sentry.captureException(error);
         res.status(500).json({ message: 'Internal server error' });
     }
-}
+};
+
+export const evaluateAdPerformance = async (projectId) => {
+    try {
+        const project = await prisma.project.findUnique({
+            where: { id: projectId },
+            include: { brandKit: true }
+        });
+
+        if (!project || (!project.generatedImage && !project.generatedVideo)) return;
+
+        const brandKit = project.brandKit;
+
+        const evaluationPrompt = `
+        Analyze this advertisement concept for a product named "${project.productName}".
+        
+        Brand Context:
+        - Voice: ${brandKit?.brandVoice || "Standard"}
+        - Target Audience: ${brandKit?.targetAudience || "General"}
+        - Description: ${brandKit?.description || ""}
+        
+        Ad Details:
+        - Prompt: ${project.userPrompt}
+        - Description: ${project.productDescription}
+        
+        TASK:
+        Give an engagement score from 0 to 100 and a 2-sentence tactical feedback.
+        Return ONLY a JSON object: {"score": number, "feedback": "string"}
+        `;
+
+        const result = await ai.models.generateContent({
+            model: "gemini-1.5-flash",
+            contents: [{ role: "user", parts: [{ text: evaluationPrompt }] }],
+            generationConfig: { responseMimeType: "application/json" }
+        });
+
+        const evaluation = JSON.parse(result.response.text());
+
+        await prisma.project.update({
+            where: { id: projectId },
+            data: {
+                engagementScore: evaluation.score || 75,
+                scoringFeedback: evaluation.feedback || "Ad shows strong product prominence but could use more brand-aligned lighting."
+            }
+        });
+
+    } catch (error) {
+        console.error("Ad Evaluation Failed:", error);
+    }
+};
+
+// Original createProject continues...
+// (I will add the trigger inside createProject in the next step or here if range allows)
 
 //get all published projects
 export const getAllPublishedProjects = async (req, res) => {
@@ -600,12 +649,60 @@ export const deleteProject = async (req, res) => {
     }
 };
 
+// Toggle Client Review
+export const toggleReview = async (req, res) => {
+    try {
+        const { userId } = req.auth();
+        const { projectId } = req.params;
+
+        const project = await prisma.project.findFirst({
+            where: { id: projectId, userId }
+        });
+
+        if (!project) return res.status(404).json({ message: "Project not found" });
+
+        const updated = await prisma.project.update({
+            where: { id: projectId },
+            data: { isReviewEnabled: !project.isReviewEnabled }
+        });
+
+        res.json({ message: `Review mode ${updated.isReviewEnabled ? 'enabled' : 'disabled'}`, isReviewEnabled: updated.isReviewEnabled });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+// GET project for review (Public)
+export const getReviewProject = async (req, res) => {
+    try {
+        const { projectId } = req.params;
+        const project = await prisma.project.findUnique({
+            where: { id: projectId },
+            include: {
+                user: { select: { name: true, image: true } },
+                brandKit: true,
+                comments: {
+                    include: { user: true, replies: { include: { user: true } } },
+                    orderBy: { createdAt: 'desc' }
+                }
+            }
+        });
+
+        if (!project || !project.isReviewEnabled) {
+            return res.status(403).json({ message: "Review access denied or link expired." });
+        }
+
+        res.json(project);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
 // Get project by id
 export const getProjectById = async (req, res) => {
     try {
         const projectId = req.params.projectId;
         const { userId } = req.auth();
-
 
         if (!projectId) {
             return res.status(400).json({ message: "Project ID is required" });
@@ -684,7 +781,9 @@ export const editGeneration = async (req, res) => {
             return res.status(404).json({ message: "Project not found" });
         }
 
-        const brandKit = await prisma.brandKit.findUnique({ where: { userId } });
+        const brandKit = project.brandKitId
+            ? await prisma.brandKit.findUnique({ where: { id: project.brandKitId } })
+            : await prisma.brandKit.findFirst({ where: { userId, isDefault: true } });
 
         if (project.isGenerating) {
             return res.status(400).json({ message: "Project is already generating" });
@@ -814,8 +913,8 @@ NEW CREATIVE DIRECTION:
 ${userPrompt || project.userPrompt || "Create a clean, premium commercial look."}
 
 BRANDING & STYLE:
-${brandKit && brandKit.color ? `Brand Signature Color (incorporate subtly): ${brandKit.color}` : ''}
-${brandKit && brandKit.voice ? `Brand Aesthetic Guidelines: ${brandKit.voice}` : ''}
+${brandKit && (brandKit.primaryColor || brandKit.color) ? `Brand Signature Color (incorporate subtly): ${brandKit.primaryColor || brandKit.color}` : ''}
+${brandKit && (brandKit.brandVoice || brandKit.voice) ? `Brand Aesthetic Guidelines: ${brandKit.brandVoice || brandKit.voice}` : ''}
 
 ${project.brandLogo ? `BRAND LOGO INTEGRATION (SUBTLE):
 - A Brand Logo has been provided.

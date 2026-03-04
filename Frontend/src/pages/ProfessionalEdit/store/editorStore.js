@@ -46,6 +46,20 @@ const useEditorStore = create((set) => ({
     activeAsset: { type: "image", url: null, id: null },
     setActiveAsset: (asset) => set({ activeAsset: asset }),
 
+    // Timeline & Overlays
+    layers: [],
+    addLayer: (layer) => set((state) => ({
+        layers: [...state.layers, { ...layer, id: Math.random().toString(36).substr(2, 9), startTime: 0, duration: 5 }]
+    })),
+    updateLayer: (id, updates) => set((state) => ({
+        layers: state.layers.map(l => l.id === id ? { ...l, ...updates } : l)
+    })),
+    removeLayer: (id) => set((state) => ({
+        layers: state.layers.filter(l => l.id !== id)
+    })),
+    selectedLayerId: null,
+    setSelectedLayerId: (id) => set({ selectedLayerId: id }),
+
     // ==== ENGINE OPERATIONS ====
 
     resetAdjustments: () => set(() => ({

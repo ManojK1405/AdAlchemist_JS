@@ -27,9 +27,12 @@ const Generator = () => {
     const [isVoiceDropdownOpen, setIsVoiceDropdownOpen] = useState(false)
     const [hasPipelineAccess, setHasPipelineAccess] = useState(false);
     const [generationType, setGenerationType] = useState('IMAGE')
+    const [brandKits, setBrandKits] = useState([])
+    const [selectedBrandKitId, setSelectedBrandKitId] = useState(null)
+    const [hasBrandHubAccess, setHasBrandHubAccess] = useState(false)
     const [brandKit, setBrandKit] = useState({
-        color: '#06b6d4',
-        voice: ''
+        primaryColor: '#06b6d4',
+        brandVoice: ''
     });
 
     const voices = [
@@ -52,26 +55,40 @@ const Generator = () => {
         }
     }
 
-    const fetchBrandKit = async () => {
+    const fetchBrandKits = async () => {
         try {
             const token = await getToken();
             const { data } = await api.get('/api/user/brand-kit', {
                 headers: { Authorization: `Bearer ${token}` }
             });
-            if (data.brandKit) {
-                setBrandKit(data.brandKit);
+
+            setHasBrandHubAccess(data.hasBrandHubAccess || false);
+
+            if (data.brandKits && data.brandKits.length > 0) {
+                setBrandKits(data.brandKits);
+                const defaultKit = data.brandKits.find(k => k.isDefault) || data.brandKits[0];
+                setBrandKit(defaultKit);
+                setSelectedBrandKitId(defaultKit.id);
             }
         } catch (error) {
-            console.error("Error fetching brand kit", error);
+            console.error("Error fetching brand kits", error);
         }
     }
 
     useEffect(() => {
         if (getToken) {
-            fetchBrandKit();
+            fetchBrandKits();
             fetchUserStatus();
         }
     }, [getToken]);
+
+    const handleSwitchBrand = (id) => {
+        const selected = brandKits.find(k => k.id === id);
+        if (selected) {
+            setBrandKit(selected);
+            setSelectedBrandKitId(id);
+        }
+    };
 
     const handleFileChange = async (e, type) => {
         if (e.target.files && e.target.files[0]) {
@@ -115,11 +132,6 @@ const Generator = () => {
             setIsGenerating(true);
             const token = await getToken();
 
-            // ✅ Save/Update Brand Kit First
-            await api.post('/api/user/brand-kit', brandKit, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-
             const formData = new FormData();
             formData.append('name', name);
             formData.append('productName', productName);
@@ -129,6 +141,7 @@ const Generator = () => {
             formData.append('images', productImage);
             formData.append('images', modelImage);
             formData.append('generationType', generationType);
+            if (selectedBrandKitId) formData.append('brandKitId', selectedBrandKitId);
             if (logoImage) formData.append('logo', logoImage);
 
             const { data } = await api.post('/api/project/create', formData, {
@@ -169,6 +182,7 @@ const Generator = () => {
             formData.append('images', productImage);
             formData.append('images', modelImage);
             formData.append('queueOnly', 'true');
+            if (selectedBrandKitId) formData.append('brandKitId', selectedBrandKitId);
             if (logoImage) formData.append('logo', logoImage);
 
             const { data: projectData } = await api.post('/api/project/create', formData, {
@@ -275,10 +289,48 @@ const Generator = () => {
                         </div>
 
                         {/* Brand Identity Section */}
-                        <div className="p-6 rounded-2xl border border-white/10 bg-white/[0.02] space-y-6">
-                            <h3 className="text-sm font-bold text-cyan-400 uppercase tracking-widest flex items-center gap-2">
+                        <div className={`p-6 rounded-3xl border ${!hasBrandHubAccess ? 'border-cyan-500/30' : 'border-white/10'} bg-white/[0.02] space-y-6 relative overflow-hidden`}>
+                            {!hasBrandHubAccess && (
+                                <div className="absolute top-4 right-4 flex items-center gap-1.5 px-3 py-1 bg-cyan-600 rounded-full shadow-lg shadow-cyan-500/20 animate-pulse">
+                                    <ShieldCheck size={12} className="text-white" />
+                                    <span className="text-[10px] font-black uppercase tracking-widest text-white">PRO Protocol</span>
+                                </div>
+                            )}
+
+                            <h3 className={`text-sm font-bold uppercase tracking-widest flex items-center gap-2 ${!hasBrandHubAccess ? 'text-gray-400' : 'text-cyan-400'}`}>
                                 <Palette size={16} /> Brand Identity Protocol
                             </h3>
+
+                            {!hasBrandHubAccess && (
+                                <div className="p-4 bg-cyan-500/5 border border-cyan-500/10 rounded-2xl">
+                                    <p className="text-[11px] text-cyan-400 font-bold leading-relaxed uppercase tracking-wide">
+                                        ✨ Premium Identity Hub: <span className="text-gray-400">Upgrade to Pro to unlock unlimited brand personalities, multi-client portfolios, and AI-native design DNA.</span>
+                                    </p>
+                                    <button
+                                        onClick={() => navigate('/plans')}
+                                        className="mt-3 text-[10px] font-black uppercase tracking-widest text-white hover:text-cyan-400 transition-colors flex items-center gap-2"
+                                    >
+                                        Unlock Premium Branding <Zap size={10} className="fill-white" />
+                                    </button>
+                                </div>
+                            )}
+
+                            {/* Identity Selector */}
+                            <div className="relative">
+                                <label className="block text-[10px] font-bold text-gray-500 uppercase mb-2 ml-1">Select Identity Portfolio</label>
+                                <select
+                                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-xs font-bold outline-none focus:border-cyan-500 appearance-none cursor-pointer"
+                                    value={selectedBrandKitId || ''}
+                                    onChange={(e) => handleSwitchBrand(e.target.value)}
+                                >
+                                    {brandKits.map(kit => (
+                                        <option key={kit.id} value={kit.id} className="bg-[#111]">{kit.name} {kit.isDefault ? '(Default)' : ''}</option>
+                                    ))}
+                                </select>
+                                <div className="absolute right-4 bottom-[14px] pointer-events-none text-gray-500">
+                                    <ChevronDown size={14} />
+                                </div>
+                            </div>
 
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                                 {/* Color */}
@@ -287,17 +339,17 @@ const Generator = () => {
                                     <div className="flex items-center gap-3 p-2 bg-white/5 rounded-xl border border-white/10">
                                         <input
                                             type="color"
-                                            value={brandKit.color}
-                                            onChange={(e) => setBrandKit({ ...brandKit, color: e.target.value })}
+                                            value={brandKit.primaryColor || '#06b6d4'}
+                                            onChange={(e) => setBrandKit({ ...brandKit, primaryColor: e.target.value })}
                                             className="w-10 h-10 rounded-lg bg-transparent border-none cursor-pointer"
                                         />
-                                        <div className="text-xs font-mono uppercase font-bold tracking-wider">{brandKit.color}</div>
+                                        <div className="text-xs font-mono uppercase font-bold tracking-wider">{brandKit.primaryColor || '#06b6d4'}</div>
                                     </div>
                                 </div>
 
                                 {/* Voice */}
                                 <div>
-                                    <label className="block text-[10px] font-bold text-gray-500 uppercase mb-2 ml-1">Brand Voice</label>
+                                    <label className="block text-[10px] font-bold text-gray-500 uppercase mb-2 ml-1">Current Protocol Voice</label>
                                     <div className="relative">
 
                                         <div
@@ -305,7 +357,7 @@ const Generator = () => {
                                             className={`w-full bg-white/5 border ${isVoiceDropdownOpen ? 'border-cyan-500' : 'border-white/10'} hover:border-white/20 rounded-xl pl-4 pr-10 py-[11px] text-xs cursor-pointer text-gray-200 transition-all flex items-center justify-between`}
                                         >
                                             <span>
-                                                {voices.find(v => v.name === brandKit.voice)?.name || (brandKit.voice ? 'Custom Mode...' : 'Select Voice...')}
+                                                {voices.find(v => v.name === brandKit.brandVoice)?.name || (brandKit.brandVoice ? 'Custom Mode...' : 'Select Voice...')}
                                             </span>
                                             <ChevronDown size={14} className={`text-gray-400 transition-transform duration-300 ${isVoiceDropdownOpen ? 'rotate-180' : ''}`} />
                                         </div>
@@ -319,16 +371,16 @@ const Generator = () => {
                                                         <div
                                                             key={v.name}
                                                             onClick={() => {
-                                                                setBrandKit({ ...brandKit, voice: v.name });
+                                                                setBrandKit({ ...brandKit, brandVoice: v.name });
                                                                 setIsVoiceDropdownOpen(false);
                                                             }}
                                                             className="px-4 py-2.5 hover:bg-white/5 cursor-pointer flex items-center justify-between group transition-colors"
                                                         >
                                                             <div className="flex flex-col">
-                                                                <span className={`text-xs font-semibold ${brandKit.voice === v.name ? 'text-cyan-400' : 'text-gray-200 group-hover:text-white'}`}>{v.name}</span>
+                                                                <span className={`text-xs font-semibold ${brandKit.brandVoice === v.name ? 'text-cyan-400' : 'text-gray-200 group-hover:text-white'}`}>{v.name}</span>
                                                                 <span className="text-[10px] text-gray-500">{v.desc}</span>
                                                             </div>
-                                                            {brandKit.voice === v.name && <Check size={14} className="text-cyan-400" />}
+                                                            {brandKit.brandVoice === v.name && <Check size={14} className="text-cyan-400" />}
                                                         </div>
                                                     ))}
 
@@ -336,15 +388,15 @@ const Generator = () => {
 
                                                     <div
                                                         onClick={() => {
-                                                            if (voices.some(v => v.name === brandKit.voice)) {
-                                                                setBrandKit({ ...brandKit, voice: 'Custom' });
+                                                            if (voices.some(v => v.name === brandKit.brandVoice)) {
+                                                                setBrandKit({ ...brandKit, brandVoice: 'Custom' });
                                                             }
                                                             setIsVoiceDropdownOpen(false);
                                                         }}
                                                         className="px-4 py-2.5 hover:bg-white/5 cursor-pointer flex items-center justify-between group transition-colors"
                                                     >
-                                                        <span className={`text-xs font-semibold ${brandKit.voice !== "" && !voices.some(v => v.name === brandKit.voice) ? 'text-cyan-400' : 'text-gray-200 group-hover:text-white'}`}>Custom Mode...</span>
-                                                        {brandKit.voice !== "" && !voices.some(v => v.name === brandKit.voice) && <Check size={14} className="text-cyan-400" />}
+                                                        <span className={`text-xs font-semibold ${brandKit.brandVoice !== "" && !voices.some(v => v.name === brandKit.brandVoice) ? 'text-cyan-400' : 'text-gray-200 group-hover:text-white'}`}>Custom Mode...</span>
+                                                        {brandKit.brandVoice !== "" && !voices.some(v => v.name === brandKit.brandVoice) && <Check size={14} className="text-cyan-400" />}
                                                     </div>
 
                                                 </div>
@@ -354,13 +406,13 @@ const Generator = () => {
                                 </div>
                             </div>
 
-                            {!voices.some(v => v.name === brandKit.voice) && brandKit.voice !== "" && (
+                            {!voices.some(v => v.name === brandKit.brandVoice) && brandKit.brandVoice !== "" && (
                                 <div>
                                     <label className="block text-[10px] font-bold text-gray-500 uppercase mb-2 ml-1">Custom Voice Description</label>
                                     <input
                                         type="text"
-                                        value={brandKit.voice}
-                                        onChange={(e) => setBrandKit({ ...brandKit, voice: e.target.value })}
+                                        value={brandKit.brandVoice}
+                                        onChange={(e) => setBrandKit({ ...brandKit, brandVoice: e.target.value })}
                                         placeholder="e.g. Moody Cyberpunk, Minimalist Luxury"
                                         className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-xs focus:outline-none focus:border-cyan-500"
                                     />

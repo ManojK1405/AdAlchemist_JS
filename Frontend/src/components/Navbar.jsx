@@ -1,4 +1,4 @@
-import { DollarSignIcon, FolderEditIcon, GalleryHorizontalEnd, SparkleIcon, Receipt, Coins } from 'lucide-react';
+import { DollarSignIcon, FolderEditIcon, GalleryHorizontalEnd, SparkleIcon, Receipt, Coins, Palette } from 'lucide-react';
 import { GhostButton, PrimaryButton } from './Buttons';
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
@@ -23,11 +23,11 @@ export default function Navbar() {
         { name: 'Create', href: '/generate' },
         { name: 'Community', href: '/community' },
         { name: 'Creator Lounge', href: '/creator-lounge' },
-        { name: 'Plans', href: '/plans' },
         ...(user ? [
+            { name: 'Brand Hub', href: '/brand-hub' },
             { name: 'My Generations', href: '/my-generations' },
-            { name: 'Billing', href: '/billing' }
-        ] : [])
+        ] : []),
+        { name: 'Plans', href: '/plans' },
     ];
 
     const getCredits = async () => {
@@ -127,6 +127,13 @@ export default function Navbar() {
                             >
                                 <GalleryHorizontalEnd size={16} />
                             </button>
+                            <button
+                                onClick={() => navigate('/creator-lounge')}
+                                className="p-2 rounded-full bg-white/10 text-gray-300 active:scale-95 transition-transform"
+                                title="Creator Lounge"
+                            >
+                                <SparkleIcon size={16} />
+                            </button>
                         </div>
 
                         <UserButton
@@ -149,6 +156,8 @@ export default function Navbar() {
                             }}>
                             <UserButton.MenuItems>
                                 <UserButton.Action label='Generate' labelIcon={<SparkleIcon size={14} />} onClick={() => navigate('/generate')} />
+
+                                <UserButton.Action label='Brand Hub' labelIcon={<Palette size={14} />} onClick={() => navigate('/brand-hub')} />
 
                                 <UserButton.Action label='My Generations' labelIcon={<FolderEditIcon size={14} />} onClick={() => navigate('/my-generations')} />
 

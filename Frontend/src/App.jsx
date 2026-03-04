@@ -22,20 +22,22 @@ import ProfessionalEdit from './pages/ProfessionalEdit/index';
 import QueueManager from './components/QueueManager';
 import GrowthSocialProof from './components/GrowthSocialProof';
 import AdminSettings from './pages/AdminSettings';
-
+import BrandHub from './pages/BrandHub';
+import SharedReview from './pages/SharedReview';
 
 function App() {
     const location = useLocation();
     const isProEdit = location.pathname.startsWith('/pro-edit');
+    const isReview = location.pathname.startsWith('/review/');
 
     return (
         <>
             <Toaster toastOptions={{ style: { background: "#333", color: "#fff" } }} />
             <SoftBackdrop />
             <LenisScroll />
-            {!isProEdit && <Navbar />}
-            {!isProEdit && <QueueManager />}
-            {!isProEdit && <GrowthSocialProof />}
+            {!isProEdit && !isReview && <Navbar />}
+            {!isProEdit && !isReview && <QueueManager />}
+            {!isProEdit && !isReview && <GrowthSocialProof />}
 
             <Routes>
                 <Route path="/" element={<Home />} />
@@ -46,6 +48,8 @@ function App() {
                 <Route path="/faq" element={<FAQ />} />
                 <Route path="/features" element={<FeaturesPage />} />
                 <Route path="/generate" element={<Generator />} />
+                <Route path="/brand-hub" element={<BrandHub />} />
+                <Route path="/review/:projectId" element={<SharedReview />} />
                 <Route path="/my-generations" element={<MyGenerations />} />
                 <Route path="/billing" element={<Billing />} />
                 <Route path="/privacy" element={<PrivacyPolicy />} />

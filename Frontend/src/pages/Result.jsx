@@ -13,7 +13,10 @@ import {
     Settings2,
     Layers,
     PlayCircle,
-    Clock
+    Clock,
+    ShieldCheck,
+    MessageSquare,
+    Share2
 } from "lucide-react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { GhostButton, PrimaryButton } from "../components/Buttons";
@@ -486,6 +489,41 @@ const Result = () => {
                     {/* Right Sidebar */}
                     <div className="space-y-6">
 
+                        {/* Performance Evaluator Card */}
+                        {project.engagementScore > 0 && (
+                            <div className="glass-panel p-6 rounded-[2.5rem] border border-cyan-500/20 bg-cyan-500/5 relative overflow-hidden group">
+                                <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:rotate-12 transition-transform">
+                                    <SparkleIcon className="size-20 text-cyan-500" />
+                                </div>
+                                <h3 className="text-[10px] font-black text-cyan-500 uppercase tracking-[0.3em] mb-4 flex items-center gap-2">
+                                    <ShieldCheck size={14} /> AI Performance Prediction
+                                </h3>
+                                <div className="flex items-end gap-3 mb-6">
+                                    <span className="text-7xl font-black tracking-tighter text-white">
+                                        {project.engagementScore}
+                                    </span>
+                                    <span className="text-cyan-500 font-bold text-xl mb-3">%</span>
+                                    <div className="flex-1 h-3 bg-white/10 rounded-full mb-4 relative overflow-hidden">
+                                        <div
+                                            className="absolute inset-y-0 left-0 bg-gradient-to-r from-cyan-600 to-cyan-400 rounded-full shadow-[0_0_15px_rgba(6,182,212,0.5)] transition-all duration-1000"
+                                            style={{ width: `${project.engagementScore}%` }}
+                                        />
+                                    </div>
+                                </div>
+                                <div className="p-5 bg-black/40 border border-white/5 rounded-2xl backdrop-blur-md">
+                                    <p className="text-[9px] font-black text-gray-500 uppercase tracking-widest mb-2 flex items-center gap-2">
+                                        <MessageSquare size={10} /> ROI Optimization Brief
+                                    </p>
+                                    <p className="text-xs font-bold text-gray-300 leading-relaxed">
+                                        "{project.scoringFeedback}"
+                                    </p>
+                                </div>
+                                <p className="text-[9px] text-gray-600 font-bold uppercase tracking-[0.2em] mt-5 text-center">
+                                    Confidence Score: Predictive Engine V3.1
+                                </p>
+                            </div>
+                        )}
+
                         {/* Download Section */}
                         <div className="glass-panel p-6 rounded-2xl">
                             <h3 className="text-xl font-semibold mb-4">Actions</h3>
@@ -519,8 +557,48 @@ const Result = () => {
                                     Download Video
                                 </GhostButton>
 
+                                {/* Client Review Toggle */}
+                                <div className="mt-4 pt-4 border-t border-white/5 space-y-4">
+                                    <button
+                                        onClick={async () => {
+                                            const token = await getToken();
+                                            const { data } = await api.post(`/api/project/${projectId}/review/toggle`, {}, {
+                                                headers: { Authorization: `Bearer ${token}` }
+                                            });
+                                            setProjectData({ ...project, isReviewEnabled: data.isReviewEnabled });
+                                            toast.success(data.message);
+                                        }}
+                                        className={`w-full py-4 rounded-2xl flex items-center justify-center gap-3 transition-all font-black uppercase text-[10px] tracking-widest ${project.isReviewEnabled
+                                            ? 'bg-green-500/10 text-green-400 border border-green-500/20'
+                                            : 'bg-white/5 text-gray-400 border border-white/10 hover:bg-white/10'
+                                            }`}
+                                    >
+                                        <Share2 className="size-4" />
+                                        {project.isReviewEnabled ? 'Review Portal Active' : 'Enable Client Review'}
+                                    </button>
 
-
+                                    {project.isReviewEnabled && (
+                                        <div className="p-4 bg-black/40 border border-white/5 rounded-2xl space-y-3">
+                                            <p className="text-[9px] font-black text-gray-500 uppercase tracking-widest">Client Access Link</p>
+                                            <div className="flex items-center gap-2">
+                                                <input
+                                                    readOnly
+                                                    value={`${window.location.origin}/review/${projectId}`}
+                                                    className="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-[10px] font-bold text-cyan-400 outline-none"
+                                                />
+                                                <button
+                                                    onClick={() => {
+                                                        navigator.clipboard.writeText(`${window.location.origin}/review/${projectId}`);
+                                                        toast.success("Link copied to clipboard!");
+                                                    }}
+                                                    className="p-2 bg-cyan-600 rounded-lg text-white hover:bg-cyan-500 transition shadow-lg"
+                                                >
+                                                    <SendIcon size={14} />
+                                                </button>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
                             </div>
                         </div>
 

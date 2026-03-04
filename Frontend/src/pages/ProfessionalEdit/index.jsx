@@ -19,6 +19,7 @@ import VirtualCanvas from "./components/Canvas/VirtualCanvas";
 
 import LeftProjectPanel from "./components/Panels/LeftProjectPanel";
 import RightInspector from "./components/Panels/RightInspector";
+import VideoTimeline from "./components/Timeline/VideoTimeline";
 
 // Utils
 import { handleExportFn } from "./utils/exportUtils";
@@ -353,6 +354,9 @@ const ProfessionalEditMaster = () => {
                     handleCommitEdits={handleCommitEdits}
                 />
             </main>
+
+            {/* Director's Cut: Timeline Layer */}
+            <VideoTimeline />
 
             {/* Deep System Footer */}
             <div className="h-6 border-t border-white/5 bg-[#09090b] flex items-center px-4 justify-between shrink-0 z-50">

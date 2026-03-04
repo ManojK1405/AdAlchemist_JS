@@ -14,7 +14,9 @@ const PLANS = {
     starter: { credits: 100, amount: 99, name: "Starter" },    // ₹99
     pro: { credits: 600, amount: 499, name: "Pro" },        // ₹499
     agency: { credits: 2500, amount: 1499, name: "Agency" }, // ₹1499
-    pipeline_unlock: { credits: 0, amount: 499, name: "Pipeline Unlock" } // Standalone ₹499
+    pipeline_unlock: { credits: 0, amount: 499, name: "Pipeline Unlock" }, // Standalone ₹499
+    brand_hub_unlock: { credits: 0, amount: 299, name: "Brand Hub Unlock" }, // Standalone ₹299
+    brand_hub_unlock_pro: { credits: 0, amount: 199, name: "Brand Hub Unlock (Pro Discount)" } // Standalone ₹199 (33% Off for Pro)
 };
 
 export const createOrder = async (req, res) => {
@@ -121,6 +123,8 @@ export const verifyPayment = async (req, res) => {
                     where: { id: userId },
                     data: {
                         credits: { increment: transaction.credits },
+                        hasProAccess: transaction.planId === 'pro' || transaction.planId === 'agency' ? true : undefined,
+                        hasBrandHubAccess: transaction.planId === 'pro' || transaction.planId === 'agency' || transaction.planId.startsWith('brand_hub_unlock') ? true : undefined,
                         hasPipelineAccess: transaction.planId === 'agency' || transaction.planId === 'pipeline_unlock' ? true : undefined
                     }
                 })
@@ -220,6 +224,8 @@ export const razorpayWebhook = async (req, res) => {
                             where: { id: transaction.userId },
                             data: {
                                 credits: { increment: transaction.credits },
+                                hasProAccess: transaction.planId === 'pro' || transaction.planId === 'agency' ? true : undefined,
+                                hasBrandHubAccess: transaction.planId === 'pro' || transaction.planId === 'agency' || transaction.planId.startsWith('brand_hub_unlock') ? true : undefined,
                                 hasPipelineAccess: transaction.planId === 'agency' || transaction.planId === 'pipeline_unlock' ? true : undefined
                             }
                         })

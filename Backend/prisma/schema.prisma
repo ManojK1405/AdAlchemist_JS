@@ -24,6 +24,7 @@ model User {
   metaPageId      String?
   hasProAccess    Boolean  @default(false)
   hasPipelineAccess Boolean @default(false)
+  hasBrandHubAccess Boolean @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -33,7 +34,7 @@ model User {
   commentLikes CommentLike[]
   projectLikes ProjectLike[]
   discussions  Discussion[]
-  brandKit     BrandKit?
+  brandKits    BrandKit[]
   sentTips     Tip[]         @relation("SentTips")
   receivedTips Tip[]         @relation("ReceivedTips")
   transactions Transaction[]
@@ -88,7 +89,12 @@ model Project {
   isPublished        Boolean  @default(false)
   brandLogo          String   @default("")
   error              String   @default("")
-
+  
+  // Ad Evaluation
+  engagementScore    Int      @default(0)
+  scoringFeedback    String   @default("")
+  isReviewEnabled    Boolean  @default(false)
+  
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -97,6 +103,8 @@ model Project {
   comments     Comment[]
   projectLikes ProjectLike[]
   generationJobs GenerationJob[]
+  brandKitId   String?
+  brandKit     BrandKit?     @relation(fields: [brandKitId], references: [id])
 }
 
 model GenerationJob {
@@ -168,11 +176,26 @@ model Discussion {
 }
 
 model BrandKit {
-  id      String  @id @default(uuid())
-  userId  String  @unique
-  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  color   String? @default("#4f46e5")
-  voice   String? @default("")
+  id             String  @id @default(uuid())
+  name           String  @default("My Brand")
+  userId         String
+  user           User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  isDefault      Boolean @default(false)
+  
+  projects       Project[]
+  logoDark       String? @default("")
+  logoLight      String? @default("")
+  primaryColor   String? @default("#06b6d4")
+  secondaryColor String? @default("#4f46e5")
+  fontPrimary    String? @default("Inter")
+  fontSecondary  String? @default("Montserrat")
+  
+  // Brand Identity
+  brandVoice     String? @default("Professional") // Sassy, Luxury, Playful, etc.
+  targetAudience String? @default("General")
+  description    String? @default("")
+  
+  updatedAt      DateTime @updatedAt
 }
 
 model GlobalSettings {

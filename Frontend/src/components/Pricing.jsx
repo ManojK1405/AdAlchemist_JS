@@ -22,7 +22,14 @@ const PLANS = [
         price: '499',
         credits: '600',
         icon: <Shield className="text-cyan-400" />,
-        features: ['600 Generation Credits', 'Priority Processing', 'Professional Templates', 'Priority Support'],
+        features: [
+            '600 Generation Credits',
+            'Priority Processing',
+            'Premium Brand Intelligence Hub',
+            '33% Discount on Hub Unlocks',
+            'Pro Templates & Aesthetics',
+            'Priority Support'
+        ],
         popular: true,
         color: 'from-cyan-600/30 to-cyan-600/30'
     },
@@ -32,7 +39,13 @@ const PLANS = [
         price: '1499',
         credits: '2,500',
         icon: <Crown className="text-yellow-400" />,
-        features: ['2,500 Generation Credits', 'Ultra-Fast Processing', 'Custom Brand Kits', 'Lifetime Pipeline Access'],
+        features: [
+            '2,500 Generation Credits',
+            'Ultra-Fast Processing',
+            'Multi-Client Identity Hub',
+            'Lifetime Pipeline Access',
+            'Agency Whitespace Tools'
+        ],
         color: 'from-cyan-600/20 to-indigo-600/20'
     }
 ];
@@ -295,8 +308,8 @@ export default function Pricing() {
                 <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
                     {PLANS.map((plan) => {
                         const originalPrice = parseInt(plan.price);
-                        const discount = appliedCoupon?.type === 'DISCOUNT' ? (originalPrice * appliedCoupon.value) / 100 : 0;
-                        const finalPrice = originalPrice - discount;
+                        const discount = appliedCoupon?.type === 'DISCOUNT' ? parseFloat(((originalPrice * appliedCoupon.value) / 100).toFixed(2)) : 0;
+                        const finalPrice = parseFloat((originalPrice - discount).toFixed(2));
 
                         return (
                             <div

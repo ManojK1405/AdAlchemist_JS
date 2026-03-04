@@ -1,5 +1,5 @@
 import express from 'express';
-import { createProject, createVideo, deleteProject, getAllPublishedProjects, getProjectById, editGeneration, editVideo, getTrendingProjects, saveEditedImage, setAsMaster } from '../controllers/projectController.js';
+import { createProject, createVideo, deleteProject, getAllPublishedProjects, getProjectById, editGeneration, editVideo, getTrendingProjects, saveEditedImage, setAsMaster, toggleReview, getReviewProject } from '../controllers/projectController.js';
 import { addToQueue, deleteFromQueue, getQueue, reorderQueue, updateQueueItem } from '../controllers/queueController.js';
 import { protect } from '../middlewares/auth.js';
 import upload from '../configs/multer.js';
@@ -24,5 +24,7 @@ projectRouter.post("/:projectId/edit", protect, upload.single('logo'), editGener
 projectRouter.post("/edit-video", protect, editVideo);
 projectRouter.post('/:projectId/save-edit', protect, saveEditedImage);
 projectRouter.post('/:projectId/set-master', protect, setAsMaster);
+projectRouter.post('/:projectId/review/toggle', protect, toggleReview);
+projectRouter.get('/review/:projectId', getReviewProject);
 
 export default projectRouter;
