@@ -8,7 +8,7 @@ import {
     VideoIcon,
     Facebook,
     Instagram,
-    SendIcon,
+    Copy,
     Coins,
     Settings2,
     Layers,
@@ -677,7 +677,7 @@ const Result = () => {
                                                     }}
                                                     className="p-2 bg-cyan-600 rounded-lg text-white hover:bg-cyan-500 transition shadow-lg"
                                                 >
-                                                    <SendIcon size={14} />
+                                                    <Copy size={14} />
                                                 </button>
                                             </div>
                                         </div>
@@ -686,7 +686,42 @@ const Result = () => {
                             </div>
                         </div>
 
+                        {/* Client Reviews Panel */}
+                        {project.clientReviews?.length > 0 && (
+                            <div className="glass-panel p-6 rounded-2xl space-y-4">
+                                <div className="flex items-center justify-between">
+                                    <h3 className="text-sm font-bold text-cyan-400 uppercase tracking-widest flex items-center gap-2">
+                                        <MessageSquare size={14} />
+                                        Client Reviews
+                                    </h3>
+                                    <span className="text-[10px] font-bold text-gray-500 bg-white/5 px-2 py-0.5 rounded-full border border-white/10 uppercase tracking-tighter">
+                                        {project.clientReviews.length} {project.clientReviews.length === 1 ? 'Review' : 'Reviews'}
+                                    </span>
+                                </div>
+
+                                <div className="space-y-3 max-h-72 overflow-y-auto custom-scrollbar pr-1">
+                                    {project.clientReviews.map(r => (
+                                        <div key={r.id} className="p-4 bg-white/[0.03] border border-white/5 rounded-2xl space-y-1">
+                                            <div className="flex items-center gap-2">
+                                                <div className="size-6 rounded-full bg-cyan-500/20 flex items-center justify-center text-[10px] font-black text-cyan-400 shrink-0">
+                                                    {r.user?.name?.[0]?.toUpperCase() || 'C'}
+                                                </div>
+                                                <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">
+                                                    {r.user?.name || 'Client Reviewer'}
+                                                </p>
+                                                <span className="ml-auto text-[9px] text-gray-600">
+                                                    {new Date(r.createdAt).toLocaleDateString()}
+                                                </span>
+                                            </div>
+                                            <p className="text-xs text-gray-300 leading-relaxed pl-8">{r.content}</p>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
                         {/* Video Magic Section */}
+
                         <div className="glass-panel p-6 rounded-2xl relative">
 
                             <div className="absolute top-0 right-0 p-4 opacity-10">

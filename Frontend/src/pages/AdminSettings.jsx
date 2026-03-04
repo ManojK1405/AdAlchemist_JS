@@ -19,7 +19,9 @@ import {
     Ticket,
     Plus,
     Trash2,
-    CheckCircle2
+    CheckCircle2,
+    Users,
+    Sparkles
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import Modal from '../components/Modal';
@@ -54,6 +56,7 @@ const AdminSettings = () => {
     const [saving, setSaving] = useState(false);
     const [passcode, setPasscode] = useState('');
     const [isAuthorized, setIsAuthorized] = useState(false);
+    const [isVerifying, setIsVerifying] = useState(false);
 
     // Coupon states
     const [coupons, setCoupons] = useState([]);
@@ -66,6 +69,12 @@ const AdminSettings = () => {
     });
     const [isCreatingCoupon, setIsCreatingCoupon] = useState(false);
 
+    // Demo access
+    const [demoEmail, setDemoEmail] = useState('');
+    const [isGrantingDemo, setIsGrantingDemo] = useState(false);
+    const [isRevokingDemo, setIsRevokingDemo] = useState(false);
+    const [demoResult, setDemoResult] = useState(null);
+
     const [modalConfig, setModalConfig] = useState({
         isOpen: false,
         title: "",
@@ -77,14 +86,20 @@ const AdminSettings = () => {
     const openConfirm = (config) => setModalConfig({ ...config, isOpen: true });
     const closeModal = () => setModalConfig(prev => ({ ...prev, isOpen: false }));
 
-    const handleVerifyCode = (e) => {
+    const handleVerifyCode = async (e) => {
         e.preventDefault();
-        if (passcode === '1405') {
-            setIsAuthorized(true);
-            toast.success("Identity Verified", { icon: '🤫' });
-        } else {
-            toast.error("Invalid Secret Key");
+        setIsVerifying(true);
+        try {
+            const { data } = await api.post('/api/admin/verify', { passcode });
+            if (data.authorized) {
+                setIsAuthorized(true);
+                toast.success("Identity Verified", { icon: '🤫' });
+            }
+        } catch (err) {
+            toast.error(err.response?.data?.message || "Invalid passcode");
             setPasscode('');
+        } finally {
+            setIsVerifying(false);
         }
     };
 
@@ -178,6 +193,48 @@ const AdminSettings = () => {
         });
     };
 
+    const handleDemoAccess = async (e) => {
+        e.preventDefault();
+        if (!demoEmail.trim()) return;
+        setIsGrantingDemo(true);
+        setDemoResult(null);
+        try {
+            const token = await getToken();
+            const { data } = await api.post('/api/admin/demo-access', { email: demoEmail.trim() }, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            setDemoResult({ success: true, message: data.message });
+            toast.success(data.message);
+        } catch (err) {
+            const msg = err.response?.data?.message || 'Failed to grant demo access';
+            setDemoResult({ success: false, message: msg });
+            toast.error(msg);
+        } finally {
+            setIsGrantingDemo(false);
+        }
+    };
+
+    const handleRevokeAccess = async () => {
+        if (!demoEmail.trim()) return toast.error('Enter an email first');
+        setIsRevokingDemo(true);
+        setDemoResult(null);
+        try {
+            const token = await getToken();
+            const { data } = await api.delete('/api/admin/demo-access', {
+                headers: { Authorization: `Bearer ${token}` },
+                data: { email: demoEmail.trim() }
+            });
+            setDemoResult({ success: true, message: data.message, revoked: true });
+            toast.success(data.message);
+        } catch (err) {
+            const msg = err.response?.data?.message || 'Failed to revoke access';
+            setDemoResult({ success: false, message: msg });
+            toast.error(msg);
+        } finally {
+            setIsRevokingDemo(false);
+        }
+    };
+
     if (!isAuthorized) return (
         <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-[#050505]">
             <motion.div
@@ -202,9 +259,11 @@ const AdminSettings = () => {
                     />
                     <button
                         type="submit"
-                        className="w-full py-4 bg-white text-black rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] hover:bg-cyan-500 transition-all active:scale-95 shadow-xl shadow-cyan-500/10"
+                        disabled={isVerifying}
+                        className="w-full py-4 bg-white text-black rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] hover:bg-cyan-500 transition-all active:scale-95 shadow-xl shadow-cyan-500/10 flex items-center justify-center gap-2"
                     >
-                        Verify Identity
+                        {isVerifying && <Loader2 size={14} className="animate-spin" />}
+                        {isVerifying ? 'Verifying...' : 'Verify Identity'}
                     </button>
                 </form>
             </motion.div>
@@ -520,7 +579,65 @@ const AdminSettings = () => {
                 </div>
             </div>
 
-            <div className="mt-16 p-8 bg-yellow-500/5 border border-yellow-500/10 rounded-[2.5rem] flex items-center gap-6">
+            {/* ── Demo Access ───────────────────────────────── */}
+            <div className="mt-16 p-8 bg-indigo-500/5 border border-indigo-500/10 rounded-[2.5rem] space-y-6">
+                <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-2xl bg-indigo-500/10 flex items-center justify-center text-indigo-400 border border-indigo-500/20 shrink-0">
+                        <Users size={22} />
+                    </div>
+                    <div>
+                        <h4 className="text-sm font-black text-white uppercase tracking-widest flex items-center gap-2">
+                            Demo Access
+                            <span className="text-[9px] px-2 py-0.5 bg-indigo-500/20 text-indigo-400 rounded-full border border-indigo-500/20 font-black">INTERVIEW MODE</span>
+                        </h4>
+                        <p className="text-xs text-gray-500 mt-0.5">Grant a user full premium access + 300 credits instantly by email.</p>
+                    </div>
+                </div>
+
+                <form onSubmit={handleDemoAccess} className="flex gap-3">
+                    <input
+                        type="email"
+                        value={demoEmail}
+                        onChange={(e) => { setDemoEmail(e.target.value); setDemoResult(null); }}
+                        placeholder="interviewer@company.com"
+                        className="flex-1 bg-white/5 border border-white/10 rounded-2xl px-5 py-3.5 text-sm font-medium outline-none focus:border-indigo-500 transition-all placeholder:text-gray-700"
+                    />
+                    <button
+                        type="submit"
+                        disabled={isGrantingDemo || isRevokingDemo || !demoEmail.trim()}
+                        className="px-6 py-3.5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 rounded-2xl font-black text-[10px] uppercase tracking-widest text-white transition-all active:scale-95 flex items-center gap-2 whitespace-nowrap"
+                    >
+                        {isGrantingDemo ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} />}
+                        {isGrantingDemo ? 'Granting...' : 'Grant'}
+                    </button>
+                    <button
+                        type="button"
+                        onClick={handleRevokeAccess}
+                        disabled={isRevokingDemo || isGrantingDemo || !demoEmail.trim()}
+                        className="px-6 py-3.5 bg-red-600/80 hover:bg-red-600 disabled:opacity-50 rounded-2xl font-black text-[10px] uppercase tracking-widest text-white transition-all active:scale-95 flex items-center gap-2 whitespace-nowrap"
+                    >
+                        {isRevokingDemo ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
+                        {isRevokingDemo ? 'Revoking...' : 'Revoke'}
+                    </button>
+                </form>
+
+                {demoResult && (
+                    <div className={`p-4 rounded-2xl border text-sm font-medium animate-in fade-in duration-300 ${demoResult.success
+                        ? 'bg-green-500/10 border-green-500/20 text-green-400'
+                        : 'bg-red-500/10 border-red-500/20 text-red-400'
+                        }`}>
+                        {demoResult.success ? '✅' : '❌'} {demoResult.message}
+                    </div>
+                )}
+
+                <div className="flex flex-wrap gap-2">
+                    {['✓ Pro Access', '✓ Pipeline Access', '✓ Brand Hub', '✓ 300 Credits'].map(f => (
+                        <span key={f} className="text-[10px] font-black text-indigo-400 bg-indigo-500/10 border border-indigo-500/20 px-3 py-1 rounded-full uppercase tracking-wider">{f}</span>
+                    ))}
+                </div>
+            </div>
+
+            <div className="mt-6 p-8 bg-yellow-500/5 border border-yellow-500/10 rounded-[2.5rem] flex items-center gap-6">
                 <div className="w-12 h-12 rounded-full bg-yellow-500/20 flex items-center justify-center text-yellow-500 shrink-0">
                     <ShieldAlert size={24} />
                 </div>

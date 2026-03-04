@@ -6,9 +6,9 @@ import { sendEmail, getTipEmailTemplate, getCommentEmailTemplate } from "../util
 
 export const addComment = async (req, res) => {
     try {
-        const auth = req.auth();
+        const auth = typeof req.auth === 'function' ? req.auth() : req.auth;
         const userId = auth?.userId || null;
-        const { content, projectId, discussionId, parentId } = req.body;
+        const { content, projectId, discussionId, parentId, isClientReview } = req.body;
 
         if (!content) {
             return res.status(400).json({ message: "Comment content is required" });
@@ -21,6 +21,7 @@ export const addComment = async (req, res) => {
                 projectId: projectId || null,
                 discussionId: discussionId || null,
                 parentId: parentId || null,
+                isClientReview: isClientReview === true || isClientReview === 'true',
             },
             include: {
                 user: true,
@@ -59,6 +60,7 @@ export const getComments = async (req, res) => {
             where: {
                 projectId: projectId || undefined,
                 discussionId: discussionId || undefined,
+                isClientReview: false,
             },
             include: {
                 user: true,

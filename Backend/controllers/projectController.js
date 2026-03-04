@@ -701,6 +701,7 @@ export const getReviewProject = async (req, res) => {
                 user: { select: { name: true, image: true } },
                 brandKit: true,
                 comments: {
+                    where: { isClientReview: true },
                     include: { user: true, replies: { include: { user: true } } },
                     orderBy: { createdAt: 'desc' }
                 }
@@ -735,15 +736,25 @@ export const getProjectById = async (req, res) => {
             include: {
                 user: true,
                 projectLikes: true,
-                comments: true,
+                comments: {
+                    where: { isClientReview: false },
+                    orderBy: { createdAt: 'desc' },
+                },
             }
         });
+
+        // Separately load client reviews for the owner
+        const clientReviews = project ? await prisma.comment.findMany({
+            where: { projectId, isClientReview: true },
+            include: { user: true },
+            orderBy: { createdAt: 'desc' },
+        }) : [];
 
         if (!project) {
             return res.status(404).json({ message: "Project not found" });
         }
 
-        return res.json(project);
+        return res.json({ ...project, clientReviews });
 
     } catch (error) {
         console.error(error);

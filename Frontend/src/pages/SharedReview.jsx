@@ -39,9 +39,10 @@ const SharedReview = () => {
         if (!comment.trim()) return;
         setIsSubmitting(true);
         try {
-            await api.post(`/api/comment/create`, {
+            await api.post(`/api/social/comments`, {
                 projectId,
-                content: comment
+                content: comment,
+                isClientReview: true
             });
             toast.success("Feedback submitted!");
             setComment("");

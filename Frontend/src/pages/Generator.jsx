@@ -23,6 +23,7 @@ const Generator = () => {
     const [modelImage, setModelImage] = useState(null)
     const [logoImage, setLogoImage] = useState(null)
     const [userPrompt, setUserPrompt] = useState('')
+    const [targetLength, setTargetLength] = useState(5)
     const [isGenerating, setIsGenerating] = useState(false)
     const [isQueuing, setIsQueuing] = useState(false)
     const [isVoiceDropdownOpen, setIsVoiceDropdownOpen] = useState(false)
@@ -139,6 +140,7 @@ const Generator = () => {
             formData.append('productDescription', productDescription);
             formData.append('aspectRatio', aspectRatio);
             formData.append('userPrompt', userPrompt);
+            formData.append('targetLength', targetLength.toString());
             formData.append('images', productImage);
             formData.append('images', modelImage);
             formData.append('generationType', generationType);
@@ -180,6 +182,7 @@ const Generator = () => {
             formData.append('productDescription', productDescription);
             formData.append('aspectRatio', aspectRatio);
             formData.append('userPrompt', userPrompt);
+            formData.append('targetLength', targetLength.toString());
             formData.append('images', productImage);
             formData.append('images', modelImage);
             formData.append('queueOnly', 'true');
@@ -290,7 +293,7 @@ const Generator = () => {
                         </div>
 
                         {/* Brand Identity Section */}
-                        <div className={`p-6 rounded-3xl border ${!hasBrandHubAccess ? 'border-cyan-500/30' : 'border-white/10'} bg-white/[0.02] space-y-6 relative overflow-hidden`}>
+                        <div className={`p-6 rounded-3xl border ${!hasBrandHubAccess ? 'border-cyan-500/30' : 'border-white/10'} bg-white/[0.02] space-y-6 relative`}>
                             {!hasBrandHubAccess && (
                                 <div className="absolute top-4 right-4 flex items-center gap-1.5 px-3 py-1 bg-cyan-600 rounded-full shadow-lg shadow-cyan-500/20 animate-pulse">
                                     <ShieldCheck size={12} className="text-white" />
@@ -317,15 +320,17 @@ const Generator = () => {
                             )}
 
                             {/* Identity Selector */}
-                            <CustomDropdown
-                                label="Select Identity Portfolio"
-                                value={selectedBrandKitId}
-                                options={brandKits.map(kit => ({
-                                    value: kit.id,
-                                    label: `${kit.name} ${kit.isDefault ? '(Default)' : ''}`
-                                }))}
-                                onChange={(val) => handleSwitchBrand(val)}
-                            />
+                            <div className="relative">
+                                <CustomDropdown
+                                    label="Select Identity Portfolio"
+                                    value={selectedBrandKitId}
+                                    options={brandKits.map(kit => ({
+                                        value: kit.id,
+                                        label: `${kit.name} ${kit.isDefault ? '(Default)' : ''}`
+                                    }))}
+                                    onChange={(val) => handleSwitchBrand(val)}
+                                />
+                            </div>
 
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                                 {/* Color */}
@@ -474,6 +479,23 @@ const Generator = () => {
                                 </button>
                             </div>
                         </div>
+
+                        {/* Video Length (Conditional) */}
+                        {generationType === 'VIDEO' && (
+                            <div className="relative">
+                                <CustomDropdown
+                                    label="Video Target Length"
+                                    icon={Clock}
+                                    value={targetLength}
+                                    onChange={(v) => setTargetLength(Number(v))}
+                                    options={[
+                                        { label: "5 Seconds (Recommended)", value: 5 },
+                                        { label: "10 Seconds", value: 10 },
+                                        { label: "15 Seconds", value: 15 }
+                                    ]}
+                                />
+                            </div>
+                        )}
 
                         {/* User Prompt */}
                         <div>

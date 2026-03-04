@@ -25,6 +25,7 @@ model User {
   hasProAccess    Boolean  @default(false)
   hasPipelineAccess Boolean @default(false)
   hasBrandHubAccess Boolean @default(false)
+  lastSpinAt      DateTime?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -131,6 +132,7 @@ model Comment {
   projectId    String?
   discussionId String?
   parentId     String?
+  isClientReview Boolean @default(false)
   
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
@@ -143,6 +145,7 @@ model Comment {
   replies      Comment[]   @relation("CommentReplies")
   likes        CommentLike[]
 }
+
 
 model CommentLike {
   id        String   @id @default(uuid())

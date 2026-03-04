@@ -1,5 +1,6 @@
 import express from 'express';
 import { getUserCredits, getAllProjects, getUserProjectById, toggleProjectPublic, getBrandKit, updateBrandKit, deleteBrandKit, unlockProStudio, unlockPipeline, unlockBrandHub } from '../controllers/userController.js';
+import { spinWheel, getSpinStatus } from '../controllers/spinController.js';
 import { protect } from '../middlewares/auth.js';
 import { prisma } from '../configs/prisma.js';
 
@@ -18,6 +19,10 @@ userRouter.delete('/brand-kit/:id', protect, deleteBrandKit);
 
 userRouter.post('/unlock-pipeline', protect, unlockPipeline);
 userRouter.post('/unlock-brand-hub', protect, unlockBrandHub);
+
+// Spin Wheel
+userRouter.get('/spin', protect, getSpinStatus);
+userRouter.post('/spin', protect, spinWheel);
 
 // Publicly fetch global feature flags/configs
 userRouter.get('/config', async (req, res) => {

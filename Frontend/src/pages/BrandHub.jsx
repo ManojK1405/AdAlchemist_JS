@@ -20,6 +20,7 @@ import {
     Sparkles
 } from "lucide-react";
 import { useAuth, useUser } from "@clerk/clerk-react";
+import { useNavigate } from "react-router-dom";
 import { toast } from "react-hot-toast";
 import api from "../configs/axios";
 import Modal from "../components/Modal";
@@ -28,6 +29,7 @@ import CustomDropdown from "../components/CustomDropdown";
 const BrandHub = () => {
     const { user } = useUser();
     const { getToken } = useAuth();
+    const navigate = useNavigate();
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
@@ -296,7 +298,15 @@ const BrandHub = () => {
                         <button
                             onClick={() => {
                                 if (!hasAccess && brandKits.length >= 1) {
-                                    toast.error("Multiple identities is a pro feature. Unlock the Brand Intelligence Hub to manage more brands!");
+                                    openConfirm({
+                                        isOpen: true,
+                                        type: 'info',
+                                        title: 'Brand Hub Locked',
+                                        message: 'Multiple brand identities is a premium feature. Unlock the Brand Intelligence Hub to manage unlimited brands & AI design DNA.',
+                                        confirmText: 'View Plans →',
+                                        cancelText: 'Maybe Later',
+                                        onConfirm: () => { closeModal(); navigate('/plans'); },
+                                    });
                                     return;
                                 }
                                 handleCreateNew();
