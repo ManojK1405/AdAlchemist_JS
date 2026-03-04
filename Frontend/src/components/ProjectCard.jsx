@@ -6,6 +6,7 @@ import { useAuth, useUser } from "@clerk/clerk-react"
 import toast from "react-hot-toast"
 import api from "../configs/axios"
 import CommentSection from "./CommentSection"
+import Modal from "./Modal"
 
 
 const ProjectCard = ({
@@ -24,28 +25,46 @@ const ProjectCard = ({
     const [isPlaying, setIsPlaying] = useState(false)
     const videoRef = useRef(null)
 
+    const [modalConfig, setModalConfig] = useState({
+        isOpen: false,
+        title: "",
+        message: "",
+        onConfirm: () => { },
+        type: "info"
+    });
+
+    const openConfirm = (config) => setModalConfig({ ...config, isOpen: true });
+    const closeModal = () => setModalConfig(prev => ({ ...prev, isOpen: false }));
+
     const isLiked = gen.projectLikes?.some(l => l.userId === user?.id)
 
     const handleDelete = async (id) => {
-        const confirm = window.confirm('Are you sure you want to delete this project?');
-        if (!confirm) return;
+        openConfirm({
+            title: "Delete Project",
+            message: "Are you sure you want to delete this project? This action cannot be undone.",
+            confirmText: "Delete Project",
+            cancelText: "Dismiss",
+            type: "danger",
+            onConfirm: async () => {
+                closeModal();
+                try {
+                    const token = await getToken();
 
-        try {
-            const token = await getToken();
+                    // optimistic remove
+                    setGenerations?.(prev => prev.filter(gen => gen.id !== id));
 
-            // optimistic remove
-            setGenerations?.(prev => prev.filter(gen => gen.id !== id));
+                    await api.delete(`/api/project/${id}`, {
+                        headers: { Authorization: `Bearer ${token}` }
+                    });
 
-            await api.delete(`/api/project/${id}`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+                    toast.success("Project deleted successfully");
 
-            toast.success("Project deleted successfully");
-
-        } catch (error) {
-            toast.error(error?.response?.data?.message || "Delete failed");
-            console.log(error);
-        }
+                } catch (error) {
+                    toast.error(error?.response?.data?.message || "Delete failed");
+                    console.log(error);
+                }
+            }
+        });
     }
 
     const togglePublish = async (projectId) => {
@@ -96,18 +115,24 @@ const ProjectCard = ({
             return;
         }
 
-        const confirm = window.confirm(`Tip 5 credits to ${gen.user?.name || 'this creator'}?`);
-        if (!confirm) return;
-
-        try {
-            const token = await getToken();
-            await api.post('/api/social/tip', { recipientId: gen.userId, amount: 5 }, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            toast.success('Successfully tipped 5 credits!');
-        } catch (error) {
-            toast.error(error?.response?.data?.message || 'Failed to tip creator');
-        }
+        openConfirm({
+            title: "Support Creator",
+            message: `Send 5 credits to ${gen.user?.name || 'this creator'} as a token of appreciation?`,
+            confirmText: "Send 5 Credits",
+            type: "info",
+            onConfirm: async () => {
+                closeModal();
+                try {
+                    const token = await getToken();
+                    await api.post('/api/social/tip', { recipientId: gen.userId, amount: 5 }, {
+                        headers: { Authorization: `Bearer ${token}` }
+                    });
+                    toast.success('Successfully tipped 5 credits!');
+                } catch (error) {
+                    toast.error(error?.response?.data?.message || 'Failed to tip creator');
+                }
+            }
+        });
     }
 
     const showTippingRules = (e) => {
@@ -171,7 +196,7 @@ const ProjectCard = ({
 
                     {gen.generatedImage && (
                         <img
-                            src={gen.generatedImage}
+                            src={gen.generatedImage || null}
                             alt={gen.productName}
                             className={`absolute inset-0 w-full h-full object-cover transition duration-700 ${(gen.generatedVideo && isPlaying) ? 'opacity-0' : 'opacity-100 group-hover:scale-110'}`}
                         />
@@ -181,7 +206,7 @@ const ProjectCard = ({
                         <>
                             <video
                                 ref={videoRef}
-                                src={gen.generatedVideo}
+                                src={gen.generatedVideo || null}
                                 muted
                                 loop
                                 playsInline
@@ -402,6 +427,8 @@ const ProjectCard = ({
                 </div>
 
             </div>
+
+            <Modal {...modalConfig} onClose={closeModal} />
         </div>
     )
 }

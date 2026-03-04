@@ -3,7 +3,7 @@ import Title from './Title';
 import api from '../configs/axios';
 import { useAuth, useUser } from '@clerk/clerk-react';
 import toast from 'react-hot-toast';
-import { Check, Zap, Shield, Crown, Clock, Ticket, Sparkles, Loader2, Coins, TrendingUp } from 'lucide-react';
+import { Check, Zap, Shield, Crown, Clock, Ticket, Sparkles, Loader2, Coins, TrendingUp, ShieldCheck } from 'lucide-react';
 import Modal from './Modal';
 
 const PLANS = [
@@ -25,8 +25,8 @@ const PLANS = [
         features: [
             '600 Generation Credits',
             'Priority Processing',
-            'Premium Brand Intelligence Hub',
-            '33% Discount on Hub Unlocks',
+            'FULL Brand Hub Access',
+            'Advanced Style Protocols',
             'Pro Templates & Aesthetics',
             'Priority Support'
         ],
@@ -66,7 +66,27 @@ export default function Pricing() {
         enableShaming: true
     });
 
+    const [userStatus, setUserStatus] = useState({
+        credits: 0,
+        hasProAccess: false,
+        hasBrandHubAccess: false,
+        hasPipelineAccess: false
+    });
+
     useEffect(() => {
+        const fetchStatus = async () => {
+            if (!user) return;
+            try {
+                const token = await getToken();
+                const { data } = await api.get('/api/user/credits', {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+                setUserStatus(data);
+            } catch (err) {
+                console.error("Failed to fetch user status", err);
+            }
+        };
+
         const fetchConfig = async () => {
             try {
                 const { data } = await api.get('/api/user/config');
@@ -75,8 +95,10 @@ export default function Pricing() {
                 console.error("Failed to fetch config", err);
             }
         };
+
+        fetchStatus();
         fetchConfig();
-    }, []);
+    }, [user, getToken]);
 
     // Modal State
     const [modalConfig, setModalConfig] = useState({
@@ -240,6 +262,38 @@ export default function Pricing() {
                 try {
                     const token = await getToken();
                     const { data } = await api.post('/api/user/unlock-pipeline', {}, {
+                        headers: { Authorization: `Bearer ${token}` }
+                    });
+                    toast.success(data.message);
+                    window.location.reload();
+                } catch (error) {
+                    toast.error(error.response?.data?.message || "Unlock failed");
+                } finally {
+                    setIsUnlocking(false);
+                }
+            }
+        });
+    };
+
+    const handleUnlockBrandHubWithCredits = async () => {
+        if (!user) return toast.error("Please login to unlock features");
+
+        const UNLOCK_COST = userStatus.hasProAccess ? 500 : 750;
+
+        openConfirm({
+            title: "Unlock Creative DNA Hub",
+            message: config.enableScarcity
+                ? `Swap ${UNLOCK_COST} Credits for Full Brand Hub Access? (Pro users save 33%). Current capacity is limited to 15 slots this week.`
+                : `Unlock Unlimited Brand Identities and Visual DNA for ${UNLOCK_COST} Credits?`,
+            confirmText: "Evolve Identity",
+            cancelText: "Keep Single Identity",
+            type: "info",
+            onConfirm: async () => {
+                closeModal();
+                setIsUnlocking(true);
+                try {
+                    const token = await getToken();
+                    const { data } = await api.post('/api/user/unlock-brand-hub', {}, {
                         headers: { Authorization: `Bearer ${token}` }
                     });
                     toast.success(data.message);
@@ -427,6 +481,64 @@ export default function Pricing() {
                         </div>
                     </div>
                 </div>
+
+                {/* Standalone Brand Hub Unlock */}
+                {!userStatus.hasBrandHubAccess && (
+                    <div className="mt-12 max-w-4xl mx-auto p-8 rounded-3xl border border-purple-500/20 bg-purple-500/5 backdrop-blur-xl relative overflow-hidden group">
+                        <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity">
+                            <ShieldCheck size={160} />
+                        </div>
+
+                        <div className="relative flex flex-col md:flex-row items-center gap-8 text-center md:text-left">
+                            <div className="flex-1 space-y-4">
+                                <div className="flex items-center justify-center md:justify-start gap-2 text-purple-400 font-black uppercase tracking-[0.2em] text-[10px]">
+                                    <Sparkles size={14} /> Brand Identity Protocol
+                                </div>
+                                <h3 className="text-2xl font-black uppercase tracking-widest text-white">Unlock Brand Intelligence Hub</h3>
+                                <p className="text-gray-400 text-sm leading-relaxed max-w-xl">
+                                    Manage unlimited brand identities, store signatures, colors, and voices for different clients.
+                                    <span className="text-purple-400 font-bold ml-1">Included for FREE in Pro and Agency plans.</span>
+                                </p>
+                            </div>
+
+                            <div className="w-full md:w-auto text-center space-y-4 bg-white/5 p-6 rounded-2xl border border-white/10">
+                                <div className="space-y-1">
+                                    <div className="flex items-center justify-center gap-2">
+                                        <span className="text-3xl font-black text-white">₹{userStatus.hasProAccess ? '199' : '299'}</span>
+                                        {config.enableAnchoring && (
+                                            <span className="text-sm text-gray-500 line-through font-bold">₹{userStatus.hasProAccess ? '299' : '899'}</span>
+                                        )}
+                                    </div>
+                                    <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">
+                                        {userStatus.hasProAccess ? '33% Pro Discount' : 'One-Time Unlock'}
+                                    </p>
+                                </div>
+                                <button
+                                    onClick={() => handleSubscription(userStatus.hasProAccess ? 'brand_hub_unlock_pro' : 'brand_hub_unlock')}
+                                    disabled={loading === 'brand_hub_unlock' || loading === 'brand_hub_unlock_pro' || isUnlocking}
+                                    className="w-full md:w-48 py-4 bg-white text-black rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-purple-400 transition-all active:scale-95 disabled:opacity-50"
+                                >
+                                    {(loading === 'brand_hub_unlock' || loading === 'brand_hub_unlock_pro') ? (
+                                        <span className="animate-spin border-2 border-black/30 border-t-black rounded-full w-4 h-4 inline-block" />
+                                    ) : "Unlock Now (Cash)"}
+                                </button>
+                                <button
+                                    onClick={handleUnlockBrandHubWithCredits}
+                                    disabled={loading || isUnlocking}
+                                    className="w-full md:w-48 py-4 bg-purple-600/10 border border-purple-500/30 text-purple-400 rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-purple-600/20 transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
+                                >
+                                    {isUnlocking ? (
+                                        <span className="animate-spin border-2 border-purple-400/30 border-t-purple-400 rounded-full w-4 h-4" />
+                                    ) : (
+                                        <>
+                                            <Coins size={14} /> {userStatus.hasProAccess ? '500' : '750'} Credits
+                                        </>
+                                    )}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
 
             <Modal

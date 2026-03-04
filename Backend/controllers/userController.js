@@ -7,7 +7,9 @@ import { v2 as cloudinary } from "cloudinary";
 //Get user credits
 export const getUserCredits = async (req, res) => {
     try {
-        const { userId } = req.auth();
+        const auth = typeof req.auth === 'function' ? req.auth() : req.auth;
+        const userId = auth?.userId;
+
         if (!userId) {
             return res.status(401).json({ message: 'Unauthorized' });
         }
@@ -141,21 +143,55 @@ export const toggleProjectPublic = async (req, res) => {
 // Get all user brand kits
 export const getBrandKit = async (req, res) => {
     try {
-        const { userId } = req.auth();
+        const auth = typeof req.auth === 'function' ? req.auth() : req.auth;
+        const userId = auth?.userId;
 
-        const user = await prisma.user.findUnique({
+        if (!userId) {
+            return res.status(401).json({ message: 'Unauthorized' });
+        }
+
+        let user = await prisma.user.findUnique({
             where: { id: userId },
             select: { hasBrandHubAccess: true, hasProAccess: true }
         });
+
+        // 🛡️ Self-Healing: If user exists in Clerk but not in our DB
+        if (!user) {
+            console.log(`User ${userId} not found in DB during Brand Hub load, self-healing...`);
+            let email = "user@adalchemist.shop";
+            let name = "New Creator";
+            let image = "https://img.clerk.com/static/placeholder.png";
+
+            try {
+                const clerkUser = await clerkClient.users.getUser(userId);
+                if (clerkUser) {
+                    email = clerkUser.emailAddresses[0]?.emailAddress || email;
+                    name = `${clerkUser.firstName || ''} ${clerkUser.lastName || ''}`.trim() || name;
+                    image = clerkUser.imageUrl || image;
+                }
+            } catch (err) {
+                console.error("Failed to fetch user from Clerk for self-healing:", err.message);
+            }
+
+            user = await prisma.user.create({
+                data: {
+                    id: userId,
+                    email,
+                    name,
+                    image,
+                    credits: 20
+                },
+                select: { hasBrandHubAccess: true, hasProAccess: true }
+            });
+        }
 
         const brandKits = await prisma.brandKit.findMany({
             where: { userId },
             orderBy: { updatedAt: 'desc' }
         });
 
-        // If no kits, return a default one in an array
-        if (brandKits.length === 0) {
-            const defaultKit = {
+        res.json({
+            brandKits: brandKits.length === 0 ? [{
                 id: "default",
                 name: "My First Brand",
                 primaryColor: "#06b6d4",
@@ -168,23 +204,17 @@ export const getBrandKit = async (req, res) => {
                 logoDark: "",
                 logoLight: "",
                 isDefault: true
-            };
-            return res.json({
-                brandKits: [defaultKit],
-                hasBrandHubAccess: user?.hasBrandHubAccess || false,
-                hasProAccess: user?.hasProAccess || false
-            });
-        }
-
-        res.json({
-            brandKits,
+            }] : brandKits,
             hasBrandHubAccess: user?.hasBrandHubAccess || false,
             hasProAccess: user?.hasProAccess || false
         });
     } catch (error) {
-        console.error("GET Brand Kit Flow Error:", error);
+        console.error("getBrandKit Error:", error);
         Sentry.captureException(error);
-        res.status(500).json({ message: 'Internal server error', details: error.message });
+        res.status(500).json({
+            message: 'Internal server error',
+            details: error.message
+        });
     }
 };
 
@@ -192,7 +222,8 @@ export const getBrandKit = async (req, res) => {
 
 export const updateBrandKit = async (req, res) => {
     try {
-        const { userId } = req.auth();
+        const auth = typeof req.auth === 'function' ? req.auth() : req.auth;
+        const userId = auth?.userId;
         const {
             name,
             primaryColor,
@@ -226,10 +257,18 @@ export const updateBrandKit = async (req, res) => {
             logoLightUrl = result.secure_url;
         }
 
-        const user = await prisma.user.findUnique({
+        let user = await prisma.user.findUnique({
             where: { id: userId },
             select: { hasBrandHubAccess: true }
         });
+
+        if (!user) {
+            console.log(`User ${userId} not found in DB during update, healing...`);
+            user = await prisma.user.create({
+                data: { id: userId, email: "user@adalchemist.shop", name: "New Creator", image: "https://img.clerk.com/static/placeholder.png", credits: 20 },
+                select: { hasBrandHubAccess: true }
+            });
+        }
 
         const currentKits = await prisma.brandKit.count({
             where: { userId }
@@ -311,7 +350,8 @@ export const updateBrandKit = async (req, res) => {
 // Delete brand kit
 export const deleteBrandKit = async (req, res) => {
     try {
-        const { userId } = req.auth();
+        const auth = typeof req.auth === 'function' ? req.auth() : req.auth;
+        const userId = auth?.userId;
         const { id } = req.params;
 
         await prisma.brandKit.delete({
@@ -402,8 +442,10 @@ export const unlockPipeline = async (req, res) => {
 // Unlock Brand Hub with credits
 export const unlockBrandHub = async (req, res) => {
     try {
-        const { userId } = req.auth();
+        const auth = typeof req.auth === 'function' ? req.auth() : req.auth;
+        const userId = auth?.userId;
 
+        if (!userId) return res.status(401).json({ message: "Unauthorized" });
         const user = await prisma.user.findUnique({
             where: { id: userId }
         });

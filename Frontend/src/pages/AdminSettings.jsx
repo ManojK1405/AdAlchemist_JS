@@ -22,6 +22,8 @@ import {
     CheckCircle2
 } from 'lucide-react';
 import { motion } from 'framer-motion';
+import Modal from '../components/Modal';
+import CustomDropdown from '../components/CustomDropdown';
 
 const SETTINGS_GROUPS = [
     {
@@ -63,6 +65,17 @@ const AdminSettings = () => {
         expiryDate: ''
     });
     const [isCreatingCoupon, setIsCreatingCoupon] = useState(false);
+
+    const [modalConfig, setModalConfig] = useState({
+        isOpen: false,
+        title: "",
+        message: "",
+        onConfirm: () => { },
+        type: "info"
+    });
+
+    const openConfirm = (config) => setModalConfig({ ...config, isOpen: true });
+    const closeModal = () => setModalConfig(prev => ({ ...prev, isOpen: false }));
 
     const handleVerifyCode = (e) => {
         e.preventDefault();
@@ -144,17 +157,25 @@ const AdminSettings = () => {
     };
 
     const handleDeleteCoupon = async (id) => {
-        if (!window.confirm("Delete this coupon protocol?")) return;
-        try {
-            const token = await getToken();
-            await api.delete(`/api/coupon/admin/${id}`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            setCoupons(prev => prev.filter(c => c.id !== id));
-            toast.success("Protocol terminated");
-        } catch (err) {
-            toast.error("Failed to delete coupon");
-        }
+        openConfirm({
+            title: "Terminate Protocol",
+            message: "Are you sure you want to delete this coupon protocol? All remaining uses will be invalidated immediately.",
+            confirmText: "Purge Key",
+            type: "danger",
+            onConfirm: async () => {
+                closeModal();
+                try {
+                    const token = await getToken();
+                    await api.delete(`/api/coupon/admin/${id}`, {
+                        headers: { Authorization: `Bearer ${token}` }
+                    });
+                    setCoupons(prev => prev.filter(c => c.id !== id));
+                    toast.success("Protocol terminated");
+                } catch (err) {
+                    toast.error("Failed to delete coupon");
+                }
+            }
+        });
     };
 
     if (!isAuthorized) return (
@@ -324,19 +345,16 @@ const AdminSettings = () => {
                                 </div>
 
                                 <div className="grid grid-cols-2 gap-4">
-                                    <div className="space-y-2">
-                                        <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Type</label>
-                                        <div className="relative">
-                                            <select
-                                                value={newCoupon.type}
-                                                onChange={e => setNewCoupon({ ...newCoupon, type: e.target.value })}
-                                                className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-[10px] font-black uppercase text-white outline-none focus:border-cyan-500 appearance-none cursor-pointer"
-                                            >
-                                                <option value="FREE_CREDITS" className="text-black bg-white">FREE CREDITS</option>
-                                                <option value="DISCOUNT" className="text-black bg-white">DISCOUNT %</option>
-                                            </select>
-                                            <Layout className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-600 pointer-events-none" size={14} />
-                                        </div>
+                                    <div className="space-y-4 pt-1">
+                                        <CustomDropdown
+                                            label="Type"
+                                            value={newCoupon.type}
+                                            onChange={(val) => setNewCoupon({ ...newCoupon, type: val })}
+                                            options={[
+                                                { label: "FREE CREDITS", value: "FREE_CREDITS" },
+                                                { label: "DISCOUNT %", value: "DISCOUNT" }
+                                            ]}
+                                        />
                                     </div>
                                     <div className="space-y-2">
                                         <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Magnitude</label>
@@ -513,6 +531,8 @@ const AdminSettings = () => {
                     </p>
                 </div>
             </div>
+
+            <Modal {...modalConfig} onClose={closeModal} />
         </div>
     );
 };

@@ -3,6 +3,7 @@ import { useAuth, useUser } from '@clerk/clerk-react';
 import { Heart, MessageSquare, Send, Reply } from 'lucide-react';
 import api from '../configs/axios';
 import toast from 'react-hot-toast';
+import Modal from './Modal';
 
 const CommentSection = ({ projectId, discussionId, ownerId, onCommentsChanged }) => {
     const { getToken } = useAuth();
@@ -13,6 +14,17 @@ const CommentSection = ({ projectId, discussionId, ownerId, onCommentsChanged })
     const [replyContent, setReplyContent] = useState('');
     const [replyTo, setReplyTo] = useState(null);
     const [loading, setLoading] = useState(false);
+
+    const [modalConfig, setModalConfig] = useState({
+        isOpen: false,
+        title: "",
+        message: "",
+        onConfirm: () => { },
+        type: "info"
+    });
+
+    const openConfirm = (config) => setModalConfig({ ...config, isOpen: true });
+    const closeModal = () => setModalConfig(prev => ({ ...prev, isOpen: false }));
 
     const buildTree = (allComments) => {
         const map = new Map();
@@ -103,17 +115,25 @@ const CommentSection = ({ projectId, discussionId, ownerId, onCommentsChanged })
     };
 
     const handleDelete = async (commentId) => {
-        if (!window.confirm('Are you sure you want to delete this comment?')) return;
-        try {
-            const token = await getToken();
-            await api.delete(`/api/social/comments/${commentId}`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            fetchComments();
-            toast.success('Comment deleted');
-        } catch (error) {
-            toast.error('Failed to delete comment');
-        }
+        openConfirm({
+            title: "Delete Comment",
+            message: "Are you sure you want to delete this comment? This action cannot be undone.",
+            confirmText: "Delete",
+            type: "danger",
+            onConfirm: async () => {
+                closeModal();
+                try {
+                    const token = await getToken();
+                    await api.delete(`/api/social/comments/${commentId}`, {
+                        headers: { Authorization: `Bearer ${token}` }
+                    });
+                    fetchComments();
+                    toast.success('Comment deleted');
+                } catch (error) {
+                    toast.error('Failed to delete comment');
+                }
+            }
+        });
     };
 
     const CommentItem = ({ comment, depth = 0 }) => {
@@ -197,52 +217,55 @@ const CommentSection = ({ projectId, discussionId, ownerId, onCommentsChanged })
     };
 
     return (
-        <div className="mt-12 pt-8 border-t border-white/10">
-            <div className="flex items-center justify-between mb-8">
-                <h4 className="flex items-center gap-3 text-xl font-semibold bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent">
-                    <MessageSquare size={22} className="text-cyan-400" />
-                    Community Feedback
-                </h4>
-                <span className="text-xs text-gray-500 bg-white/5 px-3 py-1 rounded-full border border-white/10">
-                    {rawCount} Comments
-                </span>
-            </div>
-
-            <form onSubmit={(e) => handleSubmit(e)} className="mb-10 relative group">
-                <div className="flex gap-3 items-center">
-                    <div className="relative flex-1">
-                        <input
-                            value={newComment}
-                            onChange={(e) => setNewComment(e.target.value)}
-                            placeholder="Share your thoughts with the creator..."
-                            className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-3.5 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500/50 transition-all placeholder:text-gray-600"
-                        />
-                    </div>
-                    <button
-                        type="submit"
-                        disabled={loading || !newComment.trim()}
-                        className="bg-cyan-600 hover:bg-cyan-500 disabled:opacity-30 disabled:hover:bg-cyan-600 text-white px-6 py-3.5 rounded-2xl transition-all duration-300 flex items-center gap-2 font-medium shadow-lg shadow-cyan-600/20 hover:shadow-cyan-600/40"
-                    >
-                        <Send size={18} className={loading ? 'animate-pulse' : ''} />
-                        <span className="hidden sm:inline">Post</span>
-                    </button>
+        <>
+            <div className="mt-12 pt-8 border-t border-white/10">
+                <div className="flex items-center justify-between mb-8">
+                    <h4 className="flex items-center gap-3 text-xl font-semibold bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent">
+                        <MessageSquare size={22} className="text-cyan-400" />
+                        Community Feedback
+                    </h4>
+                    <span className="text-xs text-gray-500 bg-white/5 px-3 py-1 rounded-full border border-white/10">
+                        {rawCount} Comments
+                    </span>
                 </div>
-            </form>
 
-            <div className="space-y-2 max-h-[600px] overflow-y-auto pr-4 custom-scrollbar">
-                {comments.length === 0 ? (
-                    <div className="text-center py-16 bg-white/3 rounded-3xl border border-dashed border-white/10">
-                        <div className="w-16 h-16 bg-cyan-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                            <MessageSquare size={28} className="text-cyan-400/50" />
+                <form onSubmit={(e) => handleSubmit(e)} className="mb-10 relative group">
+                    <div className="flex gap-3 items-center">
+                        <div className="relative flex-1">
+                            <input
+                                value={newComment}
+                                onChange={(e) => setNewComment(e.target.value)}
+                                placeholder="Share your thoughts with the creator..."
+                                className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-3.5 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500/50 transition-all placeholder:text-gray-600"
+                            />
                         </div>
-                        <p className="text-gray-400 font-medium">No voices here yet.</p>
-                        <p className="text-xs text-gray-500 mt-1">Be the first to start the conversation!</p>
+                        <button
+                            type="submit"
+                            disabled={loading || !newComment.trim()}
+                            className="bg-cyan-600 hover:bg-cyan-500 disabled:opacity-30 disabled:hover:bg-cyan-600 text-white px-6 py-3.5 rounded-2xl transition-all duration-300 flex items-center gap-2 font-medium shadow-lg shadow-cyan-600/20 hover:shadow-cyan-600/40"
+                        >
+                            <Send size={18} className={loading ? 'animate-pulse' : ''} />
+                            <span className="hidden sm:inline">Post</span>
+                        </button>
                     </div>
-                ) : (
-                    comments.map(comment => <CommentItem key={comment.id} comment={comment} />)
-                )}
+                </form>
+
+                <div className="space-y-2 max-h-[600px] overflow-y-auto pr-4 custom-scrollbar">
+                    {comments.length === 0 ? (
+                        <div className="text-center py-16 bg-white/3 rounded-3xl border border-dashed border-white/10">
+                            <div className="w-16 h-16 bg-cyan-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <MessageSquare size={28} className="text-cyan-400/50" />
+                            </div>
+                            <p className="text-gray-400 font-medium">No voices here yet.</p>
+                            <p className="text-xs text-gray-500 mt-1">Be the first to start the conversation!</p>
+                        </div>
+                    ) : (
+                        comments.map(comment => <CommentItem key={comment.id} comment={comment} />)
+                    )}
+                </div>
             </div>
-        </div>
+            <Modal {...modalConfig} onClose={closeModal} />
+        </>
     );
 };
 

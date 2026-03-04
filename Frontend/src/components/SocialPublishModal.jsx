@@ -3,6 +3,7 @@ import { Facebook, Instagram, X, Loader2Icon, SendIcon } from 'lucide-react';
 import { useAuth } from '@clerk/clerk-react';
 import api from '../configs/axios';
 import toast from 'react-hot-toast';
+import CustomDropdown from './CustomDropdown';
 
 const SocialPublishModal = ({ isOpen, onClose, project, initialPlatform = 'Facebook' }) => {
     const { getToken } = useAuth();
@@ -123,7 +124,7 @@ const SocialPublishModal = ({ isOpen, onClose, project, initialPlatform = 'Faceb
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-            <div className="bg-[#13131a] border border-white/10 rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl relative animate-in fade-in zoom-in-95 duration-200">
+            <div className="bg-[#13131a] border border-white/10 rounded-2xl w-full max-w-lg shadow-2xl relative animate-in fade-in zoom-in-95 duration-200">
                 <button
                     onClick={onClose}
                     className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors"
@@ -180,19 +181,15 @@ const SocialPublishModal = ({ isOpen, onClose, project, initialPlatform = 'Faceb
                                         No Facebook Pages found. Make sure you own a page and granted permissions.
                                     </p>
                                 ) : (
-                                    <select
-                                        value={selectedPage?.id || ''}
-                                        onChange={(e) => setSelectedPage(pages.find(p => p.id === e.target.value))}
-                                        className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 focus:outline-none focus:border-cyan-500 text-white"
-                                    >
-                                        {pages.map(page => (
-                                            <option key={page.id} value={page.id} className="bg-gray-900">
-                                                {page.name}
-                                            </option>
-                                        ))}
-                                    </select>
+                                    <CustomDropdown
+                                        label="Select Page"
+                                        value={selectedPage?.id}
+                                        onChange={(val) => setSelectedPage(pages.find(p => p.id === val))}
+                                        options={pages.map(page => ({ label: page.name, value: page.id }))}
+                                    />
                                 )}
                             </div>
+
 
                             {/* Action Button */}
                             <button

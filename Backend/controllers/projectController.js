@@ -258,6 +258,9 @@ One high-resolution, magazine-quality advertisement image.
             },
         });
 
+        // ⭐ NEW: Trigger evaluation immediately for initial image
+        await evaluateAdPerformance(tempProjectId).catch(e => console.error("Ad Performance Evaluation Failed:", e));
+
         if (generationType === 'VIDEO' && !req.body.queueOnly) {
             // Trigger video generation immediately after image is ready
             // We can call the internal logic or use a helper. 
@@ -560,17 +563,33 @@ export const evaluateAdPerformance = async (projectId) => {
         - Description: ${project.productDescription}
         
         TASK:
-        Give an engagement score from 0 to 100 and a 2-sentence tactical feedback.
+        1. Give a predictive engagement score from 0 to 100 based on marketing best practices.
+        2. Provide exactly 2 sentences of tactical feedback or suggestions on how to improve this ad concept. DO NOT repeat the prompt or description back. Do NOT just summarize the ad. Provide only actionable critique and creative direction.
+        
         Return ONLY a JSON object: {"score": number, "feedback": "string"}
         `;
 
         const result = await ai.models.generateContent({
-            model: "gemini-1.5-flash",
-            contents: [{ role: "user", parts: [{ text: evaluationPrompt }] }],
-            generationConfig: { responseMimeType: "application/json" }
+            model: "gemini-2.5-flash",
+            contents: evaluationPrompt,
+            config: { responseMimeType: "application/json" }
         });
 
-        const evaluation = JSON.parse(result.response.text());
+        // Clean potentially malformed JSON (e.g., if it comes wrapped in markdown)
+        let responseText = result.text.trim();
+        if (responseText.startsWith('```json')) {
+            responseText = responseText.substring(7, responseText.length - 3).trim();
+        } else if (responseText.startsWith('```')) {
+            responseText = responseText.substring(3, responseText.length - 3).trim();
+        }
+
+        let evaluation;
+        try {
+            evaluation = JSON.parse(responseText);
+        } catch (parseError) {
+            console.error("Ad Evaluation JSON Parse Failed:", parseError, "Raw Response:", responseText);
+            evaluation = { score: 75, feedback: "Ad shows strong product prominence but could use more brand-aligned lighting." };
+        }
 
         await prisma.project.update({
             where: { id: projectId },
@@ -1037,6 +1056,9 @@ CREATIVE RE-IMAGINING RULES:
             },
         });
 
+        // ⭐ NEW: Trigger evaluation for re-generated image
+        await evaluateAdPerformance(projectId).catch(e => console.error("Ad Performance Evaluation Failed:", e));
+
         return res.json({
             message: "Image regenerated successfully",
             imageUrl: uploadResult.secure_url,
@@ -1084,7 +1106,7 @@ export const editVideo = async (req, res) => {
     let isCreditDeducted = false;
 
     try {
-        // ✅ Check user credits (20)
+        // ✅ Check user credits (25)
         const user = await prisma.user.findUnique({
             where: { id: userId },
         });
@@ -1095,7 +1117,7 @@ export const editVideo = async (req, res) => {
                 .json({ message: "User Not Found" });
         }
 
-        if (user.credits < 20) {
+        if (user.credits < 25) {
             return res
                 .status(400)
                 .json({ message: "Insufficient Credits" });
@@ -1123,11 +1145,11 @@ export const editVideo = async (req, res) => {
                 .json({ message: "Project is already generating" });
         }
 
-        // ✅ Deduct 20 credits
+        // ✅ Deduct 25 credits
         await prisma.user.update({
             where: { id: userId },
             data: {
-                credits: { decrement: 20 },
+                credits: { decrement: 25 },
             },
         });
 
@@ -1243,6 +1265,9 @@ A breathtakingly professional 5 - second commercial segment that looks like it w
             },
         });
 
+        // ⭐ NEW: Trigger evaluation for re-generated video
+        await evaluateAdPerformance(projectId).catch(e => console.error("Ad Performance Evaluation Failed:", e));
+
         // 💌 Send Notification Email
         if (project.user?.email) {
             const template = getVideoCompleteEmailTemplate(project.productName, uploadResult.secure_url);
@@ -1265,7 +1290,7 @@ A breathtakingly professional 5 - second commercial segment that looks like it w
             await prisma.user.update({
                 where: { id: userId },
                 data: {
-                    credits: { increment: 20 },
+                    credits: { increment: 25 },
                 },
             });
         }

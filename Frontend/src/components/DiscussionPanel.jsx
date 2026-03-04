@@ -4,6 +4,7 @@ import { MessageCircle, Plus, Users, ArrowRight, Sparkles, Search, Trash2, Coins
 import api from '../configs/axios';
 import toast from 'react-hot-toast';
 import CommentSection from './CommentSection';
+import Modal from './Modal';
 
 const DiscussionPanel = () => {
     const { getToken } = useAuth();
@@ -15,6 +16,17 @@ const DiscussionPanel = () => {
     const [content, setContent] = useState('');
     const [loading, setLoading] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
+
+    const [modalConfig, setModalConfig] = useState({
+        isOpen: false,
+        title: "",
+        message: "",
+        onConfirm: () => { },
+        type: "info"
+    });
+
+    const openConfirm = (config) => setModalConfig({ ...config, isOpen: true });
+    const closeModal = () => setModalConfig(prev => ({ ...prev, isOpen: false }));
 
     const fetchDiscussions = async () => {
         try {
@@ -58,19 +70,26 @@ const DiscussionPanel = () => {
 
     const handleDelete = async (e, id) => {
         e.stopPropagation();
-        const confirm = window.confirm("Are you sure you want to delete this discussion?");
-        if (!confirm) return;
-        try {
-            const token = await getToken();
-            await api.delete(`/api/social/discussions/${id}`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            setDiscussions(prev => prev.filter(d => d.id !== id));
-            if (selectedId === id) setSelectedId(null);
-            toast.success("Discussion deleted successfully");
-        } catch (error) {
-            toast.error("Failed to delete discussion");
-        }
+        openConfirm({
+            title: "Dissolve Thread",
+            message: "Are you sure you want to delete this discussion and all its contributions? This action is permanent.",
+            confirmText: "Dissolve",
+            type: "danger",
+            onConfirm: async () => {
+                closeModal();
+                try {
+                    const token = await getToken();
+                    await api.delete(`/api/social/discussions/${id}`, {
+                        headers: { Authorization: `Bearer ${token}` }
+                    });
+                    setDiscussions(prev => prev.filter(d => d.id !== id));
+                    if (selectedId === id) setSelectedId(null);
+                    toast.success("Discussion deleted successfully");
+                } catch (error) {
+                    toast.error("Failed to delete discussion");
+                }
+            }
+        });
     };
 
     const handleTip = async (e, discussion) => {
@@ -80,18 +99,24 @@ const DiscussionPanel = () => {
             return;
         }
 
-        const confirm = window.confirm(`Tip 5 credits to ${discussion.user?.name || 'this creator'}?`);
-        if (!confirm) return;
-
-        try {
-            const token = await getToken();
-            await api.post('/api/social/tip', { recipientId: discussion.userId, amount: 5 }, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            toast.success('Successfully tipped 5 credits!');
-        } catch (error) {
-            toast.error(error?.response?.data?.message || 'Failed to tip creator');
-        }
+        openConfirm({
+            title: "Reward Insight",
+            message: `Send 5 credits to ${discussion.user?.name || 'this creator'} for their contribution?`,
+            confirmText: "Send 5 Credits",
+            type: "info",
+            onConfirm: async () => {
+                closeModal();
+                try {
+                    const token = await getToken();
+                    await api.post('/api/social/tip', { recipientId: discussion.userId, amount: 5 }, {
+                        headers: { Authorization: `Bearer ${token}` }
+                    });
+                    toast.success('Successfully tipped 5 credits!');
+                } catch (error) {
+                    toast.error(error?.response?.data?.message || 'Failed to tip creator');
+                }
+            }
+        });
     };
 
     const showTippingRules = (e) => {
@@ -295,6 +320,7 @@ const DiscussionPanel = () => {
                     ))
                 )}
             </div>
+            <Modal {...modalConfig} onClose={closeModal} />
         </div>
     );
 };

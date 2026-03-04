@@ -22,6 +22,8 @@ import {
 import { useAuth, useUser } from "@clerk/clerk-react";
 import { toast } from "react-hot-toast";
 import api from "../configs/axios";
+import Modal from "../components/Modal";
+import CustomDropdown from "../components/CustomDropdown";
 
 const BrandHub = () => {
     const { user } = useUser();
@@ -33,12 +35,23 @@ const BrandHub = () => {
     const [hasPro, setHasPro] = useState(false);
     const [isUnlocking, setIsUnlocking] = useState(false);
 
+    const [modalConfig, setModalConfig] = useState({
+        isOpen: false,
+        title: "",
+        message: "",
+        onConfirm: () => { },
+        type: "info"
+    });
+
+    const openConfirm = (config) => setModalConfig({ ...config, isOpen: true });
+    const closeModal = () => setModalConfig(prev => ({ ...prev, isOpen: false }));
+
     const [brandKits, setBrandKits] = useState([]);
     const [currentKitId, setCurrentKitId] = useState(null);
     const [brandKit, setBrandKit] = useState({
         name: "My Brand",
         primaryColor: "#06b6d4",
-        secondaryColor: "#4f46e5",
+        secondaryColor: "#231adddc",
         fontPrimary: "Inter",
         fontSecondary: "Montserrat",
         brandVoice: "Professional",
@@ -56,56 +69,7 @@ const BrandHub = () => {
 
     const voices = ["Professional", "Luxury", "Witty", "Direct", "Casual", "Aggressive", "Playful", "Corporate"];
     const fonts = ["Inter", "Montserrat", "Playfair Display", "Roboto", "Outfit", "Space Grotesk"];
-
-    const CustomDropdown = ({ label, value, options, onChange, icon: Icon }) => {
-        const [isOpen, setIsOpen] = useState(false);
-        const ref = React.useRef(null);
-
-        useEffect(() => {
-            const handleClickOutside = (event) => {
-                if (ref.current && !ref.current.contains(event.target)) setIsOpen(false);
-            };
-            document.addEventListener("mousedown", handleClickOutside);
-            return () => document.removeEventListener("mousedown", handleClickOutside);
-        }, []);
-
-        const isDisabled = !options || options.length === 0;
-
-        return (
-            <div className="relative" ref={ref}>
-                <label className="text-[10px] font-black text-gray-500 uppercase ml-1 flex items-center gap-2 mb-2">
-                    {Icon && <Icon size={12} />} {label}
-                </label>
-                <div
-                    onClick={() => !isDisabled && setIsOpen(!isOpen)}
-                    className={`group w-full bg-white/5 border border-white/10 rounded-xl px-5 py-4 text-xs font-bold flex items-center justify-between cursor-pointer transition-all hover:bg-white/10 hover:border-white/20 ${isDisabled ? 'opacity-50 cursor-not-allowed grayscale' : ''} ${isOpen ? 'border-cyan-500/50 bg-white/10 ring-1 ring-cyan-500/20' : ''}`}
-                >
-                    <span className={value ? "text-white" : "text-gray-500"}>
-                        {value || `Select ${label}...`}
-                    </span>
-                    <ChevronDown size={14} className={`text-gray-500 transition-transform duration-300 ${isOpen ? 'rotate-180 text-cyan-500' : ''}`} />
-                </div>
-
-                {isOpen && !isDisabled && (
-                    <div className="absolute top-[calc(100%+8px)] left-0 w-full bg-[#0d0d0f] border border-white/10 rounded-2xl p-2 shadow-2xl z-50 max-h-60 overflow-y-auto custom-scrollbar backdrop-blur-xl animate-in fade-in slide-in-from-top-2 duration-200">
-                        {options.map((opt) => (
-                            <div
-                                key={opt}
-                                onClick={() => {
-                                    onChange(opt);
-                                    setIsOpen(false);
-                                }}
-                                className={`px-4 py-3 rounded-lg text-xs font-bold transition-all flex items-center justify-between cursor-pointer group/item ${value === opt ? 'bg-cyan-500/10 text-cyan-400' : 'text-gray-400 hover:bg-white/5 hover:text-white'}`}
-                            >
-                                {opt}
-                                {value === opt && <Check size={14} className="text-cyan-400" />}
-                            </div>
-                        ))}
-                    </div>
-                )}
-            </div>
-        );
-    };
+    const audiences = ["General", "Gen Z", "Millennials", "Gen X", "Boomers", "B2B Enterprise", "Small Business", "Parents", "Tech Enthusiasts", "Luxury Buyers", "Fitness Enthusiasts", "Marketing Professionals"];
 
     const fetchBrandKits = async () => {
         try {
@@ -125,7 +89,7 @@ const BrandHub = () => {
                 setCurrentKitId(defaultOrFirst.id);
             }
         } catch (error) {
-            console.error("Error fetching brand kits", error);
+            console.error("Error fetching brand kits", error.response?.data || error);
             toast.error("Failed to load creative tokens.");
         } finally {
             setIsLoading(false);
@@ -228,21 +192,30 @@ const BrandHub = () => {
 
     const handleDelete = async () => {
         if (!currentKitId || currentKitId === "new" || currentKitId === "default") return;
-        if (!confirm("Are you sure you want to delete this identity? All associated creative DNA will be permanently lost.")) return;
 
-        setIsDeleting(true);
-        try {
-            const token = await getToken();
-            await api.delete(`/api/user/brand-kit/${currentKitId}`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            toast.success("Identity Purged from memory.");
-            await fetchBrandKits();
-        } catch (error) {
-            toast.error("Deletion protocol failed.");
-        } finally {
-            setIsDeleting(false);
-        }
+        openConfirm({
+            title: "Purge Identity",
+            message: "Are you sure you want to delete this identity? All associated creative DNA will be permanently lost from AI memory.",
+            confirmText: "Purge DNA",
+            cancelText: "Keep Identity",
+            type: "danger",
+            onConfirm: async () => {
+                closeModal();
+                setIsDeleting(true);
+                try {
+                    const token = await getToken();
+                    await api.delete(`/api/user/brand-kit/${currentKitId}`, {
+                        headers: { Authorization: `Bearer ${token}` }
+                    });
+                    toast.success("Identity Purged from memory.");
+                    await fetchBrandKits();
+                } catch (error) {
+                    toast.error("Deletion protocol failed.");
+                } finally {
+                    setIsDeleting(false);
+                }
+            }
+        });
     };
 
     const handleSave = async () => {
@@ -407,7 +380,7 @@ const BrandHub = () => {
                                 <label className="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-3 ml-2">Logo: Dark Mode / Color</label>
                                 <div className="h-48 rounded-[2rem] border-2 border-dashed border-white/10 bg-white/2 hover:border-cyan-500/50 hover:bg-white/5 transition-all flex flex-col items-center justify-center gap-4 overflow-hidden relative">
                                     {logoFiles.logoDark || brandKit.logoDark ? (
-                                        <img src={logoFiles.logoDark ? URL.createObjectURL(logoFiles.logoDark) : brandKit.logoDark} className="h-24 object-contain transition-transform group-hover:scale-110" alt="Dark logo" />
+                                        <img src={logoFiles.logoDark ? URL.createObjectURL(logoFiles.logoDark) : (brandKit.logoDark || null)} className="h-24 object-contain transition-transform group-hover:scale-110" alt="Dark logo" />
                                     ) : (
                                         <Upload className="text-gray-600" size={32} />
                                     )}
@@ -423,7 +396,7 @@ const BrandHub = () => {
                                 <label className="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-3 ml-2">Logo: Light Mode / White</label>
                                 <div className="h-48 rounded-[2rem] border-2 border-dashed border-white/10 bg-white/2 hover:border-cyan-500/50 hover:bg-white/5 transition-all flex flex-col items-center justify-center gap-4 overflow-hidden relative">
                                     {logoFiles.logoLight || brandKit.logoLight ? (
-                                        <img src={logoFiles.logoLight ? URL.createObjectURL(logoFiles.logoLight) : brandKit.logoLight} className="h-24 object-contain filter invert opacity-80" alt="Light logo" />
+                                        <img src={logoFiles.logoLight ? URL.createObjectURL(logoFiles.logoLight) : (brandKit.logoLight || null)} className="h-24 object-contain filter invert opacity-80" alt="Light logo" />
                                     ) : (
                                         <Upload className="text-gray-600" size={32} />
                                     )}
@@ -516,17 +489,13 @@ const BrandHub = () => {
                                 onChange={(val) => setBrandKit({ ...brandKit, brandVoice: val })}
                             />
 
-                            <div>
-                                <label className="text-[10px] font-black text-gray-500 uppercase ml-1 flex items-center gap-2">
-                                    <Users size={12} /> Target Psychometrics
-                                </label>
-                                <input
-                                    className="w-full mt-2 bg-white/5 border border-white/10 rounded-xl px-5 py-4 text-xs font-bold outline-none focus:border-cyan-500"
-                                    placeholder="e.g. Gen Z Fashionistas"
-                                    value={brandKit.targetAudience}
-                                    onChange={(e) => setBrandKit({ ...brandKit, targetAudience: e.target.value })}
-                                />
-                            </div>
+                            <CustomDropdown
+                                label="Target Psychometrics"
+                                icon={Users}
+                                value={brandKit.targetAudience}
+                                options={audiences}
+                                onChange={(val) => setBrandKit({ ...brandKit, targetAudience: val })}
+                            />
 
                             <div>
                                 <label className="text-[10px] font-black text-gray-500 uppercase ml-1 flex items-center gap-2">
@@ -591,6 +560,12 @@ const BrandHub = () => {
                     </div>
                 </div>
             )}
+
+            <Modal
+                {...modalConfig}
+                onClose={closeModal}
+                loading={isDeleting}
+            />
         </div>
     );
 };

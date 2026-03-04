@@ -42,6 +42,7 @@ const Result = () => {
     const [selectedImageIdx, setSelectedImageIdx] = useState(-1);
     const [selectedVideoIdx, setSelectedVideoIdx] = useState(-1);
     const [detectedRatio, setDetectedRatio] = useState(null); // String like "9/16" or "16/9"
+    const [isEvaluating, setIsEvaluating] = useState(false);
 
     // Facebook Publish States
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -215,22 +216,66 @@ const Result = () => {
 
 
     //Helper Function
-    const handleDownload = async (url, filename) => {
-        try {
-            const response = await fetch(url);
-            const blob = await response.blob();
+    const handleDownload = (url, name) => {
+        if (!url) return;
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = name;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
 
-            const urlObj = window.URL.createObjectURL(blob);
-            const link = document.createElement("a");
-            link.href = urlObj;
-            link.download = filename;
-            link.click();
-            // Small delay to ensure browser triggers download before revoking
-            setTimeout(() => window.URL.revokeObjectURL(urlObj), 100);
-        } catch (err) {
-            console.error("Download failed", err);
+    const handleEvaluate = async () => {
+        setIsEvaluating(true);
+        try {
+            const token = await getToken();
+            const { data } = await api.post(`/api/project/${projectId}/evaluate`, {}, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            setProjectData(prev => ({ ...prev, engagementScore: data.score, scoringFeedback: data.feedback }));
+            toast.success("AI Analysis Complete!");
+        } catch (error) {
+            toast.error("Evaluation failed. Please try again later.");
+        } finally {
+            setIsEvaluating(false);
         }
     };
+
+    const handleRegenerateWithSuggestion = async () => {
+        setIsGenerating(true);
+        try {
+            const token = await getToken();
+            const formData = new FormData();
+            formData.append('userPrompt', project.scoringFeedback);
+            formData.append('keepOriginalScene', 'true');
+
+            await api.post(`/api/project/${projectId}/edit`, formData, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            toast.success("Regeneration started using AI feedback! (5 credits deducted)");
+            fetchProjectData();
+        } catch (error) {
+            setIsGenerating(false);
+            toast.error(error?.response?.data?.message || "AI Regeneration failed");
+        }
+    };
+
+    const handleRegenerateVideoWithSuggestion = async () => {
+        setIsGenerating(true);
+        try {
+            const token = await getToken();
+            await api.post(`/api/project/edit-video`, { projectId, userPrompt: project.scoringFeedback }, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            toast.success("Video regeneration started using AI feedback! (25 credits deducted)");
+            fetchProjectData();
+        } catch (error) {
+            setIsGenerating(false);
+            toast.error(error?.response?.data?.message || "AI Video Regeneration failed");
+        }
+    };
+
 
 
 
@@ -346,20 +391,19 @@ const Result = () => {
                                 {viewMode === "video" && project.generatedVideo ? (
                                     <video
                                         key={selectedVideoIdx}
-                                        src={selectedVideoIdx === -1 ? project.generatedVideo : (project.videoVersions?.[selectedVideoIdx] || project.generatedVideo)}
+                                        src={(selectedVideoIdx === -1 ? project.generatedVideo : (project.videoVersions?.[selectedVideoIdx] || project.generatedVideo)) || null}
                                         onLoadedMetadata={handleVideoMetadata}
                                         controls
                                         autoPlay
-                                        loop
-                                        className="w-full h-full object-cover"
+                                        className="w-full h-full object-contain"
                                     />
                                 ) : (
                                     <img
                                         key={selectedImageIdx}
-                                        src={selectedImageIdx === -1 ? project.generatedImage : (project.imageVersions?.[selectedImageIdx] || project.generatedImage)}
+                                        src={(selectedImageIdx === -1 ? project.generatedImage : (project.imageVersions?.[selectedImageIdx] || project.generatedImage)) || null}
                                         onLoad={handleImageLoad}
-                                        alt="Generated Result"
-                                        className="w-full h-full object-cover"
+                                        alt="Preview"
+                                        className="w-full h-full object-contain"
                                     />
                                 )}
                             </div>
@@ -440,7 +484,7 @@ const Result = () => {
                                                 onClick={() => setSelectedVideoIdx(-1)}
                                                 className={`relative shrink-0 w-40 h-28 rounded-2xl overflow-hidden border-2 transition-all duration-300 ${selectedVideoIdx === -1 ? 'border-cyan-500 shadow-[0_0_20px_rgba(6,182,212,0.3)] scale-[1.02]' : 'border-white/5 opacity-50 hover:opacity-100 hover:border-white/20'}`}
                                             >
-                                                <video src={project.generatedVideo} className="w-full h-full object-cover opacity-40" />
+                                                <video src={project.generatedVideo || null} className="w-full h-full object-cover opacity-40" />
                                                 <PlayCircle className="absolute inset-0 m-auto size-8 text-white" />
                                                 <div className="absolute top-2 left-2 bg-black/60 px-2 py-0.5 rounded-md text-[10px] font-black border border-white/10 text-white">Latest</div>
                                                 {selectedVideoIdx === -1 && (
@@ -490,37 +534,77 @@ const Result = () => {
                     <div className="space-y-6">
 
                         {/* Performance Evaluator Card */}
-                        {project.engagementScore > 0 && (
+                        {(project.engagementScore > 0 || isEvaluating) ? (
                             <div className="glass-panel p-6 rounded-[2.5rem] border border-cyan-500/20 bg-cyan-500/5 relative overflow-hidden group">
-                                <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:rotate-12 transition-transform">
-                                    <SparkleIcon className="size-20 text-cyan-500" />
-                                </div>
-                                <h3 className="text-[10px] font-black text-cyan-500 uppercase tracking-[0.3em] mb-4 flex items-center gap-2">
+                                {isEvaluating ? (
+                                    <div className="flex flex-col items-center justify-center py-10 gap-4">
+                                        <Loader2Icon className="animate-spin text-cyan-500" size={40} />
+                                        <p className="text-[10px] font-black text-cyan-500 uppercase tracking-widest animate-pulse">Running Predictive Models...</p>
+                                    </div>
+                                ) : (
+                                    <>
+                                        <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:rotate-12 transition-transform">
+                                            <SparkleIcon className="size-20 text-cyan-500" />
+                                        </div>
+                                        <h3 className="text-[10px] font-black text-cyan-500 uppercase tracking-[0.3em] mb-4 flex items-center gap-2">
+                                            <ShieldCheck size={14} /> AI Performance Prediction
+                                        </h3>
+                                        <div className="flex items-end gap-3 mb-6">
+                                            <span className="text-7xl font-black tracking-tighter text-white">
+                                                {project.engagementScore}
+                                            </span>
+                                            <span className="text-cyan-500 font-bold text-xl mb-3">%</span>
+                                            <div className="flex-1 h-3 bg-white/10 rounded-full mb-4 relative overflow-hidden">
+                                                <div
+                                                    className="absolute inset-y-0 left-0 bg-gradient-to-r from-cyan-600 to-cyan-400 rounded-full shadow-[0_0_15px_rgba(6,182,212,0.5)] transition-all duration-1000"
+                                                    style={{ width: `${project.engagementScore}%` }}
+                                                />
+                                            </div>
+                                        </div>
+                                        <div className="p-5 bg-black/40 border border-white/5 rounded-2xl backdrop-blur-md">
+                                            <p className="text-[9px] font-black text-gray-500 uppercase tracking-widest mb-2 flex items-center gap-2">
+                                                <MessageSquare size={10} /> ROI Optimization Brief
+                                            </p>
+                                            <p className="text-xs font-bold text-gray-300 leading-relaxed mb-4">
+                                                "{project.scoringFeedback}"
+                                            </p>
+                                            <button
+                                                onClick={handleRegenerateWithSuggestion}
+                                                disabled={isGenerating}
+                                                className="w-full py-3 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 rounded-xl font-black uppercase text-[9px] tracking-widest transition-all flex items-center justify-center gap-2 mb-2 disabled:opacity-50"
+                                            >
+                                                {isGenerating ? <Loader2Icon size={12} className="animate-spin" /> : <SparkleIcon size={12} />}
+                                                {isGenerating ? "Generating..." : "Regenerate Image with this feedback (5 Credits)"}
+                                            </button>
+                                            <button
+                                                onClick={handleRegenerateVideoWithSuggestion}
+                                                disabled={isGenerating || !project.generatedImage}
+                                                className="w-full py-3 bg-fuchsia-500/10 hover:bg-fuchsia-500/20 text-fuchsia-400 border border-fuchsia-500/30 rounded-xl font-black uppercase text-[9px] tracking-widest transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                                            >
+                                                {isGenerating ? <Loader2Icon size={12} className="animate-spin" /> : <VideoIcon size={12} />}
+                                                {isGenerating ? "Generating..." : "Regenerate Video with this feedback (25 Credits)"}
+                                            </button>
+                                        </div>
+                                        <p className="text-[9px] text-gray-600 font-bold uppercase tracking-[0.2em] mt-5 text-center">
+                                            Confidence Score: Predictive Engine V3.1
+                                        </p>
+                                    </>
+                                )}
+                            </div>
+                        ) : (
+                            <div className="glass-panel p-6 rounded-[2.5rem] border border-white/10 bg-white/5 space-y-4">
+                                <h3 className="text-[10px] font-black text-gray-500 uppercase tracking-[0.3em] flex items-center gap-2">
                                     <ShieldCheck size={14} /> AI Performance Prediction
                                 </h3>
-                                <div className="flex items-end gap-3 mb-6">
-                                    <span className="text-7xl font-black tracking-tighter text-white">
-                                        {project.engagementScore}
-                                    </span>
-                                    <span className="text-cyan-500 font-bold text-xl mb-3">%</span>
-                                    <div className="flex-1 h-3 bg-white/10 rounded-full mb-4 relative overflow-hidden">
-                                        <div
-                                            className="absolute inset-y-0 left-0 bg-gradient-to-r from-cyan-600 to-cyan-400 rounded-full shadow-[0_0_15px_rgba(6,182,212,0.5)] transition-all duration-1000"
-                                            style={{ width: `${project.engagementScore}%` }}
-                                        />
-                                    </div>
-                                </div>
-                                <div className="p-5 bg-black/40 border border-white/5 rounded-2xl backdrop-blur-md">
-                                    <p className="text-[9px] font-black text-gray-500 uppercase tracking-widest mb-2 flex items-center gap-2">
-                                        <MessageSquare size={10} /> ROI Optimization Brief
-                                    </p>
-                                    <p className="text-xs font-bold text-gray-300 leading-relaxed">
-                                        "{project.scoringFeedback}"
-                                    </p>
-                                </div>
-                                <p className="text-[9px] text-gray-600 font-bold uppercase tracking-[0.2em] mt-5 text-center">
-                                    Confidence Score: Predictive Engine V3.1
+                                <p className="text-xs text-gray-400 leading-relaxed font-bold">
+                                    Get a predictive engagement score and tactical ROI feedback for this ad generation.
                                 </p>
+                                <button
+                                    onClick={handleEvaluate}
+                                    className="w-full py-4 rounded-2xl bg-cyan-600/20 text-cyan-400 border border-cyan-500/20 hover:bg-cyan-600/30 transition-all font-black uppercase text-[10px] tracking-widest flex items-center justify-center gap-2"
+                                >
+                                    <SparkleIcon size={14} /> Analyze with Creative AI
+                                </button>
                             </div>
                         )}
 

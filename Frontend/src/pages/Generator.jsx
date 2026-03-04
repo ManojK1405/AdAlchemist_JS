@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react"
-import { Loader2, Camera, Video, User, Layers, Zap, Sparkles, Palette, MessageSquare, ChevronDown, Check, Coins, Clock } from "lucide-react"
+import { Loader2, Camera, Video, User, Layers, Zap, Sparkles, Palette, MessageSquare, ChevronDown, Check, Coins, Clock, ShieldCheck } from "lucide-react"
 import Title from "../components/Title"
 import UploadZone from "../components/UploadZone"
 import { useAuth, useUser } from "@clerk/clerk-react"
@@ -7,6 +7,7 @@ import { useNavigate } from "react-router-dom"
 import { toast } from "react-hot-toast"
 import api from "../configs/axios"
 import heic2any from "heic2any"
+import CustomDropdown from "../components/CustomDropdown";
 
 const Generator = () => {
 
@@ -316,21 +317,15 @@ const Generator = () => {
                             )}
 
                             {/* Identity Selector */}
-                            <div className="relative">
-                                <label className="block text-[10px] font-bold text-gray-500 uppercase mb-2 ml-1">Select Identity Portfolio</label>
-                                <select
-                                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-xs font-bold outline-none focus:border-cyan-500 appearance-none cursor-pointer"
-                                    value={selectedBrandKitId || ''}
-                                    onChange={(e) => handleSwitchBrand(e.target.value)}
-                                >
-                                    {brandKits.map(kit => (
-                                        <option key={kit.id} value={kit.id} className="bg-[#111]">{kit.name} {kit.isDefault ? '(Default)' : ''}</option>
-                                    ))}
-                                </select>
-                                <div className="absolute right-4 bottom-[14px] pointer-events-none text-gray-500">
-                                    <ChevronDown size={14} />
-                                </div>
-                            </div>
+                            <CustomDropdown
+                                label="Select Identity Portfolio"
+                                value={selectedBrandKitId}
+                                options={brandKits.map(kit => ({
+                                    value: kit.id,
+                                    label: `${kit.name} ${kit.isDefault ? '(Default)' : ''}`
+                                }))}
+                                onChange={(val) => handleSwitchBrand(val)}
+                            />
 
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                                 {/* Color */}
