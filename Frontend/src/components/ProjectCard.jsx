@@ -7,6 +7,7 @@ import toast from "react-hot-toast"
 import api from "../configs/axios"
 import CommentSection from "./CommentSection"
 import Modal from "./Modal"
+import { optimizeImage, optimizeVideo } from "../utils/cdn"
 
 
 const ProjectCard = ({
@@ -196,9 +197,10 @@ const ProjectCard = ({
 
                     {gen.generatedImage && (
                         <img
-                            src={gen.generatedImage || null}
+                            src={optimizeImage(gen.generatedImage, { width: 500, quality: 'auto:eco' })}
                             alt={gen.productName}
                             className={`absolute inset-0 w-full h-full object-cover transition duration-700 ${(gen.generatedVideo && isPlaying) ? 'opacity-0' : 'opacity-100 group-hover:scale-110'}`}
+                            loading="lazy"
                         />
                     )}
 
@@ -206,7 +208,7 @@ const ProjectCard = ({
                         <>
                             <video
                                 ref={videoRef}
-                                src={gen.generatedVideo || null}
+                                src={optimizeVideo(gen.generatedVideo)}
                                 muted
                                 loop
                                 playsInline

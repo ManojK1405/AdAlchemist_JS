@@ -25,6 +25,7 @@ import { toast } from "react-hot-toast";
 import api from "../configs/axios";
 import Modal from "../components/Modal";
 import CustomDropdown from "../components/CustomDropdown";
+import { optimizeImage } from "../utils/cdn";
 
 const BrandHub = () => {
     const { user } = useUser();
@@ -390,7 +391,12 @@ const BrandHub = () => {
                                 <label className="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-3 ml-2">Logo: Dark Mode / Color</label>
                                 <div className="h-48 rounded-[2rem] border-2 border-dashed border-white/10 bg-white/2 hover:border-cyan-500/50 hover:bg-white/5 transition-all flex flex-col items-center justify-center gap-4 overflow-hidden relative">
                                     {logoFiles.logoDark || brandKit.logoDark ? (
-                                        <img src={logoFiles.logoDark ? URL.createObjectURL(logoFiles.logoDark) : (brandKit.logoDark || null)} className="h-24 object-contain transition-transform group-hover:scale-110" alt="Dark logo" />
+                                        <img
+                                            src={logoFiles.logoDark ? URL.createObjectURL(logoFiles.logoDark) : optimizeImage(brandKit.logoDark, { height: 200 })}
+                                            className="h-24 object-contain transition-transform group-hover:scale-110"
+                                            alt="Dark logo"
+                                            loading="lazy"
+                                        />
                                     ) : (
                                         <Upload className="text-gray-600" size={32} />
                                     )}
@@ -406,7 +412,12 @@ const BrandHub = () => {
                                 <label className="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-3 ml-2">Logo: Light Mode / White</label>
                                 <div className="h-48 rounded-[2rem] border-2 border-dashed border-white/10 bg-white/2 hover:border-cyan-500/50 hover:bg-white/5 transition-all flex flex-col items-center justify-center gap-4 overflow-hidden relative">
                                     {logoFiles.logoLight || brandKit.logoLight ? (
-                                        <img src={logoFiles.logoLight ? URL.createObjectURL(logoFiles.logoLight) : (brandKit.logoLight || null)} className="h-24 object-contain filter invert opacity-80" alt="Light logo" />
+                                        <img
+                                            src={logoFiles.logoLight ? URL.createObjectURL(logoFiles.logoLight) : optimizeImage(brandKit.logoLight, { height: 200 })}
+                                            className="h-24 object-contain filter invert opacity-80"
+                                            alt="Light logo"
+                                            loading="lazy"
+                                        />
                                     ) : (
                                         <Upload className="text-gray-600" size={32} />
                                     )}

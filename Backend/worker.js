@@ -2,7 +2,8 @@ import { prisma } from "./configs/prisma.js";
 import { processImageGeneration, processVideoGeneration } from "./utils/generation.js";
 import { sendEmail, getQueueCompleteEmailTemplate } from "./utils/email.js";
 
-const WORKER_INTERVAL = 5000; // Check every 5 seconds
+const WORKER_INTERVAL = 5000; // Check every 5 seconds if idle
+const CONCURRENCY = 5; // How many jobs to process simultaneously for FREE
 
 async function processJob(job) {
     console.log(`[Worker] Processing job ${job.id} (Type: ${job.type}) for User ${job.userId}`);
@@ -80,43 +81,50 @@ async function startWorker() {
 
     while (true) {
         try {
-            // Atomically find and claim the next pending job
-            // Using a transaction-like approach to prevent race conditions
+            await prisma.$connect();
+
+            // Fetch a batch of pending jobs
             const jobs = await prisma.generationJob.findMany({
                 where: { status: "PENDING" },
-                orderBy: { position: 'asc' },
-                take: 1
+                orderBy: [
+                    { position: 'asc' },
+                    { createdAt: 'asc' }
+                ],
+                take: CONCURRENCY
             });
 
             if (jobs.length > 0) {
-                const job = jobs[0];
+                console.log(`[Worker] Found ${jobs.length} jobs. Attempting to process concurrently...`);
 
-                // Attempt to "claim" the job by setting it to PROCESSING
-                // only if it's still PENDING. This is thread-safe.
-                const claimedJob = await prisma.generationJob.updateMany({
-                    where: {
-                        id: job.id,
-                        status: "PENDING"
-                    },
-                    data: { status: "PROCESSING" }
-                });
+                // Process the current batch in parallel
+                await Promise.allSettled(jobs.map(async (job) => {
+                    // Individually claim each job to prevent race conditions during parallel execution
+                    const result = await prisma.generationJob.updateMany({
+                        where: { id: job.id, status: "PENDING" },
+                        data: { status: "PROCESSING" }
+                    });
 
-                // updateMany returns { count: n }. If count is 1, we successfully claimed it.
-                if (claimedJob.count === 1) {
-                    await processJob(job);
-                } else {
-                    // Someone else claimed it first, just continue to next loop
-                    continue;
-                }
+                    if (result.count === 1) {
+                        try {
+                            await processJob(job);
+                        } catch (e) {
+                            console.error(`[Worker] Failed task ${job.id}:`, e.message);
+                        }
+                    }
+                }));
+
+                // Short sleep after processing a batch to prevent DB spam
+                await new Promise(resolve => setTimeout(resolve, 1000));
             } else {
                 await new Promise(resolve => setTimeout(resolve, WORKER_INTERVAL));
             }
         } catch (error) {
-            console.error("[Worker] Main loop error:", error);
+            console.error("[Worker] Loop error (retrying in 5s):", error.message);
             await new Promise(resolve => setTimeout(resolve, WORKER_INTERVAL));
         }
     }
 }
+
 
 // If running directly
 if (import.meta.url === `file://${process.argv[1]}`) {

@@ -61,8 +61,11 @@ export const processImageGeneration = async (projectId, payload) => {
         ],
     };
 
-    const img1 = await loadImageFromUrl(project.uploadedImages[0]);
-    const img2 = await loadImageFromUrl(project.uploadedImages[1]);
+    // Parallelize image downloads to avoid Waterfall latency
+    const [img1, img2] = await Promise.all([
+        loadImageFromUrl(project.uploadedImages[0]),
+        loadImageFromUrl(project.uploadedImages[1])
+    ]);
 
     const promptImage = `
 You are an elite commercial photography AI. Your mission is to generate a high-end, photorealistic advertisement image that is indistinguishable from a professional shoot.
@@ -83,7 +86,8 @@ OUTPUT: One high-resolution, magazine-quality advertisement image.
 
     const contents = [img1, img2];
     if (brandLogoUrl) {
-        contents.push(await loadImageFromUrl(brandLogoUrl));
+        const logoData = await loadImageFromUrl(brandLogoUrl);
+        contents.push(logoData);
     }
     contents.push(promptImage);
 
@@ -167,9 +171,13 @@ ${payload.userPrompt ? `Creative Narrative: ${payload.userPrompt}` : ''}
         }
     });
 
+    // Adaptive Polling: Check more frequently at the start
+    let pollInterval = 3000;
     while (!operation.done) {
-        await new Promise(resolve => setTimeout(resolve, 10000));
+        await new Promise(resolve => setTimeout(resolve, pollInterval));
         operation = await ai.operations.getVideosOperation({ operation });
+        // Gradually slow down polling to be nice to the API
+        if (pollInterval < 8000) pollInterval += 1000;
     }
 
     if (operation.error) throw new Error(operation.error.message);

@@ -24,6 +24,7 @@ import { useAuth, useUser } from "@clerk/clerk-react";
 import api from "../configs/axios";
 import { toast } from "react-hot-toast";
 import SocialPublishModal from "../components/SocialPublishModal";
+import { optimizeImage, optimizeVideo } from "../utils/cdn";
 
 const Result = () => {
 
@@ -428,7 +429,11 @@ const Result = () => {
                                                 onClick={() => setSelectedImageIdx(-1)}
                                                 className={`relative shrink-0 w-28 h-40 rounded-2xl overflow-hidden border-2 transition-all duration-300 ${selectedImageIdx === -1 ? 'border-cyan-500 shadow-[0_0_20px_rgba(6,182,212,0.3)] scale-[1.02]' : 'border-white/5 opacity-50 hover:opacity-100 hover:border-white/20'}`}
                                             >
-                                                <img src={project.generatedImage} className="w-full h-full object-cover" alt="Master" />
+                                                <img
+                                                    src={optimizeImage(project.generatedImage, { width: 800 })}
+                                                    className="w-full h-full object-cover"
+                                                    alt="Master"
+                                                />
                                                 <div className="absolute top-2 left-2 bg-black/60 backdrop-blur-md px-2 py-0.5 rounded-md text-[10px] font-black border border-white/10 text-white">Latest</div>
                                                 {selectedImageIdx === -1 && (
                                                     <div className="absolute inset-x-2 bottom-2 bg-cyan-600/90 backdrop-blur-sm py-1 rounded-lg text-[9px] font-bold text-center uppercase tracking-widest shadow-lg">Active</div>
@@ -484,7 +489,15 @@ const Result = () => {
                                                 onClick={() => setSelectedVideoIdx(-1)}
                                                 className={`relative shrink-0 w-40 h-28 rounded-2xl overflow-hidden border-2 transition-all duration-300 ${selectedVideoIdx === -1 ? 'border-cyan-500 shadow-[0_0_20px_rgba(6,182,212,0.3)] scale-[1.02]' : 'border-white/5 opacity-50 hover:opacity-100 hover:border-white/20'}`}
                                             >
-                                                <video src={project.generatedVideo || null} className="w-full h-full object-cover opacity-40" />
+                                                <video
+                                                    src={optimizeVideo(project.generatedVideo)}
+                                                    className="w-full h-full object-cover opacity-40"
+                                                    controls
+                                                    muted
+                                                    autoPlay
+                                                    loop
+                                                    loading="lazy"
+                                                />
                                                 <PlayCircle className="absolute inset-0 m-auto size-8 text-white" />
                                                 <div className="absolute top-2 left-2 bg-black/60 px-2 py-0.5 rounded-md text-[10px] font-black border border-white/10 text-white">Latest</div>
                                                 {selectedVideoIdx === -1 && (
@@ -501,7 +514,11 @@ const Result = () => {
                                                     onClick={() => setSelectedVideoIdx(idx)}
                                                     className={`relative shrink-0 w-40 h-28 rounded-2xl overflow-hidden border-2 transition-all duration-300 group/item ${selectedVideoIdx === idx ? 'border-cyan-500 shadow-[0_0_20px_rgba(6,182,212,0.3)] scale-[1.02]' : 'border-white/5 opacity-50 hover:opacity-100 hover:border-white/20 bg-black/40'}`}
                                                 >
-                                                    <video src={ver} className="w-full h-full object-cover absolute inset-0 opacity-40 group-hover/item:opacity-60 transition-opacity" />
+                                                    <video
+                                                        src={optimizeVideo(ver)}
+                                                        className="w-full h-full object-cover absolute inset-0 opacity-40 group-hover/item:opacity-60 transition-opacity"
+                                                        loading="lazy"
+                                                    />
                                                     <div className="absolute inset-0 flex items-center justify-center">
                                                         <PlayCircle className={`size-8 transition-transform duration-300 group-hover/item:scale-110 ${selectedVideoIdx === idx ? 'text-cyan-400 drop-shadow-[0_0_10px_rgba(6,182,212,0.5)]' : 'text-white'}`} />
                                                     </div>
