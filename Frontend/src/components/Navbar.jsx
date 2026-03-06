@@ -20,17 +20,15 @@ export default function Navbar() {
     const { pathname } = useLocation();
     const { getToken } = useAuth();
 
-    const navLinks = [
+    const navLinks = user ? [
         { name: 'Home', href: '/#' },
         { name: 'Create', href: '/generate' },
         { name: 'Community', href: '/community' },
         { name: 'Creator Lounge', href: '/creator-lounge' },
-        ...(user ? [
-            { name: 'Brand Hub', href: '/brand-hub' },
-            { name: 'My Generations', href: '/my-generations' },
-        ] : []),
+        { name: 'Brand Hub', href: '/brand-hub' },
+        { name: 'My Generations', href: '/my-generations' },
         { name: 'Plans', href: '/plans' },
-    ];
+    ] : [];
 
     const getCredits = async () => {
         try {
@@ -80,11 +78,27 @@ export default function Navbar() {
 
                     <div className='flex items-center gap-2 md:gap-5'>
                         {!user ? (
-                            <div className="flex items-center gap-3">
-                                <button onClick={() => openSignIn()} className='text-sm font-medium text-gray-300 hover:text-white transition hidden md:block'>
+                            <div className="flex items-center gap-2 md:gap-3">
+                                <Link to="/community" className="group flex items-center gap-2 px-2.5 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-full transition-all active:scale-95">
+                                    <div className="flex items-center justify-center w-6 h-6 rounded-full bg-cyan-500/20 text-cyan-500 group-hover:bg-cyan-500 group-hover:text-black transition-all">
+                                        <Users size={14} />
+                                    </div>
+                                    <span className="text-[10px] md:text-xs font-bold text-gray-300 group-hover:text-white transition-colors hidden sm:block">Community</span>
+                                </Link>
+
+                                <Link to="/creator-lounge" className="group flex items-center gap-2 px-2.5 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-full transition-all active:scale-95">
+                                    <div className="flex items-center justify-center w-6 h-6 rounded-full bg-indigo-500/20 text-indigo-500 group-hover:bg-indigo-500 group-hover:text-black transition-all">
+                                        <SparkleIcon size={14} />
+                                    </div>
+                                    <span className="text-[10px] md:text-xs font-bold text-gray-300 group-hover:text-white transition-colors hidden sm:block">Creator Lounge</span>
+                                </Link>
+
+                                <div className="w-px h-4 bg-white/10 mx-1 hidden md:block" />
+
+                                <button onClick={() => openSignIn()} className='text-sm font-medium text-gray-300 hover:text-white transition hidden md:block px-2'>
                                     Sign in
                                 </button>
-                                <PrimaryButton onClick={() => openSignUp()} className='text-xs sm:text-sm px-4 py-2'>Get Started</PrimaryButton>
+                                <PrimaryButton onClick={() => openSignUp()} className='text-xs sm:text-sm px-4 py-2 shrink-0'>Get Started</PrimaryButton>
                             </div>
                         ) : (
                             <div className="flex items-center gap-2 md:gap-3">
@@ -138,43 +152,8 @@ export default function Navbar() {
                     </div>
                 </div>
 
-                {/* Mobile Dash-Grid (Stable & No Scrolling) */}
-                <div className={`md:hidden mt-3 p-1 grid ${user ? 'grid-cols-4' : 'grid-cols-3'} gap-1.5`}>
-                    {[
-                        { name: 'Home', icon: <Home size={16} />, href: '/' },
-                        { name: 'Create', icon: <SparkleIcon size={16} />, href: '/generate', primary: true },
-                        { name: 'Lounge', icon: <GalleryHorizontalEnd size={16} />, href: '/creator-lounge' },
-                        ...(user ? [
-                            { name: 'Brand Hub', icon: <Palette size={16} />, href: '/brand-hub' },
-                            { name: 'Archive', icon: <FolderEditIcon size={16} />, href: '/my-generations' },
-                            { name: 'Community', icon: <Users size={16} />, href: '/community' },
-                            { name: 'Plans', icon: <Receipt size={16} />, href: '/plans' },
-                        ] : [
-                            { name: 'Community', icon: <Users size={16} />, href: '/community' },
-                            { name: 'Plans', icon: <Receipt size={16} />, href: '/plans' },
-                        ]),
-                    ].map((link) => (
-                        <Link
-                            key={link.name}
-                            to={link.href}
-                            onClick={() => scrollTo(0, 0)}
-                            className={`flex flex-col items-center justify-center py-2.5 rounded-2xl transition-all active:scale-90 relative overflow-hidden ${pathname === link.href
-                                    ? 'bg-cyan-500/15 text-cyan-400 border border-cyan-500/20'
-                                    : link.primary
-                                        ? 'bg-linear-to-br from-cyan-600 to-indigo-600 border-none text-white shadow-lg shadow-cyan-500/10'
-                                        : 'bg-white/5 border border-white/5 text-gray-400 active:bg-white/10'
-                                }`}
-                        >
-                            <div className="mb-0.5">
-                                {link.icon}
-                            </div>
-                            <span className="text-[8px] font-bold uppercase tracking-tight scale-90 origin-center truncate w-full text-center px-1">
-                                {link.name}
-                            </span>
-                        </Link>
-                    ))}
-                </div>
             </motion.nav>
+
 
             <SpinWheelModal isOpen={spinOpen} onClose={() => setSpinOpen(false)} />
         </>
