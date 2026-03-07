@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AdAlchemist Architecture Diagrams</title>
+    <!-- Include Mermaid.js from CDN to dynamically render the diagrams -->
+    <script type="module">
+        import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+        mermaid.initialize({ startOnLoad: true, theme: 'dark' });
+    </script>
+    <style>
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background-color: #0f172a;
+            /* Slate 900 for a dark mode feel */
+            color: #f8fafc;
+            /* Slate 50 text */
+            margin: 0;
+            padding: 2rem;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            color: #06b6d4;
+            /* AdAlchemist Cyan 500 */
+            text-align: center;
+            margin-bottom: 2rem;
+            font-size: 2.5rem;
+        }
+
+        h2 {
+            border-bottom: 1px solid #334155;
+            padding-bottom: 0.5rem;
+            margin-top: 3rem;
+            color: #cbd5e1;
+        }
+
+        p {
+            color: #94a3b8;
+        }
+
+        .mermaid {
+            background-color: #1e293b;
+            /* Slate 800 background for diagrams */
+            padding: 2rem;
+            border-radius: 0.75rem;
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+            margin: 1.5rem 0;
+            display: flex;
+            justify-content: center;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>AdAlchemist Architecture Visualizations</h1>
+
+        <p>This document contains the structural and flow diagrams for the AdAlchemist platform. It uses
+            <strong>Mermaid.js</strong> via CDN to render these diagrams dynamically in the browser.
+        </p>
+
+        <h2>1. Entity-Relationship (ER) Diagram</h2>
+        <p>This diagram represents the PostgreSQL schema mapped out in Prisma. It focuses on the heavily relational data
+            supporting the ad generation engine, the fintech credit system, and the community structures.</p>
+
+        <div class="mermaid">
+            erDiagram
+            User {
+            String id PK
+            String email
+            String name
+            Int credits
+            Boolean hasProAccess
+            Boolean hasPipelineAccess
+            Boolean hasBrandHubAccess
+            DateTime lastSpinAt
+            }
+            Project {
+            String id PK
+            String name
+            String productName
+            String userPrompt
+            String aspectRatio
+            String[] uploadedImages
+            String generatedImage
+            String generatedVideo
+            Int engagementScore
+            Boolean isPublished
+            }
+            BrandKit {
+            String id PK
+            String name
+            String brandVoice
+            String targetAudience
+            Boolean isDefault
+            String logoDark
+            }
+            Transaction {
+            String id PK
+            Float amount
+            Int credits
+            String paymentId
+            String status
+            String orderId
+            }
+            Tip {
+            String id PK
+            Float amount
+            DateTime createdAt
+            }
+            GenerationJob {
+            String id PK
+            String type
+            String status
+            Json payload
+            String error
+            }
+            Comment {
+            String id PK
+            String content
+            Boolean isClientReview
+            }
+            CommentLike {
+            String id PK
+            }
+            ProjectLike {
+            String id PK
+            }
+            Discussion {
+            String id PK
+            String title
+            String content
+            }
+            Coupon {
+            String id PK
+            String code
+            String type
+            Float value
+            Boolean isActive
+            }
+            CouponUsage {
+            String id PK
+            DateTime usedAt
+            }
+
+            User ||--o{ Project : creates
+            User ||--o{ BrandKit : configures
+            User ||--o{ Transaction : executes
+            User ||--o{ GenerationJob : initiates
+            User ||--o{ Tip : sends
+            User ||--o{ Tip : receives
+            User ||--o{ Comment : makes
+            User ||--o{ CommentLike : adds
+            User ||--o{ ProjectLike : likes
+            User ||--o{ Discussion : starts
+            User ||--o{ CouponUsage : uses
+
+            Project ||--o{ Comment : receives
+            Project ||--o{ ProjectLike : receives
+            Project ||--o{ GenerationJob : involves
+            BrandKit ||--o{ Project : styles
+
+            Comment ||--o{ CommentLike : receives
+            Comment ||--o{ Comment : replies_to
+            Discussion ||--o{ Comment : contains
+
+            Coupon ||--o{ CouponUsage : tracking
+        </div>
+
+        <h2>2. System Flow Data Diagram</h2>
+        <p>This flowchart traces a standard user journey from authentication and prompt generation to final AI
+            orchestration, showing the interactions between the React client, Node server, database, payment provider,
+            and Google AI services.</p>
+
+        <div class="mermaid">
+            flowchart TD
+            %% Define Nodes
+            Client((Client App\nReact 19 / Vite))
+            Auth[Clerk Authentication\nMiddleware]
+            DB[(PostgreSQL DB\nPrisma ORM)]
+            Express[Express.js API Backend]
+
+            %% AI Models
+            GeminiImage[Google Gemini Multi-Modal\nImage Synthesis]
+            VeoVideo[Veo 3.1\nVideo Synthesis LRO]
+            GeminiAdEval[Google Gemini 2.5 Flash\nAd Evaluation]
+
+            %% Payment System
+            Payment[Razorpay API]
+
+            %% User Journey Path
+            Client -- "1. Login / JWT" --> Auth
+            Auth -- "Validates User" --> Express
+            Express -- "Update DB State" --> DB
+
+            %% Features Pipeline
+            Client -- "2. Check / Spend Credits" --> Express
+            Express -- "Transactions & Webhooks" --> Payment
+            Express -- "Credit Deduction" --> DB
+
+            Client -- "3. Setup BrandKit" --> Express
+            Express -- "Store identity specs" --> DB
+
+            %% Main Generation Flow (The Engine)
+            Client -- "4. Submits Project\n(Prompt + Image/Logo Uploads)" --> Express
+            Express -- "Create Project & Jobs" --> DB
+
+            %% AI Orchestration
+            Express -- "5a. Image Processing\nInject BrandKit Data" --> GeminiImage
+            GeminiImage -- "Returns Base Images" --> Express
+
+            Express -- "5b. Initiates Video Generation" --> VeoVideo
+            VeoVideo -. "Polling Status\n(Every 10s)" .- Client
+            VeoVideo -- "Video Render Complete" --> Express
+
+            Express -- "5c. Ad Engagement Eval" --> GeminiAdEval
+            GeminiAdEval -- "Predictive Score & Feedback" --> Express
+
+            Express -- "6. Finalizes Project" --> DB
+            DB -- "Stream results" --> Client
+
+            %% Community Features
+            Client -- "7. Publish to Global Gallery" --> Express
+            Express -- "Update isPublished" --> DB
+            Client -- "8. Community Features\n(Likes, Comments, Discuss)" --> Express
+            Express -- "Store Interaction" --> DB
+
+            %% Node Styling
+            style Client fill:#06b6d4,stroke:#333,stroke-width:2px,color:#fff
+            style Auth fill:#4f46e5,stroke:#333,stroke-width:2px,color:#fff
+            style Express fill:#10b981,stroke:#333,stroke-width:2px,color:#fff
+            style DB fill:#f59e0b,stroke:#333,stroke-width:2px,color:#fff
+            style Payment fill:#f43f5e,stroke:#333,stroke-width:2px,color:#fff
+
+            style GeminiImage fill:#8b5cf6,stroke:#333,stroke-width:2px,color:#fff
+            style VeoVideo fill:#8b5cf6,stroke:#333,stroke-width:2px,color:#fff
+            style GeminiAdEval fill:#8b5cf6,stroke:#333,stroke-width:2px,color:#fff
+        </div>
+
+        <h2>3. Sequence Diagram (Long-Running Operation Pattern)</h2>
+        <p>This diagram highlights the critical LRO (Long Running Operation) architecture used for heavy AI tasks like
+            Veo Video generation. It shows the client polling mechanism preventing server timeouts.</p>
+        <div class="mermaid">
+            sequenceDiagram
+            autonumber
+            actor User as Client (React)
+            participant API as Express Server
+            participant DB as Postgres DB
+            participant Veo as Veo 3.1 AI
+
+            User->>API: POST /generate-video (Project ID)
+            API->>API: Validate Credits & Inputs
+            API->>DB: Create GenerationJob (Status: PENDING)
+            API->>Veo: Submit Request
+            Veo-->>API: Returns Operation ID
+            API->>DB: Update Job (Status: PROCESSING, opId)
+            API-->>User: 202 Accepted (Job ID)
+
+            loop Status Polling (Every 10s)
+            User->>API: GET /job-status/:id
+            API->>DB: Fetch Job
+            alt is Processing
+            API->>Veo: GET /operation/:opId
+            Veo-->>API: Status: Running
+            API-->>User: 202 Processing
+            else is Complete
+            API->>Veo: GET /operation/:opId
+            Veo-->>API: Status: Done (Video URL)
+            API->>DB: Update Project & Job (COMPLETED)
+            API-->>User: 200 OK (Video URL)
+            end
+            end
+        </div>
+
+        <h2>4. State Diagram (Job Lifecycle)</h2>
+        <p>A simple state machine outlining how a GenerationJob travels through the system and how errors/safety filters
+            are handled.</p>
+        <div class="mermaid">
+            stateDiagram-v2
+            [*] --> PENDING : Job Created (User Request)
+            PENDING --> PROCESSING : Emitted to Google Veo/Gemini
+            PROCESSING --> COMPLETED : Success (Asset Returned)
+            PROCESSING --> FAILED : Content Blocked (Safety Filters)
+            PROCESSING --> FAILED : Internal API Timeout
+            FAILED --> PENDING : User Retries Job
+            COMPLETED --> [*]
+        </div>
+    </div>
+</body>
+
+</html>

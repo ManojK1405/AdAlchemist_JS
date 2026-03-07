@@ -429,7 +429,7 @@ export default function Pricing() {
                 </div>
 
                 {/* Standalone Pipeline Unlock */}
-                <div className="mt-20 max-w-4xl mx-auto p-8 rounded-3xl border border-cyan-500/20 bg-cyan-500/5 backdrop-blur-xl relative overflow-hidden group">
+                {!userStatus.hasPipelineAccess && <div className="mt-20 max-w-4xl mx-auto p-8 rounded-3xl border border-cyan-500/20 bg-cyan-500/5 backdrop-blur-xl relative overflow-hidden group">
                     <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity">
                         <Clock size={160} />
                     </div>
@@ -480,7 +480,7 @@ export default function Pricing() {
                             </button>
                         </div>
                     </div>
-                </div>
+                </div>}
 
                 {/* Standalone Brand Hub Unlock */}
                 {!userStatus.hasBrandHubAccess && (

@@ -153,35 +153,37 @@ cd AdAlchemist_JS
 cd Backend
 npm install
 ```
-Create a `.env` file within `/Backend`:
+Setup your environment variables by copying the example file:
+```bash
+cp .env.example .env
 ```
-PORT=5000
-DATABASE_URL=your_postgresql_connection_string
-CLERK_SECRET_KEY=your_clerk_secret
-CLIENT_URL=http://localhost:5173
-```
+*Note: Open the `.env` file and fill in your actual keys for Clerk, Database, Google AI, Cloudinary, and Razorpay.*
+
 Synchronize the DB schema and ignite the backend:
 ```bash
 npx prisma generate
 npx prisma db push
 npm run dev
 ```
+*The backend will start running on `http://localhost:3000`.*
 
 ### 3️⃣ Frontend Configuration
+Open a new terminal window:
 ```bash
 cd Frontend
 npm install
 ```
-Create a `.env` file within `/Frontend`:
+Setup your frontend environment variables:
+```bash
+cp .env.example .env
 ```
-VITE_CLERK_PUBLISHABLE_KEY=your_clerk_publishable_key
-VITE_API_URL=http://localhost:5000
-```
+*Note: Ensure `VITE_BASEURL=http://localhost:3000` is set in your `.env` so it can talk to the local backend.*
+
 Ignite the frontend:
 ```bash
 npm run dev
 ```
-Navigate to `http://localhost:5173` to experience AdAlchemist.
+Navigate to the provided localhost URL (usually `http://localhost:5173`) to experience AdAlchemist locally!
 
 ---
 
