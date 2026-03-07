@@ -27,18 +27,23 @@ projectRouter.post('/:projectId/save-edit', protect, saveEditedImage);
 projectRouter.post('/:projectId/set-master', protect, setAsMaster);
 projectRouter.post('/:projectId/evaluate', protect, async (req, res) => {
     const { projectId } = req.params;
+    const { type = 'IMAGE' } = req.body;
     const auth = typeof req.auth === 'function' ? req.auth() : req.auth;
     const userId = auth?.userId;
     try {
         const project = await prisma.project.findFirst({ where: { id: projectId, userId } });
         if (!project) return res.status(404).json({ message: "Project not found" });
 
-        // This is a free utility but depends on Gemini Flash
         const { evaluateAdPerformance } = await import('../controllers/projectController.js');
-        await evaluateAdPerformance(projectId);
+        const evaluation = await evaluateAdPerformance(projectId, type);
 
         const updated = await prisma.project.findUnique({ where: { id: projectId } });
-        res.json({ score: updated.engagementScore, feedback: updated.scoringFeedback });
+        
+        if (type === 'VIDEO') {
+            res.json({ score: updated.videoEngagementScore, feedback: updated.videoScoringFeedback });
+        } else {
+            res.json({ score: updated.engagementScore, feedback: updated.scoringFeedback });
+        }
     } catch (error) {
         res.status(500).json({ message: error.message });
     }

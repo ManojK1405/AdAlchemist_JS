@@ -1,7 +1,11 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import Title from '../components/Title';
 
 const PrivacyPolicy = () => {
+    useEffect(() => {
+        window.scrollTo(0, 0);
+    }, []);
+
     return (
         <div className="min-h-screen text-white pt-32 pb-20 px-6">
             <div className="max-w-4xl mx-auto space-y-12">

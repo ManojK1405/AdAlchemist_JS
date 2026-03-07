@@ -530,7 +530,7 @@ A stunningly realistic, brand-quality commercial segment ready for prime-time ma
         }
 
         // EVALUATION: Trigger performance scoring
-        await evaluateAdPerformance(project.id).catch(e => console.error(e));
+        await evaluateAdPerformance(project.id, 'VIDEO').catch(e => console.error(e));
 
         return res.json({ message: 'Video generated successfully', videoUrl: uploadResult.secure_url });
     } catch (error) {
@@ -539,19 +539,23 @@ A stunningly realistic, brand-quality commercial segment ready for prime-time ma
     }
 };
 
-export const evaluateAdPerformance = async (projectId) => {
+export const evaluateAdPerformance = async (projectId, mediaType = 'IMAGE') => {
     try {
         const project = await prisma.project.findUnique({
             where: { id: projectId },
             include: { brandKit: true }
         });
 
-        if (!project || (!project.generatedImage && !project.generatedVideo)) return;
+        if (!project) return;
+        if (mediaType === 'IMAGE' && !project.generatedImage) return;
+        if (mediaType === 'VIDEO' && !project.generatedVideo) return;
 
         const brandKit = project.brandKit;
 
+        console.log(`[AI Evaluation] Starting ${mediaType} analysis for project ${projectId}...`);
+
         const evaluationPrompt = `
-        Analyze this advertisement concept for a product named "${project.productName}".
+        Analyze this ${mediaType === 'IMAGE' ? 'image' : 'video'} advertisement concept for a product named "${project.productName}".
         
         Brand Context:
         - Voice: ${brandKit?.brandVoice || "Standard"}
@@ -559,12 +563,13 @@ export const evaluateAdPerformance = async (projectId) => {
         - Description: ${brandKit?.description || ""}
         
         Ad Details:
-        - Prompt: ${project.userPrompt}
-        - Description: ${project.productDescription}
-        
+        - Creator Prompt: ${project.userPrompt}
+        - Product Description: ${project.productDescription}
+        - Media Type: ${mediaType}
+
         TASK:
-        1. Give a predictive engagement score from 0 to 100 based on marketing best practices.
-        2. Provide exactly 2 sentences of tactical feedback or suggestions on how to improve this ad concept. DO NOT repeat the prompt or description back. Do NOT just summarize the ad. Provide only actionable critique and creative direction.
+        1. Give a predictive engagement score from 1 to 100 based on marketing best practices for ${mediaType === 'IMAGE' ? 'High-end Commercial Photography' : 'Cinematic Video Advertising'}.
+        2. Provide exactly 2 sentences of tactical feedback or creative direction on how to improve this ${mediaType.toLowerCase()} concept for higher ROI. DO NOT repeat the input text. Be specific and actionable.
         
         Return ONLY a JSON object: {"score": number, "feedback": "string"}
         `;
@@ -575,8 +580,10 @@ export const evaluateAdPerformance = async (projectId) => {
             config: { responseMimeType: "application/json" }
         });
 
-        // Clean potentially malformed JSON (e.g., if it comes wrapped in markdown)
         let responseText = result.text.trim();
+        console.log(`[AI Evaluation] Raw response for ${mediaType}:`, responseText);
+
+        // Handle markdown wrappers
         if (responseText.startsWith('```json')) {
             responseText = responseText.substring(7, responseText.length - 3).trim();
         } else if (responseText.startsWith('```')) {
@@ -587,20 +594,36 @@ export const evaluateAdPerformance = async (projectId) => {
         try {
             evaluation = JSON.parse(responseText);
         } catch (parseError) {
-            console.error("Ad Evaluation JSON Parse Failed:", parseError, "Raw Response:", responseText);
-            evaluation = { score: 75, feedback: "Ad shows strong product prominence but could use more brand-aligned lighting." };
+            console.error("[AI Evaluation] JSON Parse Failed:", parseError);
+            evaluation = { score: 75, feedback: `This ${mediaType.toLowerCase()} concept shows strong potential but could benefit from refined brand integration.` };
         }
+
+        const updateData = mediaType === 'IMAGE' 
+            ? { engagementScore: evaluation.score || 75, scoringFeedback: evaluation.feedback }
+            : { videoEngagementScore: evaluation.score || 75, videoScoringFeedback: evaluation.feedback };
+
+        console.log(`[AI Evaluation] Updating project with:`, updateData);
 
         await prisma.project.update({
             where: { id: projectId },
-            data: {
-                engagementScore: evaluation.score || 75,
-                scoringFeedback: evaluation.feedback || "Ad shows strong product prominence but could use more brand-aligned lighting."
-            }
+            data: updateData
         });
 
+        return evaluation;
     } catch (error) {
-        console.error("Ad Evaluation Failed:", error);
+        console.error("[AI Evaluation] Error:", error);
+    }
+};
+
+// Internal API route for manual re-evaluation
+export const reEvaluateProject = async (req, res) => {
+    try {
+        const { projectId } = req.params;
+        const { type = 'IMAGE' } = req.body;
+        const evaluation = await evaluateAdPerformance(projectId, type);
+        res.json(evaluation);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
     }
 };
 

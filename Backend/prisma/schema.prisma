@@ -94,6 +94,8 @@ model Project {
   // Ad Evaluation
   engagementScore    Int      @default(0)
   scoringFeedback    String   @default("")
+  videoEngagementScore Int    @default(0)
+  videoScoringFeedback String   @default("")
   isReviewEnabled    Boolean  @default(false)
   
   createdAt DateTime @default(now())
@@ -205,6 +207,7 @@ model GlobalSettings {
   id                String  @id @default("system")
   enableImageGen    Boolean @default(true)
   enableVideoGen    Boolean @default(true)
+  showMockAssets    Boolean @default(false)
   
   // Growth & Dark Tactics
   enableSocialProof Boolean @default(true)

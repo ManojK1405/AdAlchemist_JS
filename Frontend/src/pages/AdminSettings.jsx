@@ -34,6 +34,7 @@ const SETTINGS_GROUPS = [
         items: [
             { key: 'enableImageGen', label: 'Image Generation', icon: <Zap size={20} className="text-yellow-400" /> },
             { key: 'enableVideoGen', label: 'Video Generation', icon: <Video size={20} className="text-blue-400" /> },
+            { key: 'showMockAssets', label: 'Mock Assets Download', icon: <Plus size={20} className="text-green-400" />, detail: "Shows test image downloads in Generator page." },
         ]
     },
     {

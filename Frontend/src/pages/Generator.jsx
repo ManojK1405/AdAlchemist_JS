@@ -37,12 +37,22 @@ const Generator = () => {
         brandVoice: ''
     });
 
+    const [globalSettings, setGlobalSettings] = useState(null);
     const voices = [
         { name: 'Professional', desc: 'Trustworthy and corporate' },
         { name: 'Casual', desc: 'Friendly and conversational' },
         { name: 'Witty', desc: 'Humorous and sharp' },
         { name: 'Luxury', desc: 'Sophisticated and elegant' },
         { name: 'Bold', desc: 'High energy and impactful' }
+    ];
+
+    const testAssets = [
+        { name: 'Model 1', type: 'Model', path: '/test-assets/model1.png' },
+        { name: 'Model 2', type: 'Model', path: '/test-assets/model2.png' },
+        { name: 'Product 1', type: 'Product', path: '/test-assets/product1.png' },
+        { name: 'Product 2', type: 'Product', path: '/test-assets/product2.png' },
+        { name: 'Logo 1', type: 'Logo', path: '/test-assets/logo1.png' },
+        { name: 'Logo 2', type: 'Logo', path: '/test-assets/logo2.png' },
     ];
 
     const fetchUserStatus = async () => {
@@ -77,10 +87,23 @@ const Generator = () => {
         }
     }
 
+    const fetchGlobalSettings = async () => {
+        try {
+            const token = await getToken();
+            const { data } = await api.get('/api/admin/settings', {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            setGlobalSettings(data);
+        } catch (error) {
+            console.error("Error fetching global settings", error);
+        }
+    }
+
     useEffect(() => {
         if (getToken) {
             fetchBrandKits();
             fetchUserStatus();
+            fetchGlobalSettings();
         }
     }, [getToken]);
 
@@ -250,6 +273,78 @@ const Generator = () => {
                         </button>
                     </div>
                 </div>
+
+                {/* FLOATING TEST ASSETS (Interview Mode) */}
+                {globalSettings?.showMockAssets && (
+                    <div className="fixed top-28 right-8 z-50 w-64 animate-in fade-in slide-in-from-right-8 duration-700">
+                        <div className="bg-[#0A0A0A]/80 backdrop-blur-2xl border border-white/10 rounded-[2.5rem] p-6 shadow-2xl space-y-6">
+                            {/* Header */}
+                            <div className="flex items-center gap-4">
+                                <div className="p-2.5 bg-cyan-500/10 rounded-xl text-cyan-400 border border-cyan-500/20">
+                                    <Layers size={18} />
+                                </div>
+                                <div>
+                                    <h3 className="text-[11px] font-black text-white uppercase tracking-[0.2em]">Test Assets</h3>
+                                    <p className="text-[9px] text-gray-500 font-bold uppercase tracking-widest">Mock Bundle</p>
+                                </div>
+                            </div>
+
+                            {/* Models Section */}
+                            <div className="space-y-3">
+                                <p className="text-[8px] font-black text-gray-600 uppercase tracking-[0.3em] ml-1">Models</p>
+                                <div className="grid grid-cols-2 gap-2">
+                                    <a
+                                        href="/test-assets/model1.png"
+                                        download="Test_Model_1.png"
+                                        className="py-2.5 bg-white/5 border border-white/10 rounded-xl text-[9px] font-black text-center text-white uppercase tracking-widest hover:bg-white/10 hover:border-white/20 transition-all active:scale-95"
+                                    >
+                                        Test 1
+                                    </a>
+                                    <a
+                                        href="/test-assets/model2.png"
+                                        download="Test_Model_2.png"
+                                        className="py-2.5 bg-white/5 border border-white/10 rounded-xl text-[9px] font-black text-center text-white uppercase tracking-widest hover:bg-white/10 hover:border-white/20 transition-all active:scale-95"
+                                    >
+                                        Test 2
+                                    </a>
+                                </div>
+                            </div>
+
+                            {/* Products Section */}
+                            <div className="space-y-3">
+                                <p className="text-[8px] font-black text-gray-600 uppercase tracking-[0.3em] ml-1">Products</p>
+                                <div className="grid grid-cols-2 gap-2">
+                                    <a
+                                        href="/test-assets/product1.png"
+                                        download="Test_Product_1.png"
+                                        className="py-2.5 bg-white/5 border border-white/10 rounded-xl text-[9px] font-black text-center text-white uppercase tracking-widest hover:bg-white/10 hover:border-white/20 transition-all active:scale-95"
+                                    >
+                                        Test 1
+                                    </a>
+                                    <a
+                                        href="/test-assets/product2.png"
+                                        download="Test_Product_2.png"
+                                        className="py-2.5 bg-white/5 border border-white/10 rounded-xl text-[9px] font-black text-center text-white uppercase tracking-widest hover:bg-white/10 hover:border-white/20 transition-all active:scale-95"
+                                    >
+                                        Test 2
+                                    </a>
+                                </div>
+                            </div>
+
+                            {/* Logos Section - Primary Action */}
+                            <div className="pt-2">
+                                <a
+                                    href="/test-assets/logo1.png"
+                                    download="Mock_Logo.png"
+                                    className="w-full py-3 bg-cyan-500/10 border border-cyan-500/20 rounded-xl flex items-center justify-center gap-2 group hover:bg-cyan-500/20 transition-all active:scale-[0.98]"
+                                >
+                                    <Zap size={12} className="text-cyan-400 fill-cyan-400 group-hover:scale-110 transition-transform" />
+                                    <span className="text-[9px] font-black text-cyan-400 uppercase tracking-[0.15em]">Download Mock Logo</span>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                )}
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
 

@@ -229,14 +229,29 @@ const Result = () => {
 
     const handleEvaluate = async () => {
         setIsEvaluating(true);
+        console.log("[Result] Starting evaluation for:", viewMode);
         try {
             const token = await getToken();
-            const { data } = await api.post(`/api/project/${projectId}/evaluate`, {}, {
+            const type = viewMode.toUpperCase(); // IMAGE or VIDEO
+            const { data } = await api.post(`/api/project/${projectId}/evaluate`, { type }, {
                 headers: { Authorization: `Bearer ${token}` }
             });
-            setProjectData(prev => ({ ...prev, engagementScore: data.score, scoringFeedback: data.feedback }));
-            toast.success("AI Analysis Complete!");
+            
+            console.log("[Result] Evaluation data received:", data);
+
+            if (!data || typeof data.score === 'undefined') {
+                throw new Error("Invalid evaluation data received from server");
+            }
+
+            setProjectData(prev => ({ 
+                ...prev, 
+                [type === 'VIDEO' ? 'videoEngagementScore' : 'engagementScore']: data.score || 75,
+                [type === 'VIDEO' ? 'videoScoringFeedback' : 'scoringFeedback']: data.feedback || "Creative analysis complete."
+            }));
+            
+            toast.success(`AI ${viewMode} Analysis Complete!`);
         } catch (error) {
+            console.error("[Result] Evaluation failed:", error);
             toast.error("Evaluation failed. Please try again later.");
         } finally {
             setIsEvaluating(false);
@@ -248,7 +263,7 @@ const Result = () => {
         try {
             const token = await getToken();
             const formData = new FormData();
-            formData.append('userPrompt', project.scoringFeedback);
+            formData.append('userPrompt', project.scoringFeedback || "");
             formData.append('keepOriginalScene', 'true');
 
             await api.post(`/api/project/${projectId}/edit`, formData, {
@@ -266,7 +281,10 @@ const Result = () => {
         setIsGenerating(true);
         try {
             const token = await getToken();
-            await api.post(`/api/project/edit-video`, { projectId, userPrompt: project.scoringFeedback }, {
+            await api.post(`/api/project/edit-video`, { 
+                projectId, 
+                userPrompt: project.videoScoringFeedback || project.scoringFeedback 
+            }, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             toast.success("Video regeneration started using AI feedback! (25 credits deducted)");
@@ -550,8 +568,10 @@ const Result = () => {
                     {/* Right Sidebar */}
                     <div className="space-y-6">
 
-                        {/* Performance Evaluator Card */}
-                        {(project.engagementScore > 0 || isEvaluating) ? (
+                        {/* AI Performance Evaluator Card */}
+                        {((viewMode === 'image' && (project.engagementScore || 0) > 0) ||
+                            (viewMode === 'video' && (project.videoEngagementScore || 0) > 0) ||
+                            isEvaluating) ? (
                             <div className="glass-panel p-6 rounded-[2.5rem] border border-cyan-500/20 bg-cyan-500/5 relative overflow-hidden group">
                                 {isEvaluating ? (
                                     <div className="flex flex-col items-center justify-center py-10 gap-4">
@@ -564,17 +584,17 @@ const Result = () => {
                                             <SparkleIcon className="size-20 text-cyan-500" />
                                         </div>
                                         <h3 className="text-[10px] font-black text-cyan-500 uppercase tracking-[0.3em] mb-4 flex items-center gap-2">
-                                            <ShieldCheck size={14} /> AI Performance Prediction
+                                            <ShieldCheck size={14} /> AI {viewMode === 'video' ? 'Video' : 'Image'} Prediction
                                         </h3>
                                         <div className="flex items-end gap-3 mb-6">
                                             <span className="text-7xl font-black tracking-tighter text-white">
-                                                {project.engagementScore}
+                                                {viewMode === 'video' ? project.videoEngagementScore : project.engagementScore}
                                             </span>
                                             <span className="text-cyan-500 font-bold text-xl mb-3">%</span>
                                             <div className="flex-1 h-3 bg-white/10 rounded-full mb-4 relative overflow-hidden">
                                                 <div
                                                     className="absolute inset-y-0 left-0 bg-gradient-to-r from-cyan-600 to-cyan-400 rounded-full shadow-[0_0_15px_rgba(6,182,212,0.5)] transition-all duration-1000"
-                                                    style={{ width: `${project.engagementScore}%` }}
+                                                    style={{ width: `${(viewMode === 'video' ? project.videoEngagementScore : project.engagementScore) || 0}%` }}
                                                 />
                                             </div>
                                         </div>
@@ -583,23 +603,15 @@ const Result = () => {
                                                 <MessageSquare size={10} /> ROI Optimization Brief
                                             </p>
                                             <p className="text-xs font-bold text-gray-300 leading-relaxed mb-4">
-                                                "{project.scoringFeedback}"
+                                                "{viewMode === 'video' ? project.videoScoringFeedback : project.scoringFeedback}"
                                             </p>
                                             <button
-                                                onClick={handleRegenerateWithSuggestion}
-                                                disabled={isGenerating}
-                                                className="w-full py-3 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 rounded-xl font-black uppercase text-[9px] tracking-widest transition-all flex items-center justify-center gap-2 mb-2 disabled:opacity-50"
+                                                onClick={viewMode === 'video' ? handleRegenerateVideoWithSuggestion : handleRegenerateWithSuggestion}
+                                                disabled={isGenerating || (viewMode === 'video' && !project.generatedImage)}
+                                                className={`w-full py-3 rounded-xl font-black uppercase text-[9px] tracking-widest transition-all flex items-center justify-center gap-2 mb-2 disabled:opacity-50 ${viewMode === 'video' ? 'bg-fuchsia-500/10 hover:bg-fuchsia-500/20 text-fuchsia-400 border border-fuchsia-500/30' : 'bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 border border-cyan-500/30'}`}
                                             >
-                                                {isGenerating ? <Loader2Icon size={12} className="animate-spin" /> : <SparkleIcon size={12} />}
-                                                {isGenerating ? "Generating..." : "Regenerate Image with this feedback (5 Credits)"}
-                                            </button>
-                                            <button
-                                                onClick={handleRegenerateVideoWithSuggestion}
-                                                disabled={isGenerating || !project.generatedImage}
-                                                className="w-full py-3 bg-fuchsia-500/10 hover:bg-fuchsia-500/20 text-fuchsia-400 border border-fuchsia-500/30 rounded-xl font-black uppercase text-[9px] tracking-widest transition-all flex items-center justify-center gap-2 disabled:opacity-50"
-                                            >
-                                                {isGenerating ? <Loader2Icon size={12} className="animate-spin" /> : <VideoIcon size={12} />}
-                                                {isGenerating ? "Generating..." : "Regenerate Video with this feedback (25 Credits)"}
+                                                {isGenerating ? <Loader2Icon size={12} className="animate-spin" /> : (viewMode === 'video' ? <VideoIcon size={12} /> : <SparkleIcon size={12} />)}
+                                                {isGenerating ? "Generating..." : `Regenerate ${viewMode === 'video' ? 'Video' : 'Image'} with this feedback (${viewMode === 'video' ? '25' : '5'} Credits)`}
                                             </button>
                                         </div>
                                         <p className="text-[9px] text-gray-600 font-bold uppercase tracking-[0.2em] mt-5 text-center">
@@ -611,16 +623,16 @@ const Result = () => {
                         ) : (
                             <div className="glass-panel p-6 rounded-[2.5rem] border border-white/10 bg-white/5 space-y-4">
                                 <h3 className="text-[10px] font-black text-gray-500 uppercase tracking-[0.3em] flex items-center gap-2">
-                                    <ShieldCheck size={14} /> AI Performance Prediction
+                                    <ShieldCheck size={14} /> AI {viewMode === 'video' ? 'Video' : 'Image'} Prediction
                                 </h3>
                                 <p className="text-xs text-gray-400 leading-relaxed font-bold">
-                                    Get a predictive engagement score and tactical ROI feedback for this ad generation.
+                                    Get a predictive engagement score and tactical ROI feedback for this {viewMode.toLowerCase()} generation.
                                 </p>
                                 <button
                                     onClick={handleEvaluate}
                                     className="w-full py-4 rounded-2xl bg-cyan-600/20 text-cyan-400 border border-cyan-500/20 hover:bg-cyan-600/30 transition-all font-black uppercase text-[10px] tracking-widest flex items-center justify-center gap-2"
                                 >
-                                    <SparkleIcon size={14} /> Analyze with Creative AI
+                                    <SparkleIcon size={14} /> Analyze {viewMode === 'video' ? 'Video' : 'Image'} with Creative AI
                                 </button>
                             </div>
                         )}

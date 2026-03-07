@@ -29,6 +29,7 @@ export const getAdminSettings = async (req, res) => {
                 id: 'system',
                 enableImageGen: true,
                 enableVideoGen: true,
+                showMockAssets: false,
                 enableSocialProof: true,
                 enableScarcity: true,
                 enableUrgency: true,
@@ -48,6 +49,7 @@ export const updateAdminSettings = async (req, res) => {
         const {
             enableImageGen,
             enableVideoGen,
+            showMockAssets,
             enableSocialProof,
             enableScarcity,
             enableUrgency,
@@ -60,6 +62,7 @@ export const updateAdminSettings = async (req, res) => {
             update: {
                 enableImageGen: enableImageGen ?? undefined,
                 enableVideoGen: enableVideoGen ?? undefined,
+                showMockAssets: showMockAssets ?? undefined,
                 enableSocialProof: enableSocialProof ?? undefined,
                 enableScarcity: enableScarcity ?? undefined,
                 enableUrgency: enableUrgency ?? undefined,
@@ -70,6 +73,7 @@ export const updateAdminSettings = async (req, res) => {
                 id: 'system',
                 enableImageGen: enableImageGen ?? true,
                 enableVideoGen: enableVideoGen ?? true,
+                showMockAssets: showMockAssets ?? false,
                 enableSocialProof: enableSocialProof ?? true,
                 enableScarcity: enableScarcity ?? true,
                 enableUrgency: enableUrgency ?? true,
