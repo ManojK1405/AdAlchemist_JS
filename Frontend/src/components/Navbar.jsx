@@ -61,9 +61,30 @@ export default function Navbar() {
                 <div className='max-w-6xl mx-auto flex items-center justify-between bg-black/50 backdrop-blur-md border border-white/4 rounded-2xl p-2 md:p-3'>
                     <div className='flex items-center gap-4'>
                         <Link to='/' onClick={() => scrollTo(0, 0)}>
-                            <span className="text-lg md:text-xl font-extrabold tracking-wide text-gray-500">
-                                Ad<span className="bg-linear-to-r from-cyan-600 to-indigo-600 bg-clip-text text-transparent">Alchemist</span>
-                            </span>
+                            <div className="relative flex items-center gap-3 group px-4 py-2 rounded-2xl transition-all duration-500 hover:bg-white/[0.03]">
+                                {/* Animated Core Icon */}
+                                <div className="relative">
+                                    <div className="absolute -inset-1 bg-gradient-to-tr from-cyan-500 to-fuchsia-500 rounded-lg blur opacity-40 group-hover:opacity-100 transition duration-1000 group-hover:duration-200" />
+                                    <div className="relative w-9 h-9 bg-black rounded-lg border border-white/20 flex items-center justify-center shadow-2xl group-hover:border-cyan-500/50 group-hover:scale-110 transition-all duration-500 overflow-hidden">
+                                        <div className="absolute inset-0 bg-gradient-to-tr from-cyan-500/20 to-fuchsia-500/20 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                        <SparkleIcon size={20} className="text-cyan-400 group-hover:rotate-45 group-hover:scale-125 transition-all duration-500" />
+                                    </div>
+                                </div>
+
+                                {/* Typography */}
+                                <div className="flex flex-col items-start leading-none">
+                                    <div className="flex items-center">
+                                        <span className="text-xl md:text-2xl font-black tracking-tighter bg-gradient-to-b from-white to-gray-400 bg-clip-text text-transparent group-hover:from-cyan-400 group-hover:to-white transition-all duration-500">
+                                            Ad
+                                        </span>
+                                        <span className="text-xl md:text-2xl font-black tracking-tighter text-white drop-shadow-[0_0_15px_rgba(255,255,255,0.1)]">
+                                            Alchemist
+                                        </span>
+                                        <div className="ml-1.5 w-1.5 h-1.5 bg-cyan-500 rounded-full animate-pulse shadow-[0_0_12px_rgba(6,182,212,0.8)]" />
+                                    </div>
+                                    <div className="mt-0.5 h-[1px] w-0 group-hover:w-full bg-gradient-to-r from-cyan-500 to-fuchsia-500 transition-all duration-500 rounded-full" />
+                                </div>
+                            </div>
                         </Link>
                     </div>
 

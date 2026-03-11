@@ -337,8 +337,8 @@ const ProjectCard = ({
                     <div className="flex items-start justify-between gap-4 mb-4">
                         <div className="flex-1">
                             <h3
-                                onClick={() => navigate(`/result/${gen.id}`)}
-                                className="font-bold text-xl text-white/90 group-hover:text-cyan-400 transition-colors cursor-pointer hover:underline decoration-cyan-500/50 underline-offset-4"
+                                onClick={() => !forCommunity && navigate(`/result/${gen.id}`)}
+                                className={`font-bold text-xl text-white/90 transition-colors ${!forCommunity ? 'group-hover:text-cyan-400 cursor-pointer hover:underline decoration-cyan-500/50 underline-offset-4' : ''}`}
                             >
                                 {gen.productName}
                             </h3>
@@ -370,14 +370,16 @@ const ProjectCard = ({
                     {/* Interaction Bar */}
                     <div className="flex items-center justify-between border-t border-white/5 pt-4 mt-2">
                         <div className="flex items-center gap-4">
-                            <button
-                                onClick={() => navigate(`/result/${gen.id}`)}
-                                className="flex sm:hidden items-center gap-1.5 transition-all duration-300 text-gray-500 hover:text-cyan-400"
-                                title="View Details"
-                            >
-                                <Info size={20} />
-                                <span className="text-xs font-bold">Details</span>
-                            </button>
+                            {!forCommunity && (
+                                <button
+                                    onClick={() => navigate(`/result/${gen.id}`)}
+                                    className="flex sm:hidden items-center gap-1.5 transition-all duration-300 text-gray-500 hover:text-cyan-400"
+                                    title="View Details"
+                                >
+                                    <Info size={20} />
+                                    <span className="text-xs font-bold">Details</span>
+                                </button>
+                            )}
                             <button
                                 onClick={toggleLike}
                                 className={`flex items-center gap-1.5 transition-all duration-300 ${isLiked ? 'text-pink-500' : 'text-gray-500 hover:text-pink-500'}`}

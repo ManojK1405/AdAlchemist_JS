@@ -14,6 +14,9 @@ export const getSystemSettings = async () => {
                     id: 'system',
                     enableImageGen: process.env.ENABLE_IMAGE_GEN === 'true',
                     enableVideoGen: process.env.ENABLE_VIDEO_GEN === 'true',
+                    enableDBO: true,
+                    enableProStudio: true,
+                    enableBrandHub: true,
                 }
             });
         }
@@ -25,17 +28,34 @@ export const getSystemSettings = async () => {
         return {
             enableImageGen: process.env.ENABLE_IMAGE_GEN === 'true',
             enableVideoGen: process.env.ENABLE_VIDEO_GEN === 'true',
+            enableDBO: true,
+            enableProStudio: true,
+            enableBrandHub: true,
         };
     }
 };
 
 export const checkFeature = async (feature, res) => {
     const settings = await getSystemSettings();
-    const isEnabled = feature === 'imageGeneration' ? settings.enableImageGen : settings.enableVideoGen;
+    
+    const featureMap = {
+        'imageGeneration': settings.enableImageGen,
+        'videoGeneration': settings.enableVideoGen,
+        'dbo': settings.enableDBO,
+        'proStudio': settings.enableProStudio,
+        'brandHub': settings.enableBrandHub,
+        'socialProof': settings.enableSocialProof,
+        'scarcity': settings.enableScarcity,
+        'urgency': settings.enableUrgency,
+        'anchoring': settings.enableAnchoring,
+        'shaming': settings.enableShaming
+    };
 
-    if (!isEnabled) {
+    const isEnabled = featureMap[feature];
+
+    if (isEnabled === false) {
         return res.status(503).json({
-            message: `The ${feature === 'imageGeneration' ? 'Image' : 'Video'} generation service is temporarily disabled to save costs. Please try again later!`,
+            message: `The ${feature} service is temporarily disabled to save costs. Please try again later!`,
             disabled: true
         });
     }

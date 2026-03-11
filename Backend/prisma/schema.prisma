@@ -97,6 +97,8 @@ model Project {
   videoEngagementScore Int    @default(0)
   videoScoringFeedback String   @default("")
   isReviewEnabled    Boolean  @default(false)
+  imageScores        Json     @default("[]")
+  videoScores        Json     @default("[]")
   
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -207,6 +209,9 @@ model GlobalSettings {
   id                String  @id @default("system")
   enableImageGen    Boolean @default(true)
   enableVideoGen    Boolean @default(true)
+  enableDBO         Boolean @default(true)
+  enableProStudio   Boolean @default(true)
+  enableBrandHub    Boolean @default(true)
   showMockAssets    Boolean @default(false)
   
   // Growth & Dark Tactics

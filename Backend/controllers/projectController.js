@@ -539,7 +539,7 @@ A stunningly realistic, brand-quality commercial segment ready for prime-time ma
     }
 };
 
-export const evaluateAdPerformance = async (projectId, mediaType = 'IMAGE') => {
+export const evaluateAdPerformance = async (projectId, mediaType = 'IMAGE', targetUrl = null) => {
     try {
         const project = await prisma.project.findUnique({
             where: { id: projectId },
@@ -547,12 +547,12 @@ export const evaluateAdPerformance = async (projectId, mediaType = 'IMAGE') => {
         });
 
         if (!project) return;
-        if (mediaType === 'IMAGE' && !project.generatedImage) return;
-        if (mediaType === 'VIDEO' && !project.generatedVideo) return;
+        const urlToScan = targetUrl || (mediaType === 'IMAGE' ? project.generatedImage : project.generatedVideo);
+        if (!urlToScan) return;
 
         const brandKit = project.brandKit;
 
-        console.log(`[AI Evaluation] Starting ${mediaType} analysis for project ${projectId}...`);
+        console.log(`[AI Evaluation] Starting ${mediaType} analysis for project ${projectId} (URL: ${urlToScan})...`);
 
         const evaluationPrompt = `
         Analyze this ${mediaType === 'IMAGE' ? 'image' : 'video'} advertisement concept for a product named "${project.productName}".
@@ -598,11 +598,26 @@ export const evaluateAdPerformance = async (projectId, mediaType = 'IMAGE') => {
             evaluation = { score: 75, feedback: `This ${mediaType.toLowerCase()} concept shows strong potential but could benefit from refined brand integration.` };
         }
 
-        const updateData = mediaType === 'IMAGE' 
-            ? { engagementScore: evaluation.score || 75, scoringFeedback: evaluation.feedback }
-            : { videoEngagementScore: evaluation.score || 75, videoScoringFeedback: evaluation.feedback };
+        const historyEntry = {
+            score: evaluation.score || 75,
+            feedback: evaluation.feedback,
+            url: urlToScan,
+            createdAt: new Date()
+        };
 
-        console.log(`[AI Evaluation] Updating project with:`, updateData);
+        const isMaster = urlToScan === (mediaType === 'IMAGE' ? project.generatedImage : project.generatedVideo);
+
+        const updateData = mediaType === 'IMAGE' 
+            ? { 
+                ...(isMaster ? { engagementScore: evaluation.score || 75, scoringFeedback: evaluation.feedback } : {}),
+                imageScores: [...(Array.isArray(project.imageScores) ? project.imageScores : []), historyEntry]
+              }
+            : { 
+                ...(isMaster ? { videoEngagementScore: evaluation.score || 75, videoScoringFeedback: evaluation.feedback } : {}),
+                videoScores: [...(Array.isArray(project.videoScores) ? project.videoScores : []), historyEntry]
+              };
+
+        console.log(`[AI Evaluation] Updating project with ${mediaType} history (Master: ${isMaster})...`);
 
         await prisma.project.update({
             where: { id: projectId },
@@ -1420,6 +1435,7 @@ export const setAsMaster = async (req, res) => {
 
 // Save a baked/cropped edit from the Pro Studio
 export const saveEditedImage = async (req, res) => {
+    if (await checkFeature('proStudio', res) !== true) return;
     try {
         const { userId } = req.auth();
         const projectId = req.params.projectId;
@@ -1459,5 +1475,178 @@ export const saveEditedImage = async (req, res) => {
         console.error("Save Edit Error:", error);
         Sentry.captureException(error);
         res.status(500).json({ message: "Failed to save edit" });
+    }
+};
+
+// --- DUNG BEETLE OPTIMIZATION (DBO) ---
+export const dungBeetleOptimization = async (req, res) => {
+    const { projectId } = req.params;
+    if (await checkFeature('dbo', res) !== true) return;
+    
+    try {
+        const auth = typeof req.auth === 'function' ? req.auth() : req.auth;
+        const userId = auth?.userId;
+        const { type = 'IMAGE' } = req.body;
+
+        console.log(`[DBO] Starting Swarm Optimization for Project: ${projectId}, User: ${userId}`);
+
+        // 1. Fetch Project & User
+        const project = await prisma.project.findUnique({
+            where: { id: projectId },
+            include: { user: true, brandKit: true }
+        });
+
+        if (!project || project.userId !== userId) {
+            return res.status(404).json({ message: "Project not found or unauthorized" });
+        }
+
+        if (project.user.credits < 10) {
+            return res.status(400).json({ message: "Dung Beetle Optimization requires 10 Credits." });
+        }
+
+        // 2. THE STEAL: Fetch trending patterns from viral ads
+        // We look for projects with high engagement scores to "steal" their prompt success
+        const trendingProjects = await prisma.project.findMany({
+            where: { isPublished: true, engagementScore: { gte: 80 } },
+            take: 3,
+            select: { userPrompt: true }
+        });
+
+        const viralSuccessPatterns = trendingProjects.length > 0 
+            ? trendingProjects.map(p => p.userPrompt).join(" | ")
+            : "minimalist focus, cinematic depth, high-speed photography lighting";
+
+        // 3. THE DANCE: Brand Alignment (Celestial Cues)
+        const brandAesthetic = project.brandKit 
+            ? `Align with ${project.brandKit.name}: Voice is ${project.brandKit.brandVoice}, Description: ${project.brandKit.description}`
+            : "Generic High-Conversion Tech/Luxury Aesthetic";
+
+        // 4. THE ROLL: Construct Iterative Refinement Prompt
+        const dboSuperPrompt = `
+            [DBO STAGE: THE ROLL] Objective: Perform recursive refinement on the current prompt: "${project.userPrompt}". 
+            Enhance micro-textures, shadow depth, and focal clarity.
+            
+            [DBO STAGE: THE DANCE] Celestial Alignment (Brand Cues): ${brandAesthetic}. 
+            Ensure brand consistency remains the fixed reference point.
+            
+            [DBO STAGE: THE STEAL] Swarm Intelligence (Viral Patterns): Integrate successful elements from These Titans: ${viralSuccessPatterns}. 
+            Look for composition balance and lighting schemes that triggered high engagement.
+            
+            [DBO STAGE: THE BROOD] Final Synthesis: Synthesize an ultra-high-fidelity variant that incorporates all swarm intelligence data. 
+            Aim for a photorealistic masterpiece that is visually arresting and commercially optimized.
+        `.trim();
+
+        // 5. Deduct Credits & Mark Generating
+        await prisma.user.update({
+            where: { id: userId },
+            data: { credits: { decrement: 10 } }
+        });
+
+        await prisma.project.update({
+            where: { id: projectId },
+            data: { isGenerating: true }
+        });
+
+        const imageFiles = await Promise.all(
+            project.uploadedImages.slice(0, 2).map(async (url) => {
+                const response = await axios.get(url, { responseType: 'arraybuffer' });
+                return {
+                    inlineData: {
+                        data: Buffer.from(response.data).toString('base64'),
+                        mimeType: "image/png"
+                    }
+                };
+            })
+        );
+
+        if (project.generatedImage) {
+            const lastGenResponse = await axios.get(project.generatedImage, { responseType: 'arraybuffer' });
+            imageFiles.push({
+                inlineData: {
+                    data: Buffer.from(lastGenResponse.data).toString('base64'),
+                    mimeType: "image/png"
+                }
+            });
+        }
+
+        // 6. Trigger AI Generation (Using the platform's specific SDK pattern)
+        const contents = [...imageFiles, dboSuperPrompt];
+        
+        const response = await ai.models.generateContent({
+            model: "gemini-3-pro-image-preview",
+            contents: contents,
+            config: {
+                maxOutputTokens: 2048,
+                temperature: 0.4,
+            },
+        });
+
+        if (!response?.candidates?.[0]?.content?.parts) {
+            throw new Error("Swarm intelligence failed to synthesize a response.");
+        }
+
+        const parts = response.candidates[0].content.parts;
+        let finalBuffer = null;
+        for (const part of parts) {
+            if (part.inlineData?.data) {
+                finalBuffer = Buffer.from(part.inlineData.data, "base64");
+                break;
+            }
+        }
+
+        let newImageUrl = project.generatedImage;
+        if (finalBuffer) {
+            const uploadResult = await cloudinary.uploader.upload(
+                `data:image/png;base64,${finalBuffer.toString("base64")}`,
+                {
+                    resource_type: "image",
+                    folder: "adalchemist/generated",
+                }
+            );
+            newImageUrl = uploadResult.secure_url;
+        }
+        
+        // 7. Update Project with the new asset first
+        await prisma.project.update({
+            where: { id: projectId },
+            data: {
+                generatedImage: newImageUrl,
+                imageVersions: { push: newImageUrl },
+                isGenerating: false
+            }
+        });
+
+        // 8. Trigger REAL Dynamic Evaluation for the "DBO Boost"
+        const evaluation = await evaluateAdPerformance(projectId, type);
+        
+        // Fetch the fully updated project to return
+        const updatedProject = await prisma.project.findUnique({
+            where: { id: projectId },
+            include: { user: true, brandKit: true }
+        });
+
+        res.json(updatedProject);
+
+    } catch (error) {
+        console.error("[DBO] Optimization Failed:", error);
+        
+        const auth = typeof req.auth === 'function' ? req.auth() : req.auth;
+        const userId = auth?.userId;
+        
+        try {
+            if (userId) {
+                await prisma.user.update({
+                    where: { id: userId },
+                    data: { credits: { increment: 10 } }
+                });
+            }
+            await prisma.project.update({
+                where: { id: projectId },
+                data: { isGenerating: false, error: error.message }
+            });
+        } catch (dbErr) {
+            console.error("[DBO] Cleanup Failed:", dbErr);
+        }
+        res.status(500).json({ message: "Dung Beetle Path Disrupted: " + error.message });
     }
 };

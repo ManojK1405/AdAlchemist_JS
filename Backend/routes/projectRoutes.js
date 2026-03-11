@@ -1,5 +1,5 @@
 import express from 'express';
-import { createProject, createVideo, deleteProject, getAllPublishedProjects, getProjectById, editGeneration, editVideo, getTrendingProjects, saveEditedImage, setAsMaster, toggleReview, getReviewProject } from '../controllers/projectController.js';
+import { createProject, createVideo, deleteProject, getAllPublishedProjects, getProjectById, editGeneration, editVideo, getTrendingProjects, saveEditedImage, setAsMaster, toggleReview, getReviewProject, dungBeetleOptimization } from '../controllers/projectController.js';
 import { addToQueue, deleteFromQueue, getQueue, reorderQueue, updateQueueItem } from '../controllers/queueController.js';
 import { protect } from '../middlewares/auth.js';
 import upload from '../configs/multer.js';
@@ -27,7 +27,7 @@ projectRouter.post('/:projectId/save-edit', protect, saveEditedImage);
 projectRouter.post('/:projectId/set-master', protect, setAsMaster);
 projectRouter.post('/:projectId/evaluate', protect, async (req, res) => {
     const { projectId } = req.params;
-    const { type = 'IMAGE' } = req.body;
+    const { type = 'IMAGE', targetUrl = null } = req.body;
     const auth = typeof req.auth === 'function' ? req.auth() : req.auth;
     const userId = auth?.userId;
     try {
@@ -35,7 +35,7 @@ projectRouter.post('/:projectId/evaluate', protect, async (req, res) => {
         if (!project) return res.status(404).json({ message: "Project not found" });
 
         const { evaluateAdPerformance } = await import('../controllers/projectController.js');
-        const evaluation = await evaluateAdPerformance(projectId, type);
+        const evaluation = await evaluateAdPerformance(projectId, type, targetUrl);
 
         const updated = await prisma.project.findUnique({ where: { id: projectId } });
         
@@ -51,5 +51,6 @@ projectRouter.post('/:projectId/evaluate', protect, async (req, res) => {
 
 projectRouter.post('/:projectId/review/toggle', protect, toggleReview);
 projectRouter.get('/review/:projectId', getReviewProject);
+projectRouter.post('/:projectId/dbo', protect, dungBeetleOptimization);
 
 export default projectRouter;

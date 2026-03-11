@@ -2,6 +2,7 @@ import * as Sentry from "@sentry/node";
 import { prisma } from "../configs/prisma.js";
 import { clerkClient } from '@clerk/express';
 import { v2 as cloudinary } from "cloudinary";
+import { checkFeature } from "../configs/features.js";
 
 
 //Get user credits
@@ -221,6 +222,7 @@ export const getBrandKit = async (req, res) => {
 // Update user brand kit
 
 export const updateBrandKit = async (req, res) => {
+    if (await checkFeature('brandHub', res) !== true) return;
     try {
         const auth = typeof req.auth === 'function' ? req.auth() : req.auth;
         const userId = auth?.userId;

@@ -1,4 +1,4 @@
-import { ArrowRightIcon, PlayIcon, ZapIcon, CheckIcon } from 'lucide-react';
+import { ArrowRightIcon, PlayIcon, ZapIcon, CheckIcon, X } from 'lucide-react';
 import { PrimaryButton, GhostButton } from './Buttons';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState } from 'react';
@@ -10,6 +10,7 @@ export default function Hero() {
     const { user } = useUser();
     const { openSignUp } = useClerk();
     const navigate = useNavigate();
+    const [showDemo, setShowDemo] = useState(false);
 
     const galleryStripImages = [
         'https://images.unsplash.com/photo-1542291026-7eec264c27ff?q=80&w=1000', // Red shoes
@@ -111,12 +112,15 @@ export default function Hero() {
                                         <ArrowRightIcon className="size-4" />
                                     </PrimaryButton>
                                 </div>
-                                <a href="https://youtu.be/zD1kX7LhYyA?si=t5y-nO7z8c6B-W6U" target='_blank' className='w-full sm:w-auto'>
-                                    <GhostButton className="max-sm:w-full max-sm:justify-center py-3 px-5">
+                                <div className='w-full sm:w-auto'>
+                                    <GhostButton 
+                                        onClick={() => setShowDemo(true)}
+                                        className="max-sm:w-full max-sm:justify-center py-3 px-5"
+                                    >
                                         <PlayIcon className="size-4" />
                                         Watch Demo
                                     </GhostButton>
-                                </a>
+                                </div>
                             </motion.div>
 
                             <motion.div className="flex sm:inline-flex overflow-hidden items-center max-sm:justify-center text-sm text-gray-200 bg-white/10 rounded"
@@ -237,6 +241,50 @@ export default function Hero() {
                     </div>
                 </div>
             </motion.section >
+            {/* VIDEO DEMO MODAL */}
+            <AnimatePresence>
+                {showDemo && (
+                    <motion.div 
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-100 flex items-center justify-center bg-black/90 backdrop-blur-2xl p-4 md:p-10"
+                        onClick={() => setShowDemo(false)}
+                    >
+                        <motion.div 
+                            initial={{ scale: 0.9, opacity: 0, y: 20 }}
+                            animate={{ scale: 1, opacity: 1, y: 0 }}
+                            exit={{ scale: 0.9, opacity: 0, y: 20 }}
+                            className="relative w-full max-w-5xl aspect-video bg-black rounded-3xl overflow-hidden border border-white/10 shadow-[0_0_100px_rgba(34,211,238,0.2)]"
+                            onClick={e => e.stopPropagation()}
+                        >
+                            <button 
+                                onClick={() => setShowDemo(false)}
+                                className="absolute top-6 right-6 z-110 p-2 bg-white/10 hover:bg-white/20 rounded-full text-white transition-all active:scale-95"
+                            >
+                                <X size={24} />
+                            </button>
+
+                            {/* Using a high-quality cinematic tech video from a reliable CDN */}
+                            <video 
+                                src="https://player.vimeo.com/progressive_redirect/playback/710665518/rendition/1080p/file.mp4?loc=external&signature=5212354a3a60a9c682705952ae64369e84360e6f5c88c7f5c88c7f5c88c7f5c8"
+                                className="w-full h-full object-cover"
+                                autoPlay
+                                controls
+                                playsInline
+                            />
+
+                            <div className="absolute bottom-8 left-8 right-8 flex items-center justify-between pointer-events-none">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-2 h-2 bg-cyan-500 rounded-full animate-pulse shadow-[0_0_10px_rgba(6,182,212,1)]" />
+                                    <span className="text-xs font-black uppercase tracking-widest text-white/50">AdAlchemist Intelligence Engine v2.4</span>
+                                </div>
+                                <div className="text-[10px] font-bold text-white/30 uppercase tracking-[0.3em]">Neural Interface Demo</div>
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </>
     );
 };

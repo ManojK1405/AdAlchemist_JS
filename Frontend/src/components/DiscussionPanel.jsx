@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAuth, useUser } from '@clerk/clerk-react';
-import { MessageCircle, Plus, Users, ArrowRight, Sparkles, Search, Trash2, Coins, Info } from 'lucide-react';
+import { MessageCircle, Plus, Users, ArrowRight, Sparkles, Search, Trash2, Coins, Info, ChevronUp, ChevronDown } from 'lucide-react';
 import api from '../configs/axios';
 import toast from 'react-hot-toast';
 import CommentSection from './CommentSection';
@@ -16,6 +16,14 @@ const DiscussionPanel = () => {
     const [content, setContent] = useState('');
     const [loading, setLoading] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
+    const scrollRef = useRef(null);
+
+    const scroll = (direction) => {
+        if (scrollRef.current) {
+            const amount = direction === 'up' ? -300 : 300;
+            scrollRef.current.scrollBy({ top: amount, behavior: 'smooth' });
+        }
+    };
 
     const [modalConfig, setModalConfig] = useState({
         isOpen: false,
@@ -141,42 +149,44 @@ const DiscussionPanel = () => {
     const suggestedTopics = ['Tutorials', 'Prompts', 'Feedback', 'Video Generation', 'Help'];
 
     return (
-        <div className="bg-[#0f0f12] border border-white/5 rounded-[2rem] overflow-hidden h-fit shadow-2xl shadow-cyan-500/5">
-            <div className="p-6 border-b border-white/5 bg-gradient-to-b from-white/[0.02] to-transparent flex items-center justify-between">
-                <h3 className="flex items-center gap-3 font-bold text-lg tracking-tight">
-                    <div className="w-8 h-8 rounded-xl bg-cyan-500/10 flex items-center justify-center">
-                        <Users size={18} className="text-cyan-400" />
+        <div className="bg-white/[0.02] backdrop-blur-3xl border border-white/5 rounded-[3rem] overflow-hidden h-fit shadow-2xl relative">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-cyan-500/5 blur-3xl pointer-events-none" />
+            
+            <div className="p-8 border-b border-white/10 bg-gradient-to-r from-white/[0.02] to-transparent flex items-center justify-between">
+                <h3 className="flex items-center gap-4 font-black text-xl uppercase tracking-tighter">
+                    <div className="p-3 bg-cyan-500/10 rounded-2xl border border-cyan-500/20 shadow-xl shadow-cyan-500/10">
+                        <Users size={20} className="text-cyan-400" />
                     </div>
-                    Creator Lounge
+                    Intelligence Feed
                 </h3>
                 <button
                     onClick={() => setIsCreating(true)}
-                    className="p-2.5 bg-cyan-600 rounded-xl hover:bg-cyan-500 transition-all duration-300 shadow-lg shadow-cyan-600/20 active:scale-95"
+                    className="flex items-center gap-3 px-6 py-3.5 bg-cyan-600 rounded-2xl hover:bg-cyan-500 transition-all duration-500 shadow-xl shadow-cyan-600/20 active:scale-95 group"
                 >
-                    <Plus size={20} className="text-white" />
+                    <Plus size={20} className="text-white transition-transform group-hover:rotate-90" />
+                    <span className="text-[10px] font-black uppercase tracking-widest hidden sm:inline">Start Thread</span>
                 </button>
             </div>
 
-            <div className="p-5 space-y-4 max-h-[700px] overflow-y-auto custom-scrollbar">
-
-                <div className="relative mb-4">
-                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-white/40" />
+            <div className="p-8 pb-0">
+                <div className="relative mb-8">
+                    <Search className="absolute left-5 top-1/2 -translate-y-1/2 size-4 text-white/30" />
                     <input
                         type="text"
-                        placeholder="Search discussions by topic or content..."
+                        placeholder="Search collective intelligence..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        className="w-full bg-[#1a1a24] border border-white/5 rounded-xl set-outline-none pl-11 pr-4 py-3 text-sm focus:outline-none focus:ring-1 focus:ring-cyan-500/50 transition-all text-white placeholder-white/30"
+                        className="w-full bg-black/40 border border-white/10 rounded-2xl pl-12 pr-6 py-4 text-sm font-bold focus:outline-none focus:ring-1 focus:ring-cyan-500/50 transition-all text-white placeholder-white/20 shadow-inner"
                     />
                 </div>
 
-                <div className="flex flex-wrap items-center gap-2 mb-6">
-                    <span className="text-xs font-bold text-white/40 uppercase tracking-widest pl-1">Related:</span>
+                <div className="flex flex-wrap items-center gap-3 mb-8">
+                    <span className="text-[9px] font-black text-white/30 uppercase tracking-[0.3em] pl-1">Protocols:</span>
                     {suggestedTopics.map((topic, idx) => (
                         <button
                             key={idx}
                             onClick={() => setSearchTerm(topic)}
-                            className="px-3 py-1.5 bg-white/5 hover:bg-white/10 text-white/60 hover:text-white/90 rounded-full text-[10px] font-medium uppercase tracking-wider transition-colors border border-white/5"
+                            className={`px-4 py-2 rounded-full text-[9px] font-black uppercase tracking-widest transition-all border ${searchTerm === topic ? 'bg-cyan-500 border-cyan-500 text-black shadow-lg shadow-cyan-500/20' : 'bg-white/5 border-white/10 text-gray-500 hover:text-white hover:bg-white/10'}`}
                         >
                             {topic}
                         </button>
@@ -192,42 +202,68 @@ const DiscussionPanel = () => {
                 </div>
 
                 {isCreating && (
-                    <form onSubmit={handleCreate} className="p-5 bg-white/[0.02] border border-white/10 rounded-[1.5rem] space-y-4 animate-in fade-in zoom-in-95 duration-300">
-                        <div className="flex items-center gap-2 text-cyan-400 text-[10px] font-bold uppercase tracking-widest pl-1">
-                            <Sparkles size={12} />
-                            Start a new topic
+                    <form onSubmit={handleCreate} className="p-8 bg-cyan-500/[0.02] border border-cyan-500/20 rounded-[2.5rem] space-y-6 animate-in fade-in zoom-in-95 duration-500 shadow-2xl relative mb-10">
+                        <div className="absolute top-0 right-0 p-6 opacity-10 blur-xl pointer-events-none">
+                            <Plus size={100} className="text-cyan-500" />
                         </div>
-                        <input
-                            value={title}
-                            onChange={(e) => setTitle(e.target.value)}
-                            placeholder="Catchy discussion title..."
-                            className="w-full bg-black/40 border border-white/5 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-1 focus:ring-cyan-500/50 transition-all"
-                        />
-                        <textarea
-                            value={content}
-                            onChange={(e) => setContent(e.target.value)}
-                            placeholder="Share your experience or ask a question..."
-                            rows={3}
-                            className="w-full bg-black/40 border border-white/5 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-1 focus:ring-cyan-500/50 transition-all resize-none"
-                        />
-                        <div className="flex gap-2 pt-2">
+                        <div className="flex items-center gap-3 text-cyan-400 text-[10px] font-black uppercase tracking-[0.4em] pl-1">
+                            <Sparkles size={14} className="animate-pulse" />
+                            Initialize New Protocol
+                        </div>
+                        <div className="space-y-4">
+                            <input
+                                value={title}
+                                onChange={(e) => setTitle(e.target.value)}
+                                placeholder="Core Subject Directive..."
+                                className="w-full bg-black/40 border border-white/10 rounded-2xl px-6 py-4 text-sm font-bold focus:outline-none focus:border-cyan-500/50 transition-all text-white placeholder-white/20"
+                            />
+                            <textarea
+                                value={content}
+                                onChange={(e) => setContent(e.target.value)}
+                                placeholder="Input detailed narrative or inquiry..."
+                                rows={4}
+                                className="w-full bg-black/40 border border-white/10 rounded-2xl px-6 py-4 text-sm font-bold focus:outline-none focus:border-cyan-500/50 transition-all resize-none text-white placeholder-white/20"
+                            />
+                        </div>
+                        <div className="flex gap-4 pt-2">
                             <button
                                 type="submit"
                                 disabled={loading}
-                                className="flex-1 bg-cyan-600 hover:bg-cyan-500 text-white py-3 rounded-xl text-xs font-bold transition-all disabled:opacity-50"
+                                className="flex-1 bg-white text-black py-4 rounded-[1.25rem] text-[10px] font-black uppercase tracking-widest transition-all hover:bg-cyan-500 active:scale-95 disabled:opacity-50 shadow-xl"
                             >
-                                {loading ? 'Publishing...' : 'Publish Topic'}
+                                {loading ? 'Synthesizing...' : 'Authorize Thread'}
                             </button>
                             <button
                                 type="button"
                                 onClick={() => setIsCreating(false)}
-                                className="px-5 bg-white/5 hover:bg-white/10 text-white/70 py-3 rounded-xl text-xs font-medium transition-all"
+                                className="px-8 bg-white/5 border border-white/10 hover:bg-white/10 text-white/50 py-4 rounded-[1.25rem] text-[10px] font-black uppercase tracking-widest transition-all"
                             >
                                 Dismiss
                             </button>
                         </div>
                     </form>
                 )}
+            </div>
+
+            <div className="relative group/feed px-8 pb-8">
+                {/* Scroll Buttons */}
+                <button 
+                    onClick={() => scroll('up')}
+                    className="absolute top-2 left-1/2 -translate-x-1/2 z-20 p-2 bg-black/60 backdrop-blur-md border border-white/10 rounded-full text-white/40 hover:text-white hover:bg-cyan-500 hover:border-cyan-500 opacity-0 md:opacity-20 group-hover/feed:opacity-100 transition-all duration-500 shadow-2xl"
+                >
+                    <ChevronUp size={16} />
+                </button>
+                <button 
+                    onClick={() => scroll('down')}
+                    className="absolute bottom-2 left-1/2 -translate-x-1/2 z-20 p-2 bg-black/60 backdrop-blur-md border border-white/10 rounded-full text-white/40 hover:text-white hover:bg-cyan-500 hover:border-cyan-500 opacity-0 md:opacity-20 group-hover/feed:opacity-100 transition-all duration-500 shadow-2xl"
+                >
+                    <ChevronDown size={16} />
+                </button>
+
+                <div 
+                    ref={scrollRef}
+                    className="space-y-6 max-h-[500px] overflow-y-auto custom-scrollbar relative scroll-smooth pr-2"
+                >
 
                 {filteredDiscussions.length === 0 ? (
                     <div className="text-center py-20 bg-white/[0.01] rounded-[2rem] border border-dashed border-white/5">
@@ -241,56 +277,77 @@ const DiscussionPanel = () => {
                     filteredDiscussions.map(discussion => (
                         <div
                             key={discussion.id}
-                            className={`group p-5 rounded-[1.5rem] border transition-all duration-300 cursor-pointer ${selectedId === discussion.id
-                                ? 'bg-cyan-500/5 border-cyan-500/30 ring-1 ring-cyan-500/30'
-                                : 'bg-white/[0.02] border-white/5 hover:border-white/10 hover:bg-white/[0.04]'
+                            className={`group p-8 rounded-[2.5rem] border transition-all duration-700 cursor-pointer relative overflow-hidden ${selectedId === discussion.id
+                                ? 'bg-cyan-500/[0.03] border-cyan-500/40 shadow-[0_0_50px_rgba(6,182,212,0.1)]'
+                                : 'bg-white/[0.02] border-white/5 hover:border-white/20 hover:bg-white/[0.04] shadow-lg'
                                 }`}
                             onClick={() => setSelectedId(selectedId === discussion.id ? null : discussion.id)}
                         >
-                            <div className="flex justify-between items-start mb-3">
-                                <h4 className="font-bold text-sm text-white/90 group-hover:text-white transition-colors leading-tight">{discussion.title}</h4>
-                                <div className="flex items-center gap-3 shrink-0 ml-4">
-                                    <span className="text-[10px] font-medium text-white/20">{new Date(discussion.createdAt).toLocaleDateString()}</span>
-                                    {clerkUser?.id === discussion.userId && (
-                                        <button
-                                            onClick={(e) => handleDelete(e, discussion.id)}
-                                            className="text-white/20 hover:text-red-400 transition-colors"
-                                        >
-                                            <Trash2 size={13} />
-                                        </button>
-                                    )}
+                            {selectedId === discussion.id && (
+                                <div className="absolute top-0 left-0 w-1 h-full bg-cyan-500 shadow-[0_0_20px_rgba(6,182,212,0.5)]" />
+                            )}
+                            
+                            <div className="flex justify-between items-start mb-6">
+                                <div className="space-y-2">
+                                    <h4 className="font-black text-lg md:text-xl text-white group-hover:text-cyan-400 transition-colors leading-tight tracking-tighter">
+                                        {discussion.title}
+                                    </h4>
+                                    <div className="flex items-center gap-3">
+                                        <span className="text-[9px] font-black text-white/20 uppercase tracking-[0.2em]">
+                                            {new Date(discussion.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+                                        </span>
+                                        <span className="w-1 h-1 bg-white/10 rounded-full" />
+                                        <span className="text-[9px] font-black text-cyan-500/40 uppercase tracking-[0.2em]">Live Session</span>
+                                    </div>
                                 </div>
+                                {clerkUser?.id === discussion.userId && (
+                                    <button
+                                        onClick={(e) => handleDelete(e, discussion.id)}
+                                        className="p-2 text-white/20 hover:text-red-500 transition-all hover:bg-red-500/10 rounded-xl"
+                                    >
+                                        <Trash2 size={16} />
+                                    </button>
+                                )}
                             </div>
-                            <p className={`text-xs text-white/50 leading-relaxed mb-4 transition-all duration-500 ${selectedId === discussion.id ? '' : 'line-clamp-2'}`}>
+
+                            <p className={`text-sm text-gray-400 font-medium leading-relaxed mb-8 transition-all duration-700 ${selectedId === discussion.id ? '' : 'line-clamp-2'}`}>
                                 {discussion.content}
                             </p>
-                            <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-2.5">
-                                    <div className="w-10 h-10 rounded-full border-2 border-white/10 overflow-hidden bg-white/5 shadow-xl">
-                                        <img src={discussion.user?.image || 'https://via.placeholder.com/24'} className="w-full h-full object-cover" alt="" />
+
+                            <div className="flex flex-wrap items-center justify-between gap-6">
+                                <div className="flex items-center gap-4">
+                                    <div className="w-12 h-12 rounded-[1.25rem] border border-white/10 overflow-hidden bg-black shadow-2xl relative group/avatar">
+                                        <img src={discussion.user?.image || 'https://via.placeholder.com/48'} className="w-full h-full object-cover transition-transform duration-700 group-hover/avatar:scale-125" alt="" />
+                                        <div className="absolute inset-0 ring-1 ring-inset ring-white/10 rounded-[1.25rem]" />
                                     </div>
-                                    <span className="text-[10px] font-bold text-white/40 uppercase tracking-wider">{discussion.user?.name || 'Creator'}</span>
+                                    <div className="flex flex-col">
+                                        <span className="text-[10px] font-black text-white uppercase tracking-widest">{discussion.user?.name || 'Creator'}</span>
+                                        <span className="text-[9px] font-bold text-gray-500 uppercase tracking-tighter">Contributor DNA</span>
+                                    </div>
                                 </div>
-                                <div className="flex items-center gap-4 text-[10px] font-bold text-white/30">
+
+                                <div className="flex items-center gap-6">
                                     {clerkUser?.id !== discussion.userId && (
-                                        <div className="flex items-center gap-1 group/tip">
-                                            <span
+                                        <div className="flex items-center gap-2">
+                                            <button
                                                 onClick={(e) => handleTip(e, discussion)}
-                                                className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-yellow-500 hover:text-yellow-400 hover:bg-yellow-500/10 transition-colors cursor-pointer"
+                                                className="flex items-center gap-2 px-5 py-2.5 bg-yellow-500/5 border border-yellow-500/20 rounded-full text-yellow-500 hover:bg-yellow-500 hover:text-black transition-all duration-500 text-[9px] font-black uppercase tracking-widest"
                                             >
-                                                <Coins size={12} />
-                                                Tip
-                                            </span>
-                                            <button onClick={showTippingRules} className="text-white/10 hover:text-white transition-colors">
-                                                <Info size={10} />
+                                                <Coins size={14} />
+                                                Reward
+                                            </button>
+                                            <button onClick={showTippingRules} className="p-2 text-white/10 hover:text-white transition-colors bg-white/5 rounded-full hover:bg-white/10">
+                                                <Info size={12} />
                                             </button>
                                         </div>
                                     )}
-                                    <span className="flex items-center gap-1.5 bg-white/5 px-2.5 py-1 rounded-full border border-white/5">
-                                        <MessageCircle size={12} className="text-cyan-400/60" />
-                                        {discussion._count?.comments || 0}
-                                    </span>
-                                    <ArrowRight size={14} className={`transition-transform duration-300 ${selectedId === discussion.id ? 'rotate-90 text-cyan-400' : 'group-hover:translate-x-1'}`} />
+                                    <div className="flex items-center gap-3 bg-white/5 px-5 py-2.5 rounded-full border border-white/5 shadow-inner">
+                                        <MessageCircle size={14} className="text-cyan-400" />
+                                        <span className="text-[10px] font-black text-white leading-none">{discussion._count?.comments || 0}</span>
+                                    </div>
+                                    <div className={`p-2 rounded-full bg-white/5 transition-all duration-500 ${selectedId === discussion.id ? 'rotate-90 bg-cyan-500 text-black shadow-[0_0_20px_rgba(6,182,212,0.4)]' : 'group-hover:translate-x-1 grayscale opacity-30 hover:grayscale-0 hover:opacity-100 hover:bg-white/10'}`}>
+                                        <ArrowRight size={16} />
+                                    </div>
                                 </div>
                             </div>
 
@@ -319,6 +376,7 @@ const DiscussionPanel = () => {
                         </div>
                     ))
                 )}
+                </div>
             </div>
             <Modal {...modalConfig} onClose={closeModal} />
         </div>

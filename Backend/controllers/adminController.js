@@ -34,7 +34,10 @@ export const getAdminSettings = async (req, res) => {
                 enableScarcity: true,
                 enableUrgency: true,
                 enableAnchoring: true,
-                enableShaming: true
+                enableShaming: true,
+                enableDBO: true,
+                enableProStudio: true,
+                enableBrandHub: true
             }
         });
         res.json(settings);
@@ -54,7 +57,10 @@ export const updateAdminSettings = async (req, res) => {
             enableScarcity,
             enableUrgency,
             enableAnchoring,
-            enableShaming
+            enableShaming,
+            enableDBO,
+            enableProStudio,
+            enableBrandHub
         } = req.body;
 
         const settings = await prisma.globalSettings.upsert({
@@ -67,7 +73,10 @@ export const updateAdminSettings = async (req, res) => {
                 enableScarcity: enableScarcity ?? undefined,
                 enableUrgency: enableUrgency ?? undefined,
                 enableAnchoring: enableAnchoring ?? undefined,
-                enableShaming: enableShaming ?? undefined
+                enableShaming: enableShaming ?? undefined,
+                enableDBO: enableDBO ?? undefined,
+                enableProStudio: enableProStudio ?? undefined,
+                enableBrandHub: enableBrandHub ?? undefined
             },
             create: {
                 id: 'system',
@@ -78,7 +87,10 @@ export const updateAdminSettings = async (req, res) => {
                 enableScarcity: enableScarcity ?? true,
                 enableUrgency: enableUrgency ?? true,
                 enableAnchoring: enableAnchoring ?? true,
-                enableShaming: enableShaming ?? true
+                enableShaming: enableShaming ?? true,
+                enableDBO: enableDBO ?? true,
+                enableProStudio: enableProStudio ?? true,
+                enableBrandHub: enableBrandHub ?? true
             }
         });
 
