@@ -8,6 +8,7 @@ import { toast } from "react-hot-toast"
 import api from "../configs/axios"
 import heic2any from "heic2any"
 import CustomDropdown from "../components/CustomDropdown";
+import { optimizeImage } from "../utils/cdn";
 
 const Generator = () => {
 
@@ -36,6 +37,7 @@ const Generator = () => {
         primaryColor: '#06b6d4',
         brandVoice: ''
     });
+    const [logoMode, setLogoMode] = useState('dark');
 
     const [globalSettings, setGlobalSettings] = useState(null);
     const voices = [
@@ -169,6 +171,7 @@ const Generator = () => {
             formData.append('generationType', generationType);
             if (selectedBrandKitId) formData.append('brandKitId', selectedBrandKitId);
             if (logoImage) formData.append('logo', logoImage);
+            formData.append('logoMode', logoMode);
 
             const { data } = await api.post('/api/project/create', formData, {
                 headers: { Authorization: `Bearer ${token}` }
@@ -211,6 +214,7 @@ const Generator = () => {
             formData.append('queueOnly', 'true');
             if (selectedBrandKitId) formData.append('brandKitId', selectedBrandKitId);
             if (logoImage) formData.append('logo', logoImage);
+            formData.append('logoMode', logoMode);
 
             const { data: projectData } = await api.post('/api/project/create', formData, {
                 headers: { Authorization: `Bearer ${token}` }
@@ -226,7 +230,8 @@ const Generator = () => {
                     userPrompt,
                     aspectRatio,
                     brandKit,
-                    generationType
+                    generationType,
+                    logoMode
                 }
             }, {
                 headers: { Authorization: `Bearer ${token}` }
@@ -370,6 +375,51 @@ const Generator = () => {
                             onClear={() => setLogoImage(null)}
                             onChange={(e) => handleFileChange(e, 'logo')}
                         />
+
+                        {/* Logo Mode Selection for Brand Hub Logos */}
+                        {!logoImage && selectedBrandKitId && (brandKit?.logoDark || brandKit?.logoLight) && (
+                            <div className="bg-white/5 border border-white/10 rounded-2xl p-4 animate-in fade-in slide-in-from-top-2 duration-300">
+                                <div className="flex items-center justify-between mb-3">
+                                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500">Logo Personality</span>
+                                    <div className={`px-2 py-0.5 rounded-full text-[8px] font-black uppercase ${logoMode === 'dark' ? 'bg-gray-800 text-gray-400' : 'bg-white text-black'}`}>
+                                        {logoMode === 'dark' ? 'Master' : 'Inverse'}
+                                    </div>
+                                </div>
+                                <div className="grid grid-cols-2 gap-2">
+                                    <button
+                                        type="button"
+                                        onClick={() => setLogoMode('dark')}
+                                        className={`flex flex-col items-center gap-2 p-3 rounded-xl border transition-all ${logoMode === 'dark' ? 'bg-cyan-500/10 border-cyan-500 text-cyan-400' : 'bg-white/5 border-white/10 text-gray-500 hover:border-white/20'}`}
+                                    >
+                                        <div className="w-full aspect-video bg-black rounded-lg flex items-center justify-center p-2 border border-white/5">
+                                            {brandKit?.logoDark ? (
+                                                <img src={optimizeImage(brandKit.logoDark, { height: 60 })} className="h-full object-contain" alt="Dark" />
+                                            ) : (
+                                                <div className="text-[8px] font-black uppercase opacity-20 text-center">No Dark Logo</div>
+                                            )}
+                                        </div>
+                                        <span className="text-[9px] font-black uppercase tracking-widest">Dark Mode</span>
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setLogoMode('light')}
+                                        className={`flex flex-col items-center gap-2 p-3 rounded-xl border transition-all ${logoMode === 'light' ? 'bg-cyan-500/10 border-cyan-500 text-cyan-400' : 'bg-white/5 border-white/10 text-gray-500 hover:border-white/20'}`}
+                                    >
+                                        <div className="w-full aspect-video bg-white/80 rounded-lg flex items-center justify-center p-2 border border-white/5">
+                                            {brandKit?.logoLight ? (
+                                                <img src={optimizeImage(brandKit.logoLight, { height: 60 })} className="h-full object-contain" alt="Light" />
+                                            ) : (
+                                                <div className="text-[8px] font-black uppercase opacity-60 text-center text-gray-400">No Light Logo</div>
+                                            )}
+                                        </div>
+                                        <span className="text-[9px] font-black uppercase tracking-widest">Light Mode</span>
+                                    </button>
+                                </div>
+                                <p className="text-[8px] text-gray-600 font-bold uppercase tracking-widest mt-3 text-center">
+                                    Strategic fallback for selected {brandKit?.name || 'identity'}
+                                </p>
+                            </div>
+                        )}
                     </div>
 
                     {/* RIGHT SIDE */}

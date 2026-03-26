@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles, ShoppingCart, Zap, Users, X } from 'lucide-react';
 import api from '../configs/axios';
+import { useUser } from '@clerk/clerk-react';
 
 const NOTIFICATIONS = [
     { id: 1, text: "Someone from London just unlocked Pipeline Access", icon: <Zap size={14} className="text-cyan-400" /> },
@@ -15,8 +16,13 @@ const GrowthSocialProof = () => {
     const [current, setCurrent] = useState(0);
     const [isVisible, setIsVisible] = useState(false);
     const [isEnabled, setIsEnabled] = useState(false);
+    const { user, isLoaded } = useUser();
 
     useEffect(() => {
+        if (!isLoaded || !user) {
+            setIsEnabled(false);
+            return;
+        }
         const checkConfig = async () => {
             try {
                 const { data } = await api.get('/api/user/config');
@@ -26,7 +32,7 @@ const GrowthSocialProof = () => {
             }
         };
         checkConfig();
-    }, []);
+    }, [user]);
 
     useEffect(() => {
         if (!isEnabled) return;

@@ -103,17 +103,39 @@ export default function Hero() {
                                 viewport={{ once: true }}
                                 transition={{ type: "spring", stiffness: 250, damping: 70, mass: 1, delay: 0.3 }}
                             >
-                                <div className="w-full sm:w-auto">
-                                    <PrimaryButton
+                                <div className="w-full sm:w-auto relative group">
+                                    {/* Animated Aura Background */}
+                                    <div className="absolute -inset-1 bg-linear-to-r from-cyan-500 to-blue-600 rounded-full blur-lg opacity-25 group-hover:opacity-75 transition duration-1000 group-hover:duration-200 animate-pulse" />
+
+                                    <motion.button
                                         onClick={handleStartGenerating}
-                                        className="max-sm:w-full py-3 px-7"
+                                        whileHover={{ scale: 1.05, y: -2 }}
+                                        whileTap={{ scale: 0.98 }}
+                                        animate={{
+                                            y: [0, -4, 0],
+                                        }}
+                                        transition={{
+                                            y: {
+                                                duration: 3,
+                                                repeat: Infinity,
+                                                ease: "easeInOut"
+                                            }
+                                        }}
+                                        className="relative max-sm:w-full flex items-center justify-center gap-2 px-8 py-4 bg-white text-black rounded-full font-black text-sm uppercase tracking-wider shadow-[0_20px_40px_rgba(0,0,0,0.3)] hover:shadow-cyan-500/20 list-none transition-all"
                                     >
-                                        Start Generating - It's Free
-                                        <ArrowRightIcon className="size-4" />
-                                    </PrimaryButton>
+                                        Start Generating
+                                        <div className="flex items-center justify-center bg-black text-white p-1 rounded-full group-hover:translate-x-1 transition-transform">
+                                            <ArrowRightIcon className="size-3" strokeWidth={3} />
+                                        </div>
+
+                                        {/* Floating Badge */}
+                                        <div className="absolute -top-3 -right-2 bg-cyan-500 text-[9px] font-black text-white px-2 py-0.5 rounded-full shadow-lg border border-black/10 animate-bounce">
+                                            FREE
+                                        </div>
+                                    </motion.button>
                                 </div>
                                 <div className='w-full sm:w-auto'>
-                                    <GhostButton 
+                                    <GhostButton
                                         onClick={() => setShowDemo(true)}
                                         className="max-sm:w-full max-sm:justify-center py-3 px-5"
                                     >
@@ -200,19 +222,7 @@ export default function Hero() {
                                         />
                                     </motion.div>
                                 ))}
-                                <motion.div className="text-sm text-gray-400 ml-2 flex items-center gap-2"
-                                    initial={{ y: 60, opacity: 0 }}
-                                    whileInView={{ y: 0, opacity: 1 }}
-                                    viewport={{ once: true }}
-                                    transition={{ type: "spring", stiffness: 250, damping: 70, mass: 1, delay: 0.2 }}
-                                >
-                                    <div className="relative flex h-3.5 w-3.5 items-center justify-center">
-                                        <span className="absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75 animate-ping duration-300" />
 
-                                        <span className="relative inline-flex size-2 rounded-full bg-green-600" />
-                                    </div>
-                                    +20 More
-                                </motion.div>
                             </div>
                         </motion.div>
                     </div>
@@ -244,21 +254,21 @@ export default function Hero() {
             {/* VIDEO DEMO MODAL */}
             <AnimatePresence>
                 {showDemo && (
-                    <motion.div 
+                    <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
                         className="fixed inset-0 z-100 flex items-center justify-center bg-black/90 backdrop-blur-2xl p-4 md:p-10"
                         onClick={() => setShowDemo(false)}
                     >
-                        <motion.div 
+                        <motion.div
                             initial={{ scale: 0.9, opacity: 0, y: 20 }}
                             animate={{ scale: 1, opacity: 1, y: 0 }}
                             exit={{ scale: 0.9, opacity: 0, y: 20 }}
                             className="relative w-full max-w-5xl aspect-video bg-black rounded-3xl overflow-hidden border border-white/10 shadow-[0_0_100px_rgba(34,211,238,0.2)]"
                             onClick={e => e.stopPropagation()}
                         >
-                            <button 
+                            <button
                                 onClick={() => setShowDemo(false)}
                                 className="absolute top-6 right-6 z-110 p-2 bg-white/10 hover:bg-white/20 rounded-full text-white transition-all active:scale-95"
                             >
@@ -266,7 +276,7 @@ export default function Hero() {
                             </button>
 
                             {/* Using a high-quality cinematic tech video from a reliable CDN */}
-                            <video 
+                            <video
                                 src="https://player.vimeo.com/progressive_redirect/playback/710665518/rendition/1080p/file.mp4?loc=external&signature=5212354a3a60a9c682705952ae64369e84360e6f5c88c7f5c88c7f5c88c7f5c8"
                                 className="w-full h-full object-cover"
                                 autoPlay

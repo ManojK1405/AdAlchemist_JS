@@ -108,6 +108,13 @@ export const createProject = async (req, res) => {
                 folder: "adalchemist/logos",
             });
             brandLogoUrl = logoUpload.secure_url;
+        } else if (brandKit) {
+            // Fallback strategy: preferred mode -> other mode -> any available
+            if (req.body.logoMode === 'light') {
+                brandLogoUrl = brandKit.logoLight || brandKit.logoDark || "";
+            } else {
+                brandLogoUrl = brandKit.logoDark || brandKit.logoLight || "";
+            }
         }
 
         // Create project
@@ -212,6 +219,19 @@ One high-resolution, magazine-quality advertisement image.
         const contents = [img1, img2];
         if (logo) {
             contents.push(loadImage(logo.path, logo.mimetype));
+        } else if (brandLogoUrl) {
+            try {
+                const logoResponse = await axios.get(brandLogoUrl, { responseType: 'arraybuffer' });
+                contents.push({
+                    inlineData: {
+                        data: Buffer.from(logoResponse.data).toString("base64"),
+                        mimeType: "image/png", // Standard for logos
+                    },
+                });
+            } catch (error) {
+                console.error("Failed to fetch brand logo for generation:", error);
+                // Continue without logo if fetching fails
+            }
         }
         contents.push(promptImage);
 

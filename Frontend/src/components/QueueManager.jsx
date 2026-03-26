@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useAuth, useClerk } from "@clerk/clerk-react";
+import { useAuth, useClerk, useUser } from "@clerk/clerk-react";
 import { Loader2, Trash2, Edit2, Play, ChevronUp, ChevronDown, List, X, Clock, CheckCircle, AlertCircle, Save, Lock, Zap, Coins, Info } from "lucide-react";
 import api from "../configs/axios";
 import { toast } from "react-hot-toast";
@@ -8,6 +8,7 @@ import Modal from "./Modal";
 
 const QueueManager = () => {
     const { getToken } = useAuth();
+    const { user, isLoaded } = useUser();
     const navigate = useNavigate();
     const [queue, setQueue] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -35,10 +36,10 @@ const QueueManager = () => {
 
     const openConfirm = (config) => setModalConfig({ ...config, isOpen: true });
     const closeModal = () => setModalConfig(prev => ({ ...prev, isOpen: false }));
-
     const fetchStatusAndQueue = async () => {
         try {
             const token = await getToken();
+            if (!token) return;
             const { data: userData } = await api.get('/api/user/credits', {
                 headers: { Authorization: `Bearer ${token}` }
             });
@@ -58,6 +59,11 @@ const QueueManager = () => {
     };
 
     useEffect(() => {
+        if (!isLoaded || !user) {
+            setLoading(false);
+            return;
+        }
+
         fetchStatusAndQueue();
         const fetchConfig = async () => {
             try {
@@ -70,7 +76,7 @@ const QueueManager = () => {
         fetchConfig();
         const interval = setInterval(fetchStatusAndQueue, 15000); // Polling every 15s
         return () => clearInterval(interval);
-    }, []);
+    }, [user]);
 
     const handleDelete = async (jobId) => {
         try {

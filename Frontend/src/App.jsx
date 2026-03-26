@@ -24,6 +24,7 @@ import GrowthSocialProof from './components/GrowthSocialProof';
 import AdminSettings from './pages/AdminSettings';
 import BrandHub from './pages/BrandHub';
 import SharedReview from './pages/SharedReview';
+import ScrollToTop from './components/ScrollToTop';
 
 function App() {
     const location = useLocation();
@@ -32,6 +33,7 @@ function App() {
 
     return (
         <>
+            <ScrollToTop />
             <Toaster toastOptions={{ style: { background: "#333", color: "#fff" } }} />
             <SoftBackdrop />
             <LenisScroll />
