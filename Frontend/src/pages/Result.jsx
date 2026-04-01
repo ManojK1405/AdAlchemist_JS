@@ -17,11 +17,8 @@ import {
     ShieldCheck,
     MessageSquare,
     Share2,
-    Bug,
     Activity,
-    Compass,
-    TrendingUp,
-    Zap
+    TrendingUp
 } from "lucide-react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { GhostButton, PrimaryButton } from "../components/Buttons";
@@ -49,8 +46,6 @@ const Result = () => {
     const [selectedVideoIdx, setSelectedVideoIdx] = useState(-1);
     const [detectedRatio, setDetectedRatio] = useState(null); // String like "9/16" or "16/9"
     const [isEvaluating, setIsEvaluating] = useState(false);
-    const [isOptimizing, setIsOptimizing] = useState(false);
-    const [optimizationStep, setOptimizationStep] = useState(0); // 0: Idle, 1: Roll, 2: Dance, 3: Steal, 4: Brood
 
     // Facebook Publish States
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -226,14 +221,27 @@ const Result = () => {
 
 
     //Helper Function
-    const handleDownload = (url, name) => {
+    const handleDownload = async (url, name) => {
         if (!url) return;
-        const link = document.createElement("a");
-        link.href = url;
-        link.download = name;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+        try {
+            const response = await fetch(url);
+            const blob = await response.blob();
+            const blobUrl = URL.createObjectURL(blob);
+            
+            const link = document.createElement("a");
+            link.href = blobUrl;
+            link.download = name;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            // Cleanup
+            setTimeout(() => URL.revokeObjectURL(blobUrl), 100);
+        } catch (error) {
+            console.error("Download failed:", error);
+            // Fallback (might still open in new tab)
+            window.open(url, "_blank");
+        }
     };
 
     const handleEvaluate = async () => {
@@ -259,45 +267,6 @@ const Result = () => {
         }
     };
 
-    const handleDBORoll = async () => {
-        setIsOptimizing(true);
-        setOptimizationStep(1); // The Roll (Analysing trajectory)
-        
-        // Stage 1: The Roll (Analysis)
-        await new Promise(r => setTimeout(r, 2000));
-        setOptimizationStep(2); // The Dance (Correcting Orientation)
-        
-        // Stage 2: The Dance (Adjustment)
-        await new Promise(r => setTimeout(r, 2500));
-        setOptimizationStep(3); // The Steal (Pattern Matching)
-        
-        // Stage 3: The Steal (Competitive Adaptation)
-        await new Promise(r => setTimeout(r, 2000));
-        setOptimizationStep(4); // The Brood (Final Synthesis)
-        
-        // Stage 4: Final Generation Trigger
-        await new Promise(r => setTimeout(r, 1500));
-        
-        try {
-            const token = await getToken();
-            const type = viewMode.toUpperCase();
-            
-            // Trigger the REAL Dung Beetle Optimization Backend
-            const { data } = await api.post(`/api/project/${projectId}/dbo`, { type }, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-
-            setProjectData(data);
-            toast.success("Dung Beetle swarm intelligence synthesis complete (10 Credits deducted)");
-            
-        } catch (error) {
-            console.error("[DBO] Failed:", error);
-            toast.error(error?.response?.data?.message || "DBO Path Disrupted. Falling back to standard AI.");
-        } finally {
-            setIsOptimizing(false);
-            setOptimizationStep(0);
-        }
-    };
 
     const handleRegenerateWithSuggestion = async () => {
         setIsGenerating(true);
@@ -646,45 +615,25 @@ const Result = () => {
                     <div className="space-y-6">
 
                         {/* AI Performance Evaluator Card */}
-                        {(isOptimizing || (viewMode === 'image' && (project.engagementScore || 0) > 0) ||
+                        {((viewMode === 'image' && (project.engagementScore || 0) > 0) ||
                             (viewMode === 'video' && (project.videoEngagementScore || 0) > 0) ||
                             isEvaluating) ? (
                             <div className="glass-panel p-6 rounded-[2.5rem] border border-cyan-500/20 bg-cyan-500/5 relative overflow-hidden group">
-                                {isEvaluating || isOptimizing ? (
+                                {isEvaluating ? (
                                     <div className="flex flex-col items-center justify-center py-10 gap-6">
                                         <div className="relative">
                                             <div className="absolute inset-0 bg-cyan-500/20 blur-2xl animate-pulse rounded-full" />
-                                            {isOptimizing ? (
-                                                <div className="relative animate-bounce">
-                                                    <Bug size={48} className="text-cyan-400 rotate-180" />
-                                                </div>
-                                            ) : (
-                                                <Loader2Icon className="animate-spin text-cyan-500 relative" size={40} />
-                                            )}
+                                            <Loader2Icon className="animate-spin text-cyan-500 relative" size={40} />
                                         </div>
                                         
                                         <div className="text-center space-y-2">
                                             <p className="text-[10px] font-black text-cyan-500 uppercase tracking-[0.4em] animate-pulse">
-                                                {isOptimizing ? "Dung Beetle Optimization" : "Predictive Evaluation"}
+                                                Predictive Evaluation
                                             </p>
                                             <p className="text-[9px] font-bold text-gray-500 uppercase tracking-widest">
-                                                {isOptimizing ? (
-                                                    optimizationStep === 1 ? "The Roll: Analyzing Pixel Trajectory..." :
-                                                    optimizationStep === 2 ? "The Dance: Orienting Celestial Cues..." :
-                                                    optimizationStep === 3 ? "The Steal: Adapting Viral Success Patterns..." :
-                                                    "The Brood: Synthesizing Final Optimization..."
-                                                ) : "Running Predictive Models..."}
+                                                Running Predictive Models...
                                             </p>
                                         </div>
-
-                                        {isOptimizing && (
-                                            <div className="w-full max-w-[200px] h-1 bg-white/5 rounded-full overflow-hidden">
-                                                <div 
-                                                    className="h-full bg-cyan-500 transition-all duration-1000 shadow-[0_0_10px_rgba(6,182,212,0.8)]"
-                                                    style={{ width: `${(optimizationStep / 4) * 100}%` }}
-                                                />
-                                            </div>
-                                        )}
                                     </div>
                                 ) : (
                                     <>
@@ -695,10 +644,6 @@ const Result = () => {
                                             <h3 className="text-[10px] font-black text-cyan-500 uppercase tracking-[0.3em] flex items-center gap-2">
                                                 <ShieldCheck size={14} /> AI {viewMode === 'video' ? 'Video' : 'Image'} Prediction
                                             </h3>
-                                            <div className="bg-cyan-500/10 border border-cyan-500/20 px-2 py-1 rounded-lg flex items-center gap-1.5">
-                                                <Bug size={10} className="text-cyan-400" />
-                                                <span className="text-[8px] font-black text-cyan-300 uppercase tracking-widest">DBO Optimized</span>
-                                            </div>
                                         </div>
                                         <div className="flex items-end gap-3 mb-6">
                                             <div className="flex flex-col">
@@ -723,68 +668,47 @@ const Result = () => {
                                         </div>
                                         <div className="p-5 bg-black/40 border border-white/5 rounded-2xl backdrop-blur-md">
                                             <p className="text-[9px] font-black text-gray-500 uppercase tracking-widest mb-2 flex items-center gap-2">
-                                                <MessageSquare size={10} /> Version Feedback
+                                                <MessageSquare size={10} /> AI Feedback
                                             </p>
                                             <p className="text-xs font-bold text-gray-300 leading-relaxed mb-4">
                                                 "{getCurrentVersionScore().feedback}"
                                             </p>
-                                            <div className="grid grid-cols-2 gap-2">
+                                            <div className="grid grid-cols-1">
                                                 <button
                                                     onClick={viewMode === 'video' ? handleRegenerateVideoWithSuggestion : handleRegenerateWithSuggestion}
                                                     disabled={isGenerating || (viewMode === 'video' && !project.generatedImage)}
                                                     className={`py-3 rounded-xl font-black uppercase text-[9px] tracking-widest transition-all flex items-center justify-center gap-2 disabled:opacity-50 ${viewMode === 'video' ? 'bg-fuchsia-500/10 hover:bg-fuchsia-500/20 text-fuchsia-400 border border-fuchsia-500/30' : 'bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 border border-cyan-500/30'}`}
                                                 >
                                                     {isGenerating ? <Loader2Icon size={12} className="animate-spin" /> : <RefreshCwIcon size={12} />}
-                                                    {isGenerating ? "Synthesizing..." : "Standard Edit"}
-                                                </button>
-                                                <button
-                                                    onClick={handleDBORoll}
-                                                    disabled={isGenerating}
-                                                    className="py-3 rounded-xl font-black uppercase text-[9px] tracking-widest transition-all flex items-center justify-center gap-2 bg-gradient-to-r from-cyan-600 to-blue-600 text-white shadow-lg shadow-cyan-500/20 hover:scale-105 active:scale-95"
-                                                >
-                                                    <Zap size={12} fill="currentColor" />
-                                                    Dung Beetle Roll
+                                                    {isGenerating ? "Synthesizing..." : "Apply AI Suggestion"}
                                                 </button>
                                             </div>
                                         </div>
                                         <div className="mt-5 flex items-center justify-between text-[8px] font-bold uppercase tracking-[0.2em] text-gray-600">
-                                            <span>Predictive Engine V3.1</span>
-                                            <span className="text-cyan-500/40">DBO Path Protected</span>
+                                            <span>Predictive Engine V4.0</span>
                                         </div>
                                     </>
                                 )}
                             </div>
                         ) : (
                             <div className="glass-panel p-6 rounded-[3rem] border border-white/10 bg-white/5 space-y-6 relative overflow-hidden group">
-                                <div className="absolute -right-10 -bottom-10 opacity-5 group-hover:opacity-10 transition-opacity">
-                                    <Bug size={150} />
-                                </div>
-                                
                                 <div className="space-y-2">
                                     <h3 className="text-[10px] font-black text-gray-500 uppercase tracking-[0.3em] flex items-center gap-2">
-                                        <Bug size={14} className="text-cyan-500" /> Swarm Intelligence Analysis
+                                        <SparkleIcon size={14} className="text-cyan-500" /> AI Creative Suggestion
                                     </h3>
                                     <p className="text-xs text-gray-400 leading-relaxed font-bold">
-                                        Authorize the **Dung Beetle Optimization** loop to evaluate pixel-perfect engagement and iterate towards viral performance.
+                                        Get instant AI performance predictions and tactical creative suggestions to optimize your advertisement's impact.
                                     </p>
                                 </div>
 
                                 <div className="grid grid-cols-1 gap-3">
                                     <button
                                         onClick={handleEvaluate}
-                                        className="w-full py-4 rounded-2xl bg-white/5 text-white/40 border border-white/10 hover:bg-white/10 transition-all font-black uppercase text-[10px] tracking-widest flex items-center justify-center gap-2"
-                                    >
-                                        <Activity size={14} /> Quick Performance Scan
-                                    </button>
-                                    <button
-                                        onClick={handleDBORoll}
                                         className="w-full py-5 rounded-[1.5rem] bg-gradient-to-br from-cyan-600 to-blue-700 text-white shadow-xl shadow-cyan-900/40 hover:scale-[1.02] active:scale-[0.98] transition-all font-black uppercase text-[10px] tracking-widest flex flex-col items-center gap-1 group/btn"
                                     >
                                         <div className="flex items-center gap-2">
-                                            <Zap size={14} fill="white" className="group-hover/btn:animate-pulse" />
-                                            Dung Beetle Optimizer (DBO)
+                                            <Activity size={14} /> Start Performance Evaluation
                                         </div>
-                                        <span className="text-[7px] text-cyan-200/60 tracking-[0.2em]">Unlock Swarm Trajectory Path • 10 Credits</span>
                                     </button>
                                 </div>
                             </div>

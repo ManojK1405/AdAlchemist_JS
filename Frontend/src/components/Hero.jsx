@@ -277,7 +277,7 @@ export default function Hero() {
 
                             {/* Using a high-quality cinematic tech video from a reliable CDN */}
                             <video
-                                src="https://player.vimeo.com/progressive_redirect/playback/710665518/rendition/1080p/file.mp4?loc=external&signature=5212354a3a60a9c682705952ae64369e84360e6f5c88c7f5c88c7f5c88c7f5c8"
+                                src="https://res.cloudinary.com/dy0drp7ka/video/upload/v1770996343/Demo_de6saf.mp4"
                                 className="w-full h-full object-cover"
                                 autoPlay
                                 controls

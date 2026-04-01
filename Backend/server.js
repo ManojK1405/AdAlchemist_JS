@@ -1,6 +1,7 @@
 import 'dotenv/config';
 import './configs/instument.js';
 import express from 'express';
+import compression from 'compression';
 import cors from 'cors';
 import { clerkMiddleware } from '@clerk/express'
 import clerkWebHooks from './controllers/clerk.js';
@@ -13,9 +14,14 @@ import paymentRouter from './routes/paymentRoutes.js';
 import adminRouter from './routes/adminRoutes.js';
 import couponRouter from './routes/couponRoutes.js';
 import { startWorker } from './worker.js';
+import { connectRedis } from './configs/redis.js';
 
+// Initialize Redis 
+connectRedis();
 
 const app = express();
+
+app.use(compression());
 
 //Middleware
 app.use(cors({

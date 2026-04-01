@@ -665,27 +665,55 @@ export const reEvaluateProject = async (req, res) => {
 // Original createProject continues...
 // (I will add the trigger inside createProject in the next step or here if range allows)
 
+import { getCache, setCache } from '../configs/redis.js';
+
+// In-memory cache fallback for high-read endpoints (30-second TTL)
+let publishedCacheFallback = { data: null, lastFetched: 0 };
+let trendingCacheFallback = { data: null, lastFetched: 0 };
+const CACHE_TTL = 30; // 30 seconds for Redis
+const FALLBACK_TTL = 30000; // 30 seconds for in-memory
+
 //get all published projects
 export const getAllPublishedProjects = async (req, res) => {
     try {
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 20;
+        const cacheKey = `published:${page}:${limit}`;
+
+        // Attempt to get from Redis
+        const cached = await getCache(cacheKey);
+        if (cached) return res.json(cached);
+
+        // Fallback to in-memory if Redis failed
+        if (publishedCacheFallback.key === cacheKey && (Date.now() - publishedCacheFallback.lastFetched < FALLBACK_TTL)) {
+            return res.json(publishedCacheFallback.data);
+        }
+
+        const skip = (page - 1) * limit;
         const projects = await prisma.project.findMany({
-            where: {
-                isPublished: true,
-            },
+            where: { isPublished: true },
             include: {
-                user: true,
+                user: { select: { id: true, name: true, image: true } },
                 projectLikes: true,
                 comments: true,
             },
-            orderBy: {
-                createdAt: 'desc'
-            }
+            orderBy: { createdAt: 'desc' },
+            skip,
+            take: limit
         });
 
-        res.json({ projects });
+        const responseData = { projects, page, limit };
+        
+        // Cache in Redis
+        await setCache(cacheKey, responseData, CACHE_TTL);
+        
+        // Always update in-memory fallback
+        publishedCacheFallback = { data: responseData, lastFetched: Date.now(), key: cacheKey };
+        
+        res.json(responseData);
 
     } catch (error) {
-        Sentry.captureException(error); // Log the error to Sentry
+        Sentry.captureException(error);
         res.status(500).json({ message: 'Internal server error' });
     }
 }
@@ -1384,27 +1412,37 @@ A breathtakingly professional 5 - second commercial segment that looks like it w
 // get trending projects (most liked)
 export const getTrendingProjects = async (req, res) => {
     try {
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 12;
+        const cacheKey = `trending:${page}:${limit}`;
+
+        const cached = await getCache(cacheKey);
+        if (cached) return res.json(cached);
+
+        if (trendingCacheFallback.key === cacheKey && (Date.now() - trendingCacheFallback.lastFetched < FALLBACK_TTL)) {
+            return res.json(trendingCacheFallback.data);
+        }
+
+        const skip = (page - 1) * limit;
         const trendingProjects = await prisma.project.findMany({
-            where: {
-                isPublished: true,
-            },
+            where: { isPublished: true },
             include: {
-                user: true,
+                user: { select: { id: true, name: true, image: true } },
                 projectLikes: true,
                 comments: true,
-                _count: {
-                    select: { projectLikes: true }
-                }
+                _count: { select: { projectLikes: true } }
             },
-            orderBy: {
-                projectLikes: {
-                    _count: 'desc'
-                }
-            },
-            take: 10
+            orderBy: { projectLikes: { _count: 'desc' } },
+            skip,
+            take: limit
         });
 
-        res.json({ projects: trendingProjects });
+        const responseData = { projects: trendingProjects, page, limit };
+        
+        await setCache(cacheKey, responseData, CACHE_TTL);
+        trendingCacheFallback = { data: responseData, lastFetched: Date.now(), key: cacheKey };
+
+        res.json(responseData);
     } catch (error) {
         Sentry.captureException(error);
         res.status(500).json({ message: 'Internal server error' });
@@ -1498,175 +1536,4 @@ export const saveEditedImage = async (req, res) => {
     }
 };
 
-// --- DUNG BEETLE OPTIMIZATION (DBO) ---
-export const dungBeetleOptimization = async (req, res) => {
-    const { projectId } = req.params;
-    if (await checkFeature('dbo', res) !== true) return;
-    
-    try {
-        const auth = typeof req.auth === 'function' ? req.auth() : req.auth;
-        const userId = auth?.userId;
-        const { type = 'IMAGE' } = req.body;
 
-        console.log(`[DBO] Starting Swarm Optimization for Project: ${projectId}, User: ${userId}`);
-
-        // 1. Fetch Project & User
-        const project = await prisma.project.findUnique({
-            where: { id: projectId },
-            include: { user: true, brandKit: true }
-        });
-
-        if (!project || project.userId !== userId) {
-            return res.status(404).json({ message: "Project not found or unauthorized" });
-        }
-
-        if (project.user.credits < 10) {
-            return res.status(400).json({ message: "Dung Beetle Optimization requires 10 Credits." });
-        }
-
-        // 2. THE STEAL: Fetch trending patterns from viral ads
-        // We look for projects with high engagement scores to "steal" their prompt success
-        const trendingProjects = await prisma.project.findMany({
-            where: { isPublished: true, engagementScore: { gte: 80 } },
-            take: 3,
-            select: { userPrompt: true }
-        });
-
-        const viralSuccessPatterns = trendingProjects.length > 0 
-            ? trendingProjects.map(p => p.userPrompt).join(" | ")
-            : "minimalist focus, cinematic depth, high-speed photography lighting";
-
-        // 3. THE DANCE: Brand Alignment (Celestial Cues)
-        const brandAesthetic = project.brandKit 
-            ? `Align with ${project.brandKit.name}: Voice is ${project.brandKit.brandVoice}, Description: ${project.brandKit.description}`
-            : "Generic High-Conversion Tech/Luxury Aesthetic";
-
-        // 4. THE ROLL: Construct Iterative Refinement Prompt
-        const dboSuperPrompt = `
-            [DBO STAGE: THE ROLL] Objective: Perform recursive refinement on the current prompt: "${project.userPrompt}". 
-            Enhance micro-textures, shadow depth, and focal clarity.
-            
-            [DBO STAGE: THE DANCE] Celestial Alignment (Brand Cues): ${brandAesthetic}. 
-            Ensure brand consistency remains the fixed reference point.
-            
-            [DBO STAGE: THE STEAL] Swarm Intelligence (Viral Patterns): Integrate successful elements from These Titans: ${viralSuccessPatterns}. 
-            Look for composition balance and lighting schemes that triggered high engagement.
-            
-            [DBO STAGE: THE BROOD] Final Synthesis: Synthesize an ultra-high-fidelity variant that incorporates all swarm intelligence data. 
-            Aim for a photorealistic masterpiece that is visually arresting and commercially optimized.
-        `.trim();
-
-        // 5. Deduct Credits & Mark Generating
-        await prisma.user.update({
-            where: { id: userId },
-            data: { credits: { decrement: 10 } }
-        });
-
-        await prisma.project.update({
-            where: { id: projectId },
-            data: { isGenerating: true }
-        });
-
-        const imageFiles = await Promise.all(
-            project.uploadedImages.slice(0, 2).map(async (url) => {
-                const response = await axios.get(url, { responseType: 'arraybuffer' });
-                return {
-                    inlineData: {
-                        data: Buffer.from(response.data).toString('base64'),
-                        mimeType: "image/png"
-                    }
-                };
-            })
-        );
-
-        if (project.generatedImage) {
-            const lastGenResponse = await axios.get(project.generatedImage, { responseType: 'arraybuffer' });
-            imageFiles.push({
-                inlineData: {
-                    data: Buffer.from(lastGenResponse.data).toString('base64'),
-                    mimeType: "image/png"
-                }
-            });
-        }
-
-        // 6. Trigger AI Generation (Using the platform's specific SDK pattern)
-        const contents = [...imageFiles, dboSuperPrompt];
-        
-        const response = await ai.models.generateContent({
-            model: "gemini-3-pro-image-preview",
-            contents: contents,
-            config: {
-                maxOutputTokens: 2048,
-                temperature: 0.4,
-            },
-        });
-
-        if (!response?.candidates?.[0]?.content?.parts) {
-            throw new Error("Swarm intelligence failed to synthesize a response.");
-        }
-
-        const parts = response.candidates[0].content.parts;
-        let finalBuffer = null;
-        for (const part of parts) {
-            if (part.inlineData?.data) {
-                finalBuffer = Buffer.from(part.inlineData.data, "base64");
-                break;
-            }
-        }
-
-        let newImageUrl = project.generatedImage;
-        if (finalBuffer) {
-            const uploadResult = await cloudinary.uploader.upload(
-                `data:image/png;base64,${finalBuffer.toString("base64")}`,
-                {
-                    resource_type: "image",
-                    folder: "adalchemist/generated",
-                }
-            );
-            newImageUrl = uploadResult.secure_url;
-        }
-        
-        // 7. Update Project with the new asset first
-        await prisma.project.update({
-            where: { id: projectId },
-            data: {
-                generatedImage: newImageUrl,
-                imageVersions: { push: newImageUrl },
-                isGenerating: false
-            }
-        });
-
-        // 8. Trigger REAL Dynamic Evaluation for the "DBO Boost"
-        const evaluation = await evaluateAdPerformance(projectId, type);
-        
-        // Fetch the fully updated project to return
-        const updatedProject = await prisma.project.findUnique({
-            where: { id: projectId },
-            include: { user: true, brandKit: true }
-        });
-
-        res.json(updatedProject);
-
-    } catch (error) {
-        console.error("[DBO] Optimization Failed:", error);
-        
-        const auth = typeof req.auth === 'function' ? req.auth() : req.auth;
-        const userId = auth?.userId;
-        
-        try {
-            if (userId) {
-                await prisma.user.update({
-                    where: { id: userId },
-                    data: { credits: { increment: 10 } }
-                });
-            }
-            await prisma.project.update({
-                where: { id: projectId },
-                data: { isGenerating: false, error: error.message }
-            });
-        } catch (dbErr) {
-            console.error("[DBO] Cleanup Failed:", dbErr);
-        }
-        res.status(500).json({ message: "Dung Beetle Path Disrupted: " + error.message });
-    }
-};
